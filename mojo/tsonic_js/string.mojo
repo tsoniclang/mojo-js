@@ -267,6 +267,20 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized):
             index += 1
         return Self(code_units=units^)
 
+    def iter_values(self) -> List[Self]:
+        var result = List[Self]()
+        var index = 0
+        while index < len(self):
+            var width = 1
+            var first = UInt32(self._code_units[][index])
+            if first >= 0xD800 and first <= 0xDBFF and index + 1 < len(self):
+                var second = UInt32(self._code_units[][index + 1])
+                if second >= 0xDC00 and second <= 0xDFFF:
+                    width = 2
+            result.append(self._range(index, index + width))
+            index += width
+        return result^
+
     def _matches_at(self, value: Self, start: Int) -> Bool:
         if start < 0 or start + len(value) > len(self):
             return False

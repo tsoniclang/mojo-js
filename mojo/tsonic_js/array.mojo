@@ -363,6 +363,13 @@ struct JsArray[T: Copyable & Deinitable](ImplicitlyCopyable, Sized):
     def same_storage(self, other: Self) -> Bool:
         return self._elements is other._elements
 
+    def iter_values(self) -> List[Self.T]:
+        var result = List[Self.T]()
+        for current in self._elements[]:
+            if current:
+                result.append(current.value())
+        return result^
+
     def _first_present_index(self) -> Int:
         for index in range(len(self)):
             if self._elements[][index]:
