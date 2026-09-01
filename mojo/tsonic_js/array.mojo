@@ -37,7 +37,7 @@ struct JsArray[T: Copyable & Deinitable](ImplicitlyCopyable, Sized):
         var value = self.get(_array_index(index))
         if not value:
             raise Error("JavaScript array index is absent")
-        return value.value()
+        return value.value().copy()
 
     def set(mut self, index: Int, var value: Self.T):
         if index < 0:

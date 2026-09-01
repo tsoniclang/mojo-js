@@ -15,15 +15,21 @@ from .console import (
 from .collection_callbacks import *
 from .constructors import array_new, map_new, set_new
 from .date import JsDate, date_new, date_now, date_parse, date_utc
+from .json import json_parse, json_stringify
 from .map import JsMap
 from .math import *
 from .number import *
-from .object import object_is
+from .object import (
+    object_entries,
+    object_has_own,
+    object_is,
+    object_keys,
+    object_values,
+)
 from .set import JsSet
 from .string import JsString, string_from_char_code, string_from_code_point
 from .string_array import string_split
 from .value import (
-    JsPrimitiveValue,
     JsValue,
     js_value_from_bool,
     js_value_from_null,

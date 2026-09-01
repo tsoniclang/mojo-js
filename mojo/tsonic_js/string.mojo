@@ -27,6 +27,13 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
     def __init__(out self, *, var code_units: List[UInt16]):
         self._code_units = ArcPointer(code_units^)
 
+    def __init__(
+        out self,
+        *,
+        code_unit_storage: ArcPointer[List[UInt16]],
+    ):
+        self._code_units = code_unit_storage
+
     def __len__(self) -> Int:
         return len(self._code_units[])
 

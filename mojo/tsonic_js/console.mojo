@@ -1,20 +1,21 @@
-from tsonic_runtime import Null, Undefined
-
-from .string import JsString
 from .value import JsValue
 
 
 def _console_write_value(value: JsValue):
-    if value.isa[Undefined]():
+    if value.is_undefined():
         print("undefined", end="")
-    elif value.isa[Null]():
+    elif value.is_null():
         print("null", end="")
-    elif value.isa[Bool]():
-        print("true" if value[Bool] else "false", end="")
-    elif value.isa[Float64]():
-        print(value[Float64], end="")
+    elif value.is_bool():
+        print("true" if value._bool_value() else "false", end="")
+    elif value.is_number():
+        print(value._number_value(), end="")
+    elif value.is_string():
+        print(value._string_value(), end="")
+    elif value.is_array():
+        print("[Array]", end="")
     else:
-        print(value[JsString], end="")
+        print("[object Object]", end="")
 
 
 def _console_write(label: String, *data: JsValue):
