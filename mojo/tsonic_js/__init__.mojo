@@ -13,7 +13,15 @@ from .console import (
     console_warn,
 )
 from .collection_callbacks import *
-from .constructors import array_new, map_new, set_new
+from .constructors import (
+    array_from,
+    array_from_map_value,
+    array_from_map_with_index,
+    array_new,
+    map_new,
+    set_new,
+)
+from .uri import decode_uri_component, encode_uri_component
 from .date import JsDate, date_new, date_now, date_parse, date_utc
 from .json import json_parse, json_stringify
 from .map import JsMap

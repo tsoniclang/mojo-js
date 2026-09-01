@@ -62,6 +62,12 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
         units.append(unit.value())
         return Self(code_units=units^)
 
+    def get_index(self, index: Float64) -> Optional[Self]:
+        var normalized = _string_integer(index)
+        if normalized < 0 or normalized >= len(self):
+            return None
+        return Optional[Self](self.char_at(Float64(normalized)))
+
     def at(self, index: Float64) -> Optional[Self]:
         var normalized = _string_integer(index)
         if normalized < 0:

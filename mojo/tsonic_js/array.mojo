@@ -33,6 +33,9 @@ struct JsArray[T: Copyable & Deinitable](ImplicitlyCopyable, Sized):
             return None
         return self._elements[][index].copy()
 
+    def get_index(self, index: Float64) -> Optional[Self.T]:
+        return self.get(_array_index(index))
+
     def __getitem__(self, index: Float64) raises -> Self.T:
         var value = self.get(_array_index(index))
         if not value:

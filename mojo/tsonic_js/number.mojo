@@ -15,6 +15,14 @@ comptime NUMBER_NEGATIVE_INFINITY = FloatLiteral.negative_infinity
 comptime NUMBER_POSITIVE_INFINITY = FloatLiteral.infinity
 
 
+def js_truthy_number(value: Float64) -> Bool:
+    return value != 0 and value == value
+
+
+def js_truthy_number(value: Float32) -> Bool:
+    return value != 0 and value == value
+
+
 def number_to_string(value: Float64) -> JsString:
     if value != value:
         return JsString("NaN")

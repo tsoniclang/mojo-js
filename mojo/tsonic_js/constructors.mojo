@@ -1,4 +1,5 @@
 from std.collections import List
+from tsonic_runtime import RaisingCallable
 
 from .array import JsArray
 from .map import JsMap
@@ -10,6 +11,40 @@ def array_new[T: Copyable & Deinitable](*items: T) -> JsArray[T]:
     for item in items:
         values.append(item.copy())
     return JsArray[T](values^)
+
+
+def array_from[T: Copyable & Deinitable](values: JsArray[T]) -> JsArray[T]:
+    return values.copy()
+
+
+def array_from(values: JsString) -> JsArray[JsString]:
+    return JsArray[JsString](values.iter_values())
+
+
+def array_from_map_value[
+    T: Copyable & Deinitable,
+    U: Copyable & Deinitable,
+](
+    values: JsArray[T], callback: RaisingCallable[Tuple[T], U]
+) raises -> JsArray[U]:
+    var result = List[U]()
+    for value in values.iter_values():
+        result.append(callback.call((value,)))
+    return JsArray[U](result^)
+
+
+def array_from_map_with_index[
+    T: Copyable & Deinitable,
+    U: Copyable & Deinitable,
+](
+    values: JsArray[T], callback: RaisingCallable[Tuple[T, Float64], U]
+) raises -> JsArray[U]:
+    var result = List[U]()
+    var index = 0
+    for value in values.iter_values():
+        result.append(callback.call((value, Float64(index))))
+        index += 1
+    return JsArray[U](result^)
 
 
 def map_new[
@@ -46,4 +81,11 @@ def set_new[
             _ = result.add(values[Float64(index)])
         except:
             pass
+    return result
+
+
+def set_new(values: JsString) -> JsSet[JsString]:
+    var result = JsSet[JsString]()
+    for value in values.iter_values():
+        _ = result.add(value)
     return result
