@@ -2,6 +2,7 @@ from std.collections import List
 from std.memory import ArcPointer
 
 from .array import JsArray
+from .equality import same_value_zero
 
 
 struct _JsMapEntry[K: Copyable & Deinitable, V: Copyable & Deinitable](Copyable):
@@ -87,6 +88,6 @@ struct JsMap[
 
     def _find(self, key: Self.K) -> Int:
         for index in range(len(self)):
-            if self._entries[][index].key == key:
+            if same_value_zero(self._entries[][index].key, key):
                 return index
         return -1

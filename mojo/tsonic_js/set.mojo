@@ -2,6 +2,7 @@ from std.collections import List
 from std.memory import ArcPointer
 
 from .array import JsArray
+from .equality import same_value_zero
 
 
 struct JsSet[T: Copyable & Deinitable & Equatable](ImplicitlyCopyable, Sized):
@@ -99,6 +100,6 @@ struct JsSet[T: Copyable & Deinitable & Equatable](ImplicitlyCopyable, Sized):
 
     def _find(self, value: Self.T) -> Int:
         for index in range(len(self)):
-            if self._values[][index] == value:
+            if same_value_zero(self._values[][index], value):
                 return index
         return -1

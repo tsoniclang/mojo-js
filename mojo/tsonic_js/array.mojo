@@ -3,6 +3,7 @@ from std.memory import ArcPointer
 
 from .string import JsString
 from .value import JsValue, js_truthy
+from .equality import same_value_zero
 
 
 struct JsArray[T: Copyable & Deinitable](ImplicitlyCopyable, Sized):
@@ -135,7 +136,7 @@ struct JsArray[T: Copyable & Deinitable](ImplicitlyCopyable, Sized):
         var start = _relative_start(from_index, len(self))
         for index in range(start, len(self)):
             var current = self._elements[][index]
-            if current and current.value() == value:
+            if current and same_value_zero(current.value(), value):
                 return True
         return False
 
