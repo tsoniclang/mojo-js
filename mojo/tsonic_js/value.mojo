@@ -11,3 +11,5 @@ comptime JsPrimitiveValue = Variant[
     Float64,
     JsString,
 ]
+
+comptime JsValue = JsPrimitiveValue
