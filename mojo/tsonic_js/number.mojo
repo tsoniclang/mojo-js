@@ -1,5 +1,6 @@
 from std import math
 from std.collections import List
+from std.memory import bitcast
 
 from .string import JsString
 
@@ -101,6 +102,332 @@ def number_to_string(value: Float64) -> JsString:
             for index in range(integer_digits, len(significant)):
                 result.append(significant[index])
     return JsString(code_units=result^)
+
+
+def number_value_of(value: Float64) -> Float64:
+    return value
+
+
+def number_to_fixed(value: Float64, fraction_digits: Float64 = 0) raises -> JsString:
+    var digits = _format_count(fraction_digits, 0, 100, "toFixed fraction digits")
+    if not math.isfinite(value) or math.abs(value) >= 1e21:
+        return number_to_string(value)
+    var exact = _exact_decimal(math.abs(value))
+    var scale = exact.scale
+    var coefficient = exact.coefficient.copy()
+    var shift = scale - digits
+    var rounded = List[UInt16]()
+    if shift <= 0:
+        rounded = coefficient^
+        for _ in range(-shift):
+            rounded.append(48)
+    else:
+        var keep = len(coefficient) - shift
+        if keep < 0:
+            rounded.append(48)
+        elif keep == 0:
+            rounded.append(UInt16(49 if coefficient[0] >= 53 else 48))
+        else:
+            rounded = _round_decimal_digits(coefficient^, keep)
+    var output = List[UInt16]()
+    if _is_negative_nonzero(value):
+        output.append(45)
+    if digits == 0:
+        for unit in rounded:
+            output.append(unit)
+        return JsString(code_units=output^)
+    if len(rounded) <= digits:
+        output.append(48)
+        output.append(46)
+        for _ in range(digits - len(rounded)):
+            output.append(48)
+        for unit in rounded:
+            output.append(unit)
+    else:
+        var decimal = len(rounded) - digits
+        for index in range(len(rounded)):
+            if index == decimal:
+                output.append(46)
+            output.append(rounded[index])
+    return JsString(code_units=output^)
+
+
+def number_to_exponential(
+    value: Float64,
+    fraction_digits: Optional[Float64] = None,
+) raises -> JsString:
+    if not fraction_digits:
+        return _shortest_exponential(value)
+    var digits = _format_count(
+        fraction_digits.value(), 0, 100, "toExponential fraction digits"
+    )
+    return _format_significant(value, digits + 1, True)
+
+
+def number_to_exponential_default(value: Float64) -> JsString:
+    return _shortest_exponential(value)
+
+
+def number_to_exponential_digits(
+    value: Float64, fraction_digits: Float64
+) raises -> JsString:
+    var digits = _format_count(
+        fraction_digits, 0, 100, "toExponential fraction digits"
+    )
+    return _format_significant(value, digits + 1, True)
+
+
+def number_to_precision(
+    value: Float64,
+    precision: Optional[Float64] = None,
+) raises -> JsString:
+    if not precision:
+        return number_to_string(value)
+    var digits = _format_count(precision.value(), 1, 100, "toPrecision precision")
+    return _format_significant(value, digits, False)
+
+
+def number_to_precision_default(value: Float64) -> JsString:
+    return number_to_string(value)
+
+
+def number_to_precision_digits(value: Float64, precision: Float64) raises -> JsString:
+    var digits = _format_count(precision, 1, 100, "toPrecision precision")
+    return _format_significant(value, digits, False)
+
+
+def _format_significant(
+    value: Float64, precision: Int, exponential: Bool
+) raises -> JsString:
+    if not math.isfinite(value):
+        return number_to_string(value)
+    if value == 0:
+        var zero = List[UInt16]()
+        zero.append(48)
+        if precision > 1:
+            zero.append(46)
+            for _ in range(precision - 1):
+                zero.append(48)
+        if exponential:
+            _append_exponent(zero, 0)
+        return JsString(code_units=zero^)
+    var exact = _exact_decimal(math.abs(value))
+    var scale = exact.scale
+    var coefficient = exact.coefficient.copy()
+    var exponent = len(coefficient) - scale - 1
+    var rounded = _round_decimal_digits(coefficient^, precision)
+    if len(rounded) > precision:
+        exponent += 1
+        _ = rounded.pop()
+    while len(rounded) < precision:
+        rounded.append(48)
+    var use_exponential = exponential or exponent < -6 or exponent >= precision
+    var output = List[UInt16]()
+    if _is_negative_nonzero(value):
+        output.append(45)
+    if use_exponential:
+        output.append(rounded[0])
+        if precision > 1:
+            output.append(46)
+            for index in range(1, precision):
+                output.append(rounded[index])
+        _append_exponent(output, exponent)
+        return JsString(code_units=output^)
+    var integer_digits = exponent + 1
+    if integer_digits <= 0:
+        output.append(48)
+        output.append(46)
+        for _ in range(-integer_digits):
+            output.append(48)
+        for unit in rounded:
+            output.append(unit)
+    elif integer_digits >= precision:
+        for unit in rounded:
+            output.append(unit)
+        for _ in range(integer_digits - precision):
+            output.append(48)
+    else:
+        for index in range(precision):
+            if index == integer_digits:
+                output.append(46)
+            output.append(rounded[index])
+    return JsString(code_units=output^)
+
+
+def _shortest_exponential(value: Float64) -> JsString:
+    if not math.isfinite(value) or value == 0:
+        var result = number_to_string(value)
+        if value == 0:
+            return JsString("0e+0")
+        return result
+    var source = number_to_string(value)
+    var negative = _is_negative_nonzero(value)
+    var start = 1 if negative else 0
+    var exponent_marker = -1
+    for index in range(start, len(source)):
+        var unit = source.code_unit_at(index).value()
+        if unit == 101:
+            exponent_marker = index
+            break
+    if exponent_marker >= 0:
+        return source
+    var decimal = -1
+    for index in range(start, len(source)):
+        if source.code_unit_at(index).value() == 46:
+            decimal = index
+            break
+    var significant = List[UInt16]()
+    var exponent: Int
+    if decimal < 0:
+        exponent = len(source) - start - 1
+        for index in range(start, len(source)):
+            significant.append(source.code_unit_at(index).value())
+    elif decimal > start:
+        exponent = decimal - start - 1
+        for index in range(start, len(source)):
+            if index != decimal:
+                significant.append(source.code_unit_at(index).value())
+    else:
+        var first = decimal + 1
+        while first < len(source) and source.code_unit_at(first).value() == 48:
+            first += 1
+        exponent = -(first - decimal)
+        for index in range(first, len(source)):
+            significant.append(source.code_unit_at(index).value())
+    var output = List[UInt16]()
+    if negative:
+        output.append(45)
+    output.append(significant[0])
+    if len(significant) > 1:
+        output.append(46)
+        for index in range(1, len(significant)):
+            output.append(significant[index])
+    _append_exponent(output, exponent)
+    return JsString(code_units=output^)
+
+
+def _format_count(value: Float64, minimum: Int, maximum: Int, name: String) raises -> Int:
+    var count = 0 if value != value or value == 0 else Int(math.trunc(value))
+    if not math.isfinite(value) or count < minimum or count > maximum:
+        raise Error(
+            name
+            + " must be between "
+            + String(minimum)
+            + " and "
+            + String(maximum)
+        )
+    return count
+
+
+def _is_negative_nonzero(value: Float64) -> Bool:
+    return value != 0 and (bitcast[.uint64](value) >> 63) == 1
+
+
+def _exact_decimal(value: Float64) -> _ExactDecimal:
+    var bits = bitcast[.uint64](value)
+    var raw_exponent = Int((bits >> 52) & 0x7FF)
+    var mantissa = bits & 0x000FFFFFFFFFFFFF
+    var binary_exponent = -1074
+    if raw_exponent != 0:
+        mantissa |= UInt64(1) << 52
+        binary_exponent = raw_exponent - 1023 - 52
+    var coefficient = _DecimalCoefficient(mantissa)
+    var scale = 0
+    if binary_exponent >= 0:
+        for _ in range(binary_exponent):
+            coefficient.multiply(2)
+    else:
+        scale = -binary_exponent
+        for _ in range(scale):
+            coefficient.multiply(5)
+        while scale > 0 and coefficient.divisible_by_ten():
+            coefficient.divide_by_ten()
+            scale -= 1
+    return _ExactDecimal(coefficient.digits(), scale)
+
+
+def _round_decimal_digits(var digits: List[UInt16], keep: Int) -> List[UInt16]:
+    if len(digits) <= keep:
+        while len(digits) < keep:
+            digits.append(48)
+        return digits^
+    var round_up = digits[keep] >= 53
+    while len(digits) > keep:
+        _ = digits.pop()
+    if not round_up:
+        return digits^
+    var index = keep - 1
+    while index >= 0 and digits[index] == 57:
+        digits[index] = 48
+        index -= 1
+    if index >= 0:
+        digits[index] += 1
+    else:
+        digits.insert(0, 49)
+    return digits^
+
+
+def _append_exponent(mut output: List[UInt16], exponent: Int):
+    output.append(101)
+    output.append(UInt16(43 if exponent >= 0 else 45))
+    _append_decimal_integer(output, abs(exponent))
+
+
+struct _ExactDecimal(Movable):
+    var coefficient: List[UInt16]
+    var scale: Int
+
+    def __init__(out self, var coefficient: List[UInt16], scale: Int):
+        self.coefficient = coefficient^
+        self.scale = scale
+
+
+struct _DecimalCoefficient(Movable):
+    var chunks: List[UInt32]
+
+    def __init__(out self, value: UInt64):
+        self.chunks = List[UInt32]()
+        self.chunks.append(UInt32(value % 1000000000))
+        var upper = value / 1000000000
+        if upper != 0:
+            self.chunks.append(UInt32(upper))
+
+    def multiply(mut self, factor: UInt32):
+        var carry = UInt64(0)
+        for index in range(len(self.chunks)):
+            var product = UInt64(self.chunks[index]) * UInt64(factor) + carry
+            self.chunks[index] = UInt32(product % 1000000000)
+            carry = product / 1000000000
+        if carry != 0:
+            self.chunks.append(UInt32(carry))
+
+    def divisible_by_ten(self) -> Bool:
+        return self.chunks[0] % 10 == 0
+
+    def divide_by_ten(mut self):
+        var carry = UInt64(0)
+        var index = len(self.chunks) - 1
+        while index >= 0:
+            var current = carry * 1000000000 + UInt64(self.chunks[index])
+            self.chunks[index] = UInt32(current / 10)
+            carry = current % 10
+            index -= 1
+        if len(self.chunks) > 1 and self.chunks[len(self.chunks) - 1] == 0:
+            _ = self.chunks.pop()
+
+    def digits(self) -> List[UInt16]:
+        var output = List[UInt16]()
+        var index = len(self.chunks) - 1
+        _append_decimal_integer(output, Int(self.chunks[index]))
+        index -= 1
+        while index >= 0:
+            var text = String(self.chunks[index])
+            for _ in range(9 - text.byte_length()):
+                output.append(48)
+            for byte in text.as_bytes():
+                output.append(UInt16(byte))
+            index -= 1
+        return output^
 
 
 def _append_decimal_integer(mut output: List[UInt16], value: Int):
