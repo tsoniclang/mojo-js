@@ -40,6 +40,26 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
     def __eq__(self, other: Self) -> Bool:
         return self._code_units[] == other._code_units[]
 
+    def __lt__(self, other: Self) -> Bool:
+        var length = min(len(self), len(other))
+        for index in range(length):
+            var left = self._code_units[][index]
+            var right = other._code_units[][index]
+            if left < right:
+                return True
+            if left > right:
+                return False
+        return len(self) < len(other)
+
+    def __gt__(self, other: Self) -> Bool:
+        return other < self
+
+    def __le__(self, other: Self) -> Bool:
+        return not other < self
+
+    def __ge__(self, other: Self) -> Bool:
+        return not self < other
+
     def __add__(self, other: Self) -> Self:
         return self.concat(other)
 

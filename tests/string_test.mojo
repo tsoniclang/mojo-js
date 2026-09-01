@@ -27,6 +27,10 @@ def main() raises:
 
     assert_equal(JsString("a").concat(JsString("b")).to_native_strict(), "ab")
     assert_true(JsString("same") == JsString("same"))
+    assert_true(JsString("alpha") < JsString("beta"))
+    assert_true(JsString("beta") > JsString("alpha"))
+    assert_true(JsString("a") < JsString("aa"))
+    assert_true(JsString("😀") < JsString("😁"))
 
     var text = JsString("  Alpha beta Alpha  ")
     assert_true(text.includes(JsString("beta")))
