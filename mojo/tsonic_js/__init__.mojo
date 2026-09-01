@@ -1,10 +1,12 @@
 from .array import JsArray
+from .boolean import boolean_to_string, boolean_value_of
 from .console import console_debug, console_error, console_info, console_log, console_warn
 from .constructors import array_new, map_new, set_new
 from .date import JsDate, date_new, date_now, date_parse, date_utc
 from .map import JsMap
 from .math import *
 from .number import *
+from .object import object_is
 from .set import JsSet
 from .string import JsString, string_from_char_code, string_from_code_point
 from .string_array import string_split
