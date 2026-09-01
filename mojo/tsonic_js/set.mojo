@@ -44,6 +44,9 @@ struct JsSet[T: Copyable & Deinitable & Equatable](ImplicitlyCopyable, Sized):
     def values(self) -> JsArray[Self.T]:
         return self.keys()
 
+    def iter_values(self) -> List[Self.T]:
+        return self._values[].copy()
+
     def entries(self) -> JsArray[Tuple[Self.T, Self.T]]:
         var result = List[Tuple[Self.T, Self.T]](capacity=len(self))
         for value in self._values[]:

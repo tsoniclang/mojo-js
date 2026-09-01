@@ -75,6 +75,12 @@ struct JsMap[
             result.append((entry.key.copy(), entry.value.copy()))
         return JsArray[Tuple[Self.K, Self.V]](result^)
 
+    def iter_entries(self) -> List[Tuple[Self.K, Self.V]]:
+        var result = List[Tuple[Self.K, Self.V]](capacity=len(self))
+        for entry in self._entries[]:
+            result.append((entry.key.copy(), entry.value.copy()))
+        return result^
+
     def for_each(self, callback: def(Self.V, Self.K, Self) capturing):
         for entry in self._entries[]:
             callback(entry.value.copy(), entry.key.copy(), self)
