@@ -25,7 +25,7 @@ struct _UtcParts(Copyable):
     var millisecond: Int
 
 
-struct JsDate(ImplicitlyCopyable, Sized):
+struct JsDate(ImplicitlyCopyable):
     var _milliseconds: ArcPointer[Float64]
 
     def __init__(out self, milliseconds: Float64):
@@ -342,9 +342,9 @@ def _parts(milliseconds: Float64) -> _UtcParts:
     var second = Int(within / 1000)
     var millisecond = Int(within - Int64(second) * 1000)
     return _UtcParts(
-        civil.get[0](),
-        civil.get[1]() - 1,
-        civil.get[2](),
+        civil[0],
+        civil[1] - 1,
+        civil[2],
         _floor_mod(Int(days) + 4, 7),
         hour,
         minute,
@@ -389,8 +389,8 @@ def _civil_from_days(days: Int) -> Tuple[Int, Int, Int]:
 def _parse_iso(value: String) -> Float64:
     if (
         value.byte_length() < 10
-        or UInt8(value[byte=4]) != 45
-        or UInt8(value[byte=7]) != 45
+        or UInt8(value.as_bytes()[4]) != 45
+        or UInt8(value.as_bytes()[7]) != 45
     ):
         return Float64(FloatLiteral.nan)
     var year = _digits(value, 0, 4)
@@ -402,9 +402,9 @@ def _parse_iso(value: String) -> Float64:
         return _time_clip(_from_components(year, month - 1, day, 0, 0, 0, 0))
     if (
         value.byte_length() < 20
-        or UInt8(value[byte=10]) != 84
-        or UInt8(value[byte=13]) != 58
-        or UInt8(value[byte=16]) != 58
+        or UInt8(value.as_bytes()[10]) != 84
+        or UInt8(value.as_bytes()[13]) != 58
+        or UInt8(value.as_bytes()[16]) != 58
     ):
         return Float64(FloatLiteral.nan)
     var hour = _digits(value, 11, 2)
@@ -412,24 +412,27 @@ def _parse_iso(value: String) -> Float64:
     var second = _digits(value, 17, 2)
     var millisecond = 0
     var offset = 19
-    if offset < value.byte_length() and UInt8(value[byte=offset]) == 46:
+    if offset < value.byte_length() and UInt8(value.as_bytes()[offset]) == 46:
         offset += 1
         var multiplier = 100
         while offset < value.byte_length() and multiplier > 0:
-            var digit = _digit(UInt8(value[byte=offset]))
+            var digit = _digit(UInt8(value.as_bytes()[offset]))
             if digit < 0:
                 break
             millisecond += digit * multiplier
             multiplier /= 10
             offset += 1
     var timezone = 0
-    if offset < value.byte_length() and UInt8(value[byte=offset]) != 90:
-        var sign = -1 if UInt8(value[byte=offset]) == 43 else 1
-        if UInt8(value[byte=offset]) != 43 and UInt8(value[byte=offset]) != 45:
+    if offset < value.byte_length() and UInt8(value.as_bytes()[offset]) != 90:
+        var sign = -1 if UInt8(value.as_bytes()[offset]) == 43 else 1
+        if (
+            UInt8(value.as_bytes()[offset]) != 43
+            and UInt8(value.as_bytes()[offset]) != 45
+        ):
             return Float64(FloatLiteral.nan)
         if (
             offset + 5 >= value.byte_length()
-            or UInt8(value[byte=offset + 3]) != 58
+            or UInt8(value.as_bytes()[offset + 3]) != 58
         ):
             return Float64(FloatLiteral.nan)
         timezone = sign * (
@@ -452,7 +455,7 @@ def _digits(value: String, start: Int, count: Int) -> Int:
         return -1
     var result = 0
     for index in range(start, start + count):
-        var digit = _digit(UInt8(value[byte=index]))
+        var digit = _digit(UInt8(value.as_bytes()[index]))
         if digit < 0:
             return -1
         result = result * 10 + digit

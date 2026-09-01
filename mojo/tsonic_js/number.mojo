@@ -41,7 +41,7 @@ def number_parse_float(value: JsString) -> Float64:
 
 def number_parse_int(value: JsString, radix: Float64 = 0) -> Float64:
     try:
-        var text = value.to_native_strict().strip()
+        var text = String(value.to_native_strict().strip())
         if not text:
             return Float64(FloatLiteral.nan)
         var sign = 1
@@ -61,7 +61,7 @@ def number_parse_int(value: JsString, radix: Float64 = 0) -> Float64:
         var result = 0.0
         var digits = 0
         while offset < text.byte_length():
-            var digit = _digit_value(UInt8(text[byte=offset]))
+            var digit = _digit_value(UInt8(text.as_bytes()[offset]))
             if digit < 0 or digit >= base:
                 break
             result = result * Float64(base) + Float64(digit)
@@ -75,13 +75,13 @@ def number_parse_int(value: JsString, radix: Float64 = 0) -> Float64:
 
 
 def _number_prefix(value: String, integer_only: Bool) -> String:
-    var text = value.strip()
+    var text = String(value.strip())
     var end = 0
     var saw_digit = False
     var saw_dot = False
     var saw_exponent = False
     while end < text.byte_length():
-        var byte = UInt8(text[byte=end])
+        var byte = UInt8(text.as_bytes()[end])
         if byte >= 48 and byte <= 57:
             saw_digit = True
             end += 1
@@ -103,7 +103,8 @@ def _number_prefix(value: String, integer_only: Bool) -> String:
             saw_digit = False
             end += 1
             if end < text.byte_length() and (
-                UInt8(text[byte=end]) == 43 or UInt8(text[byte=end]) == 45
+                UInt8(text.as_bytes()[end]) == 43
+                or UInt8(text.as_bytes()[end]) == 45
             ):
                 end += 1
             continue
@@ -116,10 +117,10 @@ def _number_prefix(value: String, integer_only: Bool) -> String:
 def _has_hex_prefix(value: String, offset: Int) -> Bool:
     return (
         offset + 1 < value.byte_length()
-        and UInt8(value[byte=offset]) == 48
+        and UInt8(value.as_bytes()[offset]) == 48
         and (
-            UInt8(value[byte=offset + 1]) == 88
-            or UInt8(value[byte=offset + 1]) == 120
+            UInt8(value.as_bytes()[offset + 1]) == 88
+            or UInt8(value.as_bytes()[offset + 1]) == 120
         )
     )
 

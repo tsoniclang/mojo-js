@@ -3,6 +3,13 @@ from std.memory import ArcPointer
 from std.testing import assert_equal
 from tsonic_js import (
     JsArray,
+    JsString,
+    JsValue,
+    adapt_truthy_always_false_callback,
+    adapt_truthy_always_true_callback,
+    adapt_truthy_dynamic_callback,
+    adapt_truthy_number_callback,
+    adapt_truthy_string_callback,
     array_filter_value,
     array_for_each_value,
     array_map_with_index,
@@ -63,6 +70,46 @@ struct CallbackEnvironment:
     ) raises -> None:
         var environment = context.unsafe_bitcast[CallbackEnvironment]()
         environment[].total.write(environment[].total.read() + arguments[0])
+
+    @staticmethod
+    def number_truth(
+        context: ErasedCallableContext,
+        var arguments: Tuple[Float64],
+    ) raises -> Float64:
+        _ = context
+        return arguments[0]
+
+    @staticmethod
+    def string_truth(
+        context: ErasedCallableContext,
+        var arguments: Tuple[Float64],
+    ) raises -> JsString:
+        _ = context
+        return JsString("") if arguments[0] == 0 else JsString("present")
+
+    @staticmethod
+    def dynamic_truth(
+        context: ErasedCallableContext,
+        var arguments: Tuple[Float64],
+    ) raises -> JsValue:
+        _ = context
+        return JsValue(arguments[0])
+
+    @staticmethod
+    def present_truth(
+        context: ErasedCallableContext,
+        var arguments: Tuple[Float64],
+    ) raises -> Tuple[Float64]:
+        _ = context
+        return (arguments[0],)
+
+    @staticmethod
+    def absent_truth(
+        context: ErasedCallableContext,
+        var arguments: Tuple[Float64],
+    ) raises -> None:
+        _ = context
+        _ = arguments
 
     @staticmethod
     def destroy(context: ErasedCallableContext):
@@ -131,3 +178,41 @@ def main() raises:
         ),
     )
     assert_equal(total.read(), 6)
+
+    var number_truth = adapt_truthy_number_callback(
+        RaisingCallable[Tuple[Float64], Float64](
+            environment(0, total), CallbackEnvironment.number_truth
+        )
+    )
+    assert_equal(number_truth.call((0.0,)), False)
+    assert_equal(number_truth.call((2.0,)), True)
+
+    var string_truth = adapt_truthy_string_callback(
+        RaisingCallable[Tuple[Float64], JsString](
+            environment(0, total), CallbackEnvironment.string_truth
+        )
+    )
+    assert_equal(string_truth.call((0.0,)), False)
+    assert_equal(string_truth.call((2.0,)), True)
+
+    var dynamic_truth = adapt_truthy_dynamic_callback(
+        RaisingCallable[Tuple[Float64], JsValue](
+            environment(0, total), CallbackEnvironment.dynamic_truth
+        )
+    )
+    assert_equal(dynamic_truth.call((0.0,)), False)
+    assert_equal(dynamic_truth.call((2.0,)), True)
+
+    var present_truth = adapt_truthy_always_true_callback(
+        RaisingCallable[Tuple[Float64], Tuple[Float64]](
+            environment(0, total), CallbackEnvironment.present_truth
+        )
+    )
+    assert_equal(present_truth.call((0.0,)), True)
+
+    var absent_truth = adapt_truthy_always_false_callback(
+        RaisingCallable[Tuple[Float64], NoneType](
+            environment(0, total), CallbackEnvironment.absent_truth
+        )
+    )
+    assert_equal(absent_truth.call((2.0,)), False)
