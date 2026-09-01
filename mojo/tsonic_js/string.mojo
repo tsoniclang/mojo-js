@@ -43,6 +43,9 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
     def __add__(self, other: Self) -> Self:
         return self.concat(other)
 
+    def __iadd__(mut self, other: Self):
+        self = self.concat(other)
+
     def write_to(self, mut writer: Some[Writer]):
         writer.write(self.to_native_lossy())
 
