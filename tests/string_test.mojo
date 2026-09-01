@@ -44,16 +44,24 @@ def main() raises:
     assert_equal(text.trim_start().to_native_strict(), "Alpha beta Alpha  ")
     assert_equal(text.trim_end().to_native_strict(), "  Alpha beta Alpha")
     assert_equal(JsString("ab").repeat(3).to_native_strict(), "ababab")
-    assert_equal(JsString("x").pad_start(3, JsString("0")).to_native_strict(), "00x")
-    assert_equal(JsString("x").pad_end(3, JsString("0")).to_native_strict(), "x00")
+    assert_equal(
+        JsString("x").pad_start(3, JsString("0")).to_native_strict(), "00x"
+    )
+    assert_equal(
+        JsString("x").pad_end(3, JsString("0")).to_native_strict(), "x00"
+    )
     assert_equal(JsString("Aa").to_lower_case().to_native_strict(), "aa")
     assert_equal(JsString("Aa").to_upper_case().to_native_strict(), "AA")
     assert_equal(
-        JsString("one one").replace(JsString("one"), JsString("two")).to_native_strict(),
+        JsString("one one")
+        .replace(JsString("one"), JsString("two"))
+        .to_native_strict(),
         "two one",
     )
     assert_equal(
-        JsString("one one").replace_all(JsString("one"), JsString("two")).to_native_strict(),
+        JsString("one one")
+        .replace_all(JsString("one"), JsString("two"))
+        .to_native_strict(),
         "two two",
     )
     var pieces = string_split(JsString("a,b,c"), JsString(","), 2)

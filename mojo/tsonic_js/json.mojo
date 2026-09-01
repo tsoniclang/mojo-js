@@ -167,23 +167,31 @@ struct _JsonParser:
             self._position += 1
         if self._matches(48):
             self._position += 1
-            if self._position < len(self._source) and _is_digit(self._current()):
+            if self._position < len(self._source) and _is_digit(
+                self._current()
+            ):
                 raise Error("JSON number has a leading zero")
         else:
             self._require_digit()
-            while self._position < len(self._source) and _is_digit(self._current()):
+            while self._position < len(self._source) and _is_digit(
+                self._current()
+            ):
                 self._position += 1
         if self._matches(46):
             self._position += 1
             self._require_digit()
-            while self._position < len(self._source) and _is_digit(self._current()):
+            while self._position < len(self._source) and _is_digit(
+                self._current()
+            ):
                 self._position += 1
         if self._matches(69) or self._matches(101):
             self._position += 1
             if self._matches(43) or self._matches(45):
                 self._position += 1
             self._require_digit()
-            while self._position < len(self._source) and _is_digit(self._current()):
+            while self._position < len(self._source) and _is_digit(
+                self._current()
+            ):
                 self._position += 1
         var text = String()
         for index in range(start, self._position):
@@ -197,7 +205,9 @@ struct _JsonParser:
         return atof(text)
 
     def _require_digit(mut self) raises:
-        if self._position >= len(self._source) or not _is_digit(self._current()):
+        if self._position >= len(self._source) or not _is_digit(
+            self._current()
+        ):
             raise Error("invalid JSON number")
         self._position += 1
 

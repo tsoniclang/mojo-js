@@ -67,7 +67,10 @@ def _object_key_order(value: JsValue) raises -> List[Int]:
         var integer = _array_index(value.object_key(index))
         if integer:
             var insertion = len(integer_indexes)
-            while insertion > 0 and integer_indexes[insertion - 1] > integer.value():
+            while (
+                insertion > 0
+                and integer_indexes[insertion - 1] > integer.value()
+            ):
                 insertion -= 1
             integer_indexes.insert(insertion, integer.value())
             integer_entries.insert(insertion, index)

@@ -234,9 +234,7 @@ struct _JsValueBuilder(ImplicitlyCopyable):
         return self._append(_JsValueNode(value))
 
     def append_array(mut self, var children: List[Int]) raises -> Int:
-        return self._append(
-            _JsValueNode(_ARRAY, List[JsString](), children^)
-        )
+        return self._append(_JsValueNode(_ARRAY, List[JsString](), children^))
 
     def append_object(
         mut self,

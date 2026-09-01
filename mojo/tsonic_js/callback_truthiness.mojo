@@ -10,9 +10,7 @@ from .value import JsValue, js_truthy
 
 
 @fieldwise_init
-struct _NumberTruthinessAdapter[
-    Arguments: Movable & Deinitable
-]:
+struct _NumberTruthinessAdapter[Arguments: Movable & Deinitable]:
     var callable: RaisingCallable[Self.Arguments, Float64]
 
     @staticmethod
@@ -28,16 +26,18 @@ struct _NumberTruthinessAdapter[
 
     @staticmethod
     def destroy(context: ErasedCallableContext):
-        destroy_callable_environment[
-            _NumberTruthinessAdapter[Self.Arguments]
-        ](context)
+        destroy_callable_environment[_NumberTruthinessAdapter[Self.Arguments]](
+            context
+        )
 
 
 def adapt_truthy_number_callback[
     Arguments: Movable & Deinitable
 ](
     value: RaisingCallable[Arguments, Float64],
-) -> RaisingCallable[Arguments, Bool]:
+) -> RaisingCallable[
+    Arguments, Bool
+]:
     comptime Adapter = _NumberTruthinessAdapter[Arguments]
     var environment = allocate_callable_environment(
         Adapter(value), Adapter.destroy
@@ -46,9 +46,7 @@ def adapt_truthy_number_callback[
 
 
 @fieldwise_init
-struct _StringTruthinessAdapter[
-    Arguments: Movable & Deinitable
-]:
+struct _StringTruthinessAdapter[Arguments: Movable & Deinitable]:
     var callable: RaisingCallable[Self.Arguments, JsString]
 
     @staticmethod
@@ -63,16 +61,18 @@ struct _StringTruthinessAdapter[
 
     @staticmethod
     def destroy(context: ErasedCallableContext):
-        destroy_callable_environment[
-            _StringTruthinessAdapter[Self.Arguments]
-        ](context)
+        destroy_callable_environment[_StringTruthinessAdapter[Self.Arguments]](
+            context
+        )
 
 
 def adapt_truthy_string_callback[
     Arguments: Movable & Deinitable
 ](
     value: RaisingCallable[Arguments, JsString],
-) -> RaisingCallable[Arguments, Bool]:
+) -> RaisingCallable[
+    Arguments, Bool
+]:
     comptime Adapter = _StringTruthinessAdapter[Arguments]
     var environment = allocate_callable_environment(
         Adapter(value), Adapter.destroy
@@ -81,9 +81,7 @@ def adapt_truthy_string_callback[
 
 
 @fieldwise_init
-struct _DynamicTruthinessAdapter[
-    Arguments: Movable & Deinitable
-]:
+struct _DynamicTruthinessAdapter[Arguments: Movable & Deinitable]:
     var callable: RaisingCallable[Self.Arguments, JsValue]
 
     @staticmethod
@@ -98,16 +96,18 @@ struct _DynamicTruthinessAdapter[
 
     @staticmethod
     def destroy(context: ErasedCallableContext):
-        destroy_callable_environment[
-            _DynamicTruthinessAdapter[Self.Arguments]
-        ](context)
+        destroy_callable_environment[_DynamicTruthinessAdapter[Self.Arguments]](
+            context
+        )
 
 
 def adapt_truthy_dynamic_callback[
     Arguments: Movable & Deinitable
 ](
     value: RaisingCallable[Arguments, JsValue],
-) -> RaisingCallable[Arguments, Bool]:
+) -> RaisingCallable[
+    Arguments, Bool
+]:
     comptime Adapter = _DynamicTruthinessAdapter[Arguments]
     var environment = allocate_callable_environment(
         Adapter(value), Adapter.destroy
@@ -145,7 +145,9 @@ def adapt_truthy_always_true_callback[
     Result: Movable & Deinitable,
 ](
     value: RaisingCallable[Arguments, Result],
-) -> RaisingCallable[Arguments, Bool]:
+) -> RaisingCallable[
+    Arguments, Bool
+]:
     comptime Adapter = _PresentTruthinessAdapter[Arguments, Result]
     var environment = allocate_callable_environment(
         Adapter(value), Adapter.destroy
@@ -183,7 +185,9 @@ def adapt_truthy_always_false_callback[
     Result: Movable & Deinitable,
 ](
     value: RaisingCallable[Arguments, Result],
-) -> RaisingCallable[Arguments, Bool]:
+) -> RaisingCallable[
+    Arguments, Bool
+]:
     comptime Adapter = _AbsentTruthinessAdapter[Arguments, Result]
     var environment = allocate_callable_environment(
         Adapter(value), Adapter.destroy

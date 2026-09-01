@@ -12,8 +12,12 @@ from tsonic_js import (
     object_values,
 )
 
+from tsonic_js import boolean_to_string, boolean_value_of
+
 
 def main() raises:
+    assert_equal(boolean_to_string(True).to_native_strict(), "true")
+    assert_false(boolean_value_of(False))
     var number = JsValue(Float64(4.5))
     assert_true(number.is_number())
     assert_equal(number.number_value(), 4.5)
@@ -27,13 +31,16 @@ def main() raises:
     var missing = JsValue.undefined()
     assert_true(missing.is_undefined())
     assert_false(js_truthy(missing))
-    assert_true(object_is(JsValue(Float64(FloatLiteral.nan)), JsValue(Float64(FloatLiteral.nan))))
+    assert_true(
+        object_is(
+            JsValue(Float64(FloatLiteral.nan)),
+            JsValue(Float64(FloatLiteral.nan)),
+        )
+    )
     assert_false(object_is(JsValue(-0.0), JsValue(0.0)))
 
     var parsed = json_parse(
-        JsString(
-            "{\"plain\":1,\"2\":\"two\",\"1\":true,\"nested\":[null,\"😀\"]}"
-        )
+        JsString('{"plain":1,"2":"two","1":true,"nested":[null,"😀"]}')
     )
     assert_true(parsed.is_object())
     assert_true(object_has_own(parsed, JsString("nested")))
@@ -49,12 +56,12 @@ def main() raises:
     assert_true(Bool(encoded))
     assert_equal(
         encoded.value().to_native_strict(),
-        "{\"1\":true,\"2\":\"two\",\"plain\":1,\"nested\":[null,\"😀\"]}",
+        '{"1":true,"2":"two","plain":1,"nested":[null,"😀"]}',
     )
     assert_false(Bool(json_stringify(JsValue.undefined())))
 
     try:
-        _ = json_parse(JsString("{\"broken\":}"))
+        _ = json_parse(JsString('{"broken":}'))
         raise Error("invalid JSON unexpectedly parsed")
     except error:
         assert_equal(String(error), "invalid JSON value")

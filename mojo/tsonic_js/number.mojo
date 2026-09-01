@@ -55,8 +55,8 @@ def number_to_string(value: Float64) -> JsString:
             exponent_negative = bytes[index] == Byte(45)
             index += 1
         while index < source.byte_length():
-            source_exponent = (
-                source_exponent * 10 + Int(UInt8(bytes[index]) - 48)
+            source_exponent = source_exponent * 10 + Int(
+                UInt8(bytes[index]) - 48
             )
             index += 1
         if exponent_negative:
@@ -64,9 +64,7 @@ def number_to_string(value: Float64) -> JsString:
     var leading = 0
     while leading < len(digits) and digits[leading] == 48:
         leading += 1
-    var decimal_exponent = (
-        digits_before_decimal - leading - 1 + source_exponent
-    )
+    var decimal_exponent = digits_before_decimal - leading - 1 + source_exponent
     var significant = List[UInt16]()
     for index in range(leading, len(digits)):
         significant.append(digits[index])
@@ -108,8 +106,81 @@ def number_value_of(value: Float64) -> Float64:
     return value
 
 
-def number_to_fixed(value: Float64, fraction_digits: Float64 = 0) raises -> JsString:
-    var digits = _format_count(fraction_digits, 0, 100, "toFixed fraction digits")
+def number_to_string_radix(value: Int8, radix: Float64) raises -> JsString:
+    return _signed_to_string_radix(Int64(value), radix)
+
+
+def number_to_string_radix(value: UInt8, radix: Float64) raises -> JsString:
+    return _unsigned_to_string_radix(UInt64(value), radix)
+
+
+def number_to_string_radix(value: Int16, radix: Float64) raises -> JsString:
+    return _signed_to_string_radix(Int64(value), radix)
+
+
+def number_to_string_radix(value: UInt16, radix: Float64) raises -> JsString:
+    return _unsigned_to_string_radix(UInt64(value), radix)
+
+
+def number_to_string_radix(value: Int32, radix: Float64) raises -> JsString:
+    return _signed_to_string_radix(Int64(value), radix)
+
+
+def number_to_string_radix(value: UInt32, radix: Float64) raises -> JsString:
+    return _unsigned_to_string_radix(UInt64(value), radix)
+
+
+def number_to_string_radix(value: Int64, radix: Float64) raises -> JsString:
+    return _signed_to_string_radix(value, radix)
+
+
+def number_to_string_radix(value: UInt64, radix: Float64) raises -> JsString:
+    return _unsigned_to_string_radix(value, radix)
+
+
+def number_to_string_radix(value: Int, radix: Float64) raises -> JsString:
+    return _signed_to_string_radix(Int64(value), radix)
+
+
+def number_to_string_radix(value: UInt, radix: Float64) raises -> JsString:
+    return _unsigned_to_string_radix(UInt64(value), radix)
+
+
+def _signed_to_string_radix(value: Int64, radix: Float64) raises -> JsString:
+    if value >= 0:
+        return _unsigned_to_string_radix(UInt64(value), radix)
+    var magnitude = UInt64(-(value + 1)) + 1
+    return _unsigned_to_string_radix(magnitude, radix, True)
+
+
+def _unsigned_to_string_radix(
+    value: UInt64, radix: Float64, negative: Bool = False
+) raises -> JsString:
+    var base = _format_count(radix, 2, 36, "toString radix")
+    var reversed = List[UInt16]()
+    var remaining = value
+    if remaining == 0:
+        reversed.append(48)
+    while remaining != 0:
+        var digit = Int(remaining % UInt64(base))
+        reversed.append(UInt16(48 + digit if digit < 10 else 87 + digit))
+        remaining //= UInt64(base)
+    var output = List[UInt16]()
+    if negative:
+        output.append(45)
+    var index = len(reversed) - 1
+    while index >= 0:
+        output.append(reversed[index])
+        index -= 1
+    return JsString(code_units=output^)
+
+
+def number_to_fixed(
+    value: Float64, fraction_digits: Float64 = 0
+) raises -> JsString:
+    var digits = _format_count(
+        fraction_digits, 0, 100, "toFixed fraction digits"
+    )
     if not math.isfinite(value) or math.abs(value) >= 1e21:
         return number_to_string(value)
     var exact = _exact_decimal(math.abs(value))
@@ -183,7 +254,9 @@ def number_to_precision(
 ) raises -> JsString:
     if not precision:
         return number_to_string(value)
-    var digits = _format_count(precision.value(), 1, 100, "toPrecision precision")
+    var digits = _format_count(
+        precision.value(), 1, 100, "toPrecision precision"
+    )
     return _format_significant(value, digits, False)
 
 
@@ -191,7 +264,9 @@ def number_to_precision_default(value: Float64) -> JsString:
     return number_to_string(value)
 
 
-def number_to_precision_digits(value: Float64, precision: Float64) raises -> JsString:
+def number_to_precision_digits(
+    value: Float64, precision: Float64
+) raises -> JsString:
     var digits = _format_count(precision, 1, 100, "toPrecision precision")
     return _format_significant(value, digits, False)
 
@@ -306,7 +381,9 @@ def _shortest_exponential(value: Float64) -> JsString:
     return JsString(code_units=output^)
 
 
-def _format_count(value: Float64, minimum: Int, maximum: Int, name: String) raises -> Int:
+def _format_count(
+    value: Float64, minimum: Int, maximum: Int, name: String
+) raises -> Int:
     var count = 0 if value != value or value == 0 else Int(math.trunc(value))
     if not math.isfinite(value) or count < minimum or count > maximum:
         raise Error(

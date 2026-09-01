@@ -1,4 +1,9 @@
-from std.testing import assert_almost_equal, assert_equal, assert_false, assert_true
+from std.testing import (
+    assert_almost_equal,
+    assert_equal,
+    assert_false,
+    assert_true,
+)
 from tsonic_js import *
 
 
@@ -47,6 +52,18 @@ def main() raises:
     assert_equal(number_parse_int(JsString("ff"), 16), 255)
     assert_equal(number_parse_float(JsString("12.5tail")), 12.5)
     assert_equal(number_value_of(12.5), 12.5)
+    assert_equal(
+        number_to_string_radix(Int32(255), 16).to_native_strict(), "ff"
+    )
+    assert_equal(
+        number_to_string_radix(Int32(-10), 2).to_native_strict(), "-1010"
+    )
+    assert_equal(
+        number_to_string_radix(
+            UInt64(18446744073709551615), 36
+        ).to_native_strict(),
+        "3w5e11264sgsf",
+    )
     assert_equal(number_to_fixed(123.456, 2).to_native_strict(), "123.46")
     assert_equal(number_to_fixed(1.005, 2).to_native_strict(), "1.00")
     assert_equal(number_to_fixed(2.35, 1).to_native_strict(), "2.4")
@@ -54,9 +71,7 @@ def main() raises:
         number_to_fixed(1e20, 0).to_native_strict(),
         "100000000000000000000",
     )
-    assert_equal(
-        number_to_exponential_default(77).to_native_strict(), "7.7e+1"
-    )
+    assert_equal(number_to_exponential_default(77).to_native_strict(), "7.7e+1")
     assert_equal(
         number_to_exponential_digits(77, 2).to_native_strict(), "7.70e+1"
     )
@@ -81,7 +96,9 @@ def main() raises:
     assert_equal(epoch.get_utc_seconds(), 0)
     assert_equal(epoch.get_utc_milliseconds(), 0)
     assert_equal(epoch.value_of(), 0)
-    assert_equal(epoch.to_iso_string().to_native_strict(), "1970-01-01T00:00:00.000Z")
+    assert_equal(
+        epoch.to_iso_string().to_native_strict(), "1970-01-01T00:00:00.000Z"
+    )
     assert_equal(date_parse(JsString("1970-01-01T00:00:01.000Z")), 1000)
     assert_equal(date_utc(1970, 0), 0)
     assert_true(date_now() > 0)
