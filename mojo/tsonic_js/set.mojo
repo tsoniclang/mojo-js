@@ -54,10 +54,6 @@ struct JsSet[T: Copyable & Deinitable & Equatable](ImplicitlyCopyable, Sized):
             result.append((value.copy(), value.copy()))
         return JsArray[Tuple[Self.T, Self.T]](result^)
 
-    def for_each(self, callback: def(Self.T, Self.T, Self) capturing):
-        for value in self._values[]:
-            callback(value.copy(), value.copy(), self)
-
     def union(self, other: Self) -> Self:
         var result = Self()
         for value in self._values[]:

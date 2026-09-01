@@ -1,6 +1,17 @@
 from .array import JsArray
+from .array_callbacks_predicates import *
+from .array_callbacks_reduce import *
+from .array_callbacks_sort import *
+from .array_callbacks_transform import *
 from .boolean import boolean_to_string, boolean_value_of
-from .console import console_debug, console_error, console_info, console_log, console_warn
+from .console import (
+    console_debug,
+    console_error,
+    console_info,
+    console_log,
+    console_warn,
+)
+from .collection_callbacks import *
 from .constructors import array_new, map_new, set_new
 from .date import JsDate, date_new, date_now, date_parse, date_utc
 from .map import JsMap

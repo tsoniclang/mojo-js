@@ -11,47 +11,47 @@ comptime MATH_SQRT1_2 = 0.7071067811865476
 comptime MATH_SQRT2 = 1.4142135623730951
 
 
-fn math_abs(value: Float64) -> Float64:
+def math_abs(value: Float64) -> Float64:
     return math.abs(value)
 
 
-fn math_acos(value: Float64) -> Float64:
+def math_acos(value: Float64) -> Float64:
     return math.acos(value)
 
 
-fn math_acosh(value: Float64) -> Float64:
+def math_acosh(value: Float64) -> Float64:
     return math.acosh(value)
 
 
-fn math_asin(value: Float64) -> Float64:
+def math_asin(value: Float64) -> Float64:
     return math.asin(value)
 
 
-fn math_asinh(value: Float64) -> Float64:
+def math_asinh(value: Float64) -> Float64:
     return math.asinh(value)
 
 
-fn math_atan(value: Float64) -> Float64:
+def math_atan(value: Float64) -> Float64:
     return math.atan(value)
 
 
-fn math_atan2(y: Float64, x: Float64) -> Float64:
+def math_atan2(y: Float64, x: Float64) -> Float64:
     return math.atan2(y, x)
 
 
-fn math_atanh(value: Float64) -> Float64:
+def math_atanh(value: Float64) -> Float64:
     return math.atanh(value)
 
 
-fn math_cbrt(value: Float64) -> Float64:
+def math_cbrt(value: Float64) -> Float64:
     return math.cbrt(value)
 
 
-fn math_ceil(value: Float64) -> Float64:
+def math_ceil(value: Float64) -> Float64:
     return math.ceil(value)
 
 
-fn math_clz32(value: Float64) -> Float64:
+def math_clz32(value: Float64) -> Float64:
     var bits = _to_uint32(value)
     if bits == 0:
         return 32
@@ -63,31 +63,31 @@ fn math_clz32(value: Float64) -> Float64:
     return Float64(count)
 
 
-fn math_cos(value: Float64) -> Float64:
+def math_cos(value: Float64) -> Float64:
     return math.cos(value)
 
 
-fn math_cosh(value: Float64) -> Float64:
+def math_cosh(value: Float64) -> Float64:
     return math.cosh(value)
 
 
-fn math_exp(value: Float64) -> Float64:
+def math_exp(value: Float64) -> Float64:
     return math.exp(value)
 
 
-fn math_expm1(value: Float64) -> Float64:
+def math_expm1(value: Float64) -> Float64:
     return math.expm1(value)
 
 
-fn math_floor(value: Float64) -> Float64:
+def math_floor(value: Float64) -> Float64:
     return math.floor(value)
 
 
-fn math_fround(value: Float64) -> Float64:
+def math_fround(value: Float64) -> Float64:
     return Float64(Float32(value))
 
 
-fn math_hypot(*values: Float64) -> Float64:
+def math_hypot(*values: Float64) -> Float64:
     var scale = 0.0
     var sum = 0.0
     for value in values:
@@ -106,100 +106,116 @@ fn math_hypot(*values: Float64) -> Float64:
     return 0.0 if scale == 0 else scale * math.sqrt(sum)
 
 
-fn math_imul(left: Float64, right: Float64) -> Float64:
+def math_imul(left: Float64, right: Float64) -> Float64:
     var product = UInt64(_to_uint32(left)) * UInt64(_to_uint32(right))
     var low = UInt32(product & 0xFFFFFFFF)
-    return Float64(Int64(low) - 0x100000000) if low >= 0x80000000 else Float64(low)
+    return Float64(Int64(low) - 0x100000000) if low >= 0x80000000 else Float64(
+        low
+    )
 
 
-fn math_log(value: Float64) -> Float64:
+def math_log(value: Float64) -> Float64:
     return math.log(value)
 
 
-fn math_log10(value: Float64) -> Float64:
+def math_log10(value: Float64) -> Float64:
     return math.log10(value)
 
 
-fn math_log1p(value: Float64) -> Float64:
+def math_log1p(value: Float64) -> Float64:
     return math.log1p(value)
 
 
-fn math_log2(value: Float64) -> Float64:
+def math_log2(value: Float64) -> Float64:
     return math.log2(value)
 
 
-fn math_max(*values: Float64) -> Float64:
+def math_max(*values: Float64) -> Float64:
     var result = Float64(FloatLiteral.negative_infinity)
     for value in values:
         if value != value:
             return value
-        if value > result or (value == 0 and result == 0 and not _negative_zero(value)):
+        if value > result or (
+            value == 0 and result == 0 and not _negative_zero(value)
+        ):
             result = value
     return result
 
 
-fn math_min(*values: Float64) -> Float64:
+def math_min(*values: Float64) -> Float64:
     var result = Float64(FloatLiteral.infinity)
     for value in values:
         if value != value:
             return value
-        if value < result or (value == 0 and result == 0 and _negative_zero(value)):
+        if value < result or (
+            value == 0 and result == 0 and _negative_zero(value)
+        ):
             result = value
     return result
 
 
-fn math_pow(base: Float64, exponent: Float64) -> Float64:
+def math_pow(base: Float64, exponent: Float64) -> Float64:
     return math.pow(base, exponent)
 
 
-fn math_random() -> Float64:
+def math_random() -> Float64:
     return random.random_float64()
 
 
-fn math_round(value: Float64) -> Float64:
-    if value != value or value == Float64(FloatLiteral.infinity) or value == Float64(FloatLiteral.negative_infinity) or value == 0:
+def math_round(value: Float64) -> Float64:
+    if (
+        value != value
+        or value == Float64(FloatLiteral.infinity)
+        or value == Float64(FloatLiteral.negative_infinity)
+        or value == 0
+    ):
         return value
     var rounded = math.floor(value + 0.5)
     return -0.0 if rounded == 0 and value < 0 else rounded
 
 
-fn math_sign(value: Float64) -> Float64:
+def math_sign(value: Float64) -> Float64:
     if value != value or value == 0:
         return value
     return -1.0 if value < 0 else 1.0
 
 
-fn math_sin(value: Float64) -> Float64:
+def math_sin(value: Float64) -> Float64:
     return math.sin(value)
 
 
-fn math_sinh(value: Float64) -> Float64:
+def math_sinh(value: Float64) -> Float64:
     return math.sinh(value)
 
 
-fn math_sqrt(value: Float64) -> Float64:
+def math_sqrt(value: Float64) -> Float64:
     return math.sqrt(value)
 
 
-fn math_tan(value: Float64) -> Float64:
+def math_tan(value: Float64) -> Float64:
     return math.tan(value)
 
 
-fn math_tanh(value: Float64) -> Float64:
+def math_tanh(value: Float64) -> Float64:
     return math.tanh(value)
 
 
-fn math_trunc(value: Float64) -> Float64:
+def math_trunc(value: Float64) -> Float64:
     return math.trunc(value)
 
 
-fn _to_uint32(value: Float64) -> UInt32:
-    if value != value or value == 0 or value == Float64(FloatLiteral.infinity) or value == Float64(FloatLiteral.negative_infinity):
+def _to_uint32(value: Float64) -> UInt32:
+    if (
+        value != value
+        or value == 0
+        or value == Float64(FloatLiteral.infinity)
+        or value == Float64(FloatLiteral.negative_infinity)
+    ):
         return 0
     var integer = math.trunc(value)
     var modulo = integer - math.floor(integer / 4294967296.0) * 4294967296.0
     return UInt32(modulo)
 
 
-fn _negative_zero(value: Float64) -> Bool:
+def _negative_zero(value: Float64) -> Bool:
     return value == 0 and 1.0 / value == Float64(FloatLiteral.negative_infinity)

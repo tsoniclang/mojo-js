@@ -4,7 +4,7 @@ from .string import JsString
 from .value import JsValue
 
 
-fn object_is(left: JsValue, right: JsValue) -> Bool:
+def object_is(left: JsValue, right: JsValue) -> Bool:
     if left.isa[Undefined]():
         return right.isa[Undefined]()
     if left.isa[Null]():
@@ -19,7 +19,9 @@ fn object_is(left: JsValue, right: JsValue) -> Bool:
         if left_number != left_number:
             return right_number != right_number
         if left_number == 0 and right_number == 0:
-            return bitcast[.uint64](left_number) == bitcast[.uint64](right_number)
+            return bitcast[.uint64](left_number) == bitcast[.uint64](
+                right_number
+            )
         return left_number == right_number
     if left.isa[JsString]():
         return right.isa[JsString]() and left[JsString] == right[JsString]

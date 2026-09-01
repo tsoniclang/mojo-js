@@ -4,7 +4,7 @@ from .array import JsArray
 from .string import JsString
 
 
-fn string_split(
+def string_split(
     value: JsString,
     separator: JsString,
     limit: Float64 = 4294967295.0,

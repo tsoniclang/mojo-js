@@ -2,7 +2,6 @@ from std.collections import List
 from std.memory import ArcPointer
 
 from .string import JsString
-from .value import JsValue, js_truthy
 from .equality import same_value_zero
 
 
@@ -86,7 +85,9 @@ struct JsArray[T: Copyable & Deinitable](ImplicitlyCopyable, Sized):
     ) -> Self:
         var destination = _relative_start(target, len(self))
         var first = _relative_start(start, len(self))
-        var last = len(self) if end == Float64(FloatLiteral.infinity) else _relative_start(end, len(self))
+        var last = len(self) if end == Float64(
+            FloatLiteral.infinity
+        ) else _relative_start(end, len(self))
         var count = min(max(last - first, 0), len(self) - destination)
         var copied = List[Optional[Self.T]](capacity=count)
         for offset in range(count):
@@ -102,7 +103,9 @@ struct JsArray[T: Copyable & Deinitable](ImplicitlyCopyable, Sized):
         end: Float64 = Float64(FloatLiteral.infinity),
     ) -> Self:
         var first = _relative_start(start, len(self))
-        var last = len(self) if end == Float64(FloatLiteral.infinity) else _relative_start(end, len(self))
+        var last = len(self) if end == Float64(
+            FloatLiteral.infinity
+        ) else _relative_start(end, len(self))
         for index in range(first, last):
             self._elements[][index] = Optional[Self.T](value.copy())
         return self
@@ -114,11 +117,15 @@ struct JsArray[T: Copyable & Deinitable](ImplicitlyCopyable, Sized):
         *items: Self.T,
     ) -> Self:
         var first = _relative_start(start, len(self))
-        var removed_count = len(self) - first if delete_count == Float64(FloatLiteral.infinity) else min(max(Int(delete_count), 0), len(self) - first)
+        var removed_count = len(self) - first if delete_count == Float64(
+            FloatLiteral.infinity
+        ) else min(max(Int(delete_count), 0), len(self) - first)
         var removed = List[Optional[Self.T]](capacity=removed_count)
         for index in range(first, first + removed_count):
             removed.append(self._elements[][index].copy())
-        var next = List[Optional[Self.T]](capacity=len(self) - removed_count + len(items))
+        var next = List[Optional[Self.T]](
+            capacity=len(self) - removed_count + len(items)
+        )
         for index in range(first):
             next.append(self._elements[][index].copy())
         for item in items:
@@ -132,7 +139,9 @@ struct JsArray[T: Copyable & Deinitable](ImplicitlyCopyable, Sized):
         var normalized = _relative_index(index, len(self))
         return self.get(normalized)
 
-    def includes(self, value: Self.T, from_index: Float64 = 0) -> Bool where Self.T: Equatable:
+    def includes(
+        self, value: Self.T, from_index: Float64 = 0
+    ) -> Bool where Self.T is Equatable:
         var start = _relative_start(from_index, len(self))
         for index in range(start, len(self)):
             var current = self._elements[][index]
@@ -140,7 +149,9 @@ struct JsArray[T: Copyable & Deinitable](ImplicitlyCopyable, Sized):
                 return True
         return False
 
-    def index_of(self, value: Self.T, from_index: Float64 = 0) -> Float64 where Self.T: Equatable:
+    def index_of(
+        self, value: Self.T, from_index: Float64 = 0
+    ) -> Float64 where Self.T is Equatable:
         var start = _relative_start(from_index, len(self))
         for index in range(start, len(self)):
             var current = self._elements[][index]
@@ -148,8 +159,14 @@ struct JsArray[T: Copyable & Deinitable](ImplicitlyCopyable, Sized):
                 return Float64(index)
         return -1
 
-    def last_index_of(self, value: Self.T, from_index: Float64 = Float64(FloatLiteral.infinity)) -> Float64 where Self.T: Equatable:
-        var index = len(self) - 1 if from_index == Float64(FloatLiteral.infinity) else min(Int(from_index), len(self) - 1)
+    def last_index_of(
+        self,
+        value: Self.T,
+        from_index: Float64 = Float64(FloatLiteral.infinity),
+    ) -> Float64 where Self.T is Equatable:
+        var index = len(self) - 1 if from_index == Float64(
+            FloatLiteral.infinity
+        ) else min(Int(from_index), len(self) - 1)
         while index >= 0:
             var current = self._elements[][index]
             if current and current.value() == value:
@@ -157,9 +174,13 @@ struct JsArray[T: Copyable & Deinitable](ImplicitlyCopyable, Sized):
             index -= 1
         return -1
 
-    def slice(self, start: Float64 = 0, end: Float64 = Float64(FloatLiteral.infinity)) -> Self:
+    def slice(
+        self, start: Float64 = 0, end: Float64 = Float64(FloatLiteral.infinity)
+    ) -> Self:
         var first = _relative_start(start, len(self))
-        var last = len(self) if end == Float64(FloatLiteral.infinity) else _relative_start(end, len(self))
+        var last = len(self) if end == Float64(
+            FloatLiteral.infinity
+        ) else _relative_start(end, len(self))
         if last < first:
             last = first
         var values = List[Optional[Self.T]](capacity=last - first)
@@ -167,7 +188,9 @@ struct JsArray[T: Copyable & Deinitable](ImplicitlyCopyable, Sized):
             values.append(self._elements[][index].copy())
         return Self(elements=values^)
 
-    def join(self, separator: JsString = JsString(",")) raises -> JsString where Self.T: Writable:
+    def join(
+        self, separator: JsString = JsString(",")
+    ) raises -> JsString where Self.T is Writable:
         var result = String()
         for index in range(len(self)):
             if index != 0:
@@ -177,156 +200,7 @@ struct JsArray[T: Copyable & Deinitable](ImplicitlyCopyable, Sized):
                 result += String(value.value())
         return JsString(result^)
 
-    def map[U: Copyable & Deinitable](
-        self,
-        callback: def(Self.T, Float64, Self) capturing -> U,
-    ) -> JsArray[U]:
-        var result = List[Optional[U]](capacity=len(self))
-        for index in range(len(self)):
-            var current = self._elements[][index]
-            if current:
-                result.append(Optional[U](callback(current.value(), Float64(index), self)))
-            else:
-                result.append(None)
-        return JsArray[U](elements=result^)
-
-    def for_each(
-        self,
-        callback: def(Self.T, Float64, Self) capturing,
-    ):
-        for index in range(len(self)):
-            var current = self._elements[][index]
-            if current:
-                callback(current.value(), Float64(index), self)
-
-    def filter(
-        self,
-        callback: def(Self.T, Float64, Self) capturing -> JsValue,
-    ) -> Self:
-        var result = List[Optional[Self.T]]()
-        for index in range(len(self)):
-            var current = self._elements[][index]
-            if current and js_truthy(callback(current.value(), Float64(index), self)):
-                result.append(current.copy())
-        return Self(elements=result^)
-
-    def reduce[U: Copyable & Deinitable](
-        self,
-        callback: def(U, Self.T, Float64, Self) capturing -> U,
-        initial: U,
-    ) -> U:
-        var accumulator = initial
-        for index in range(len(self)):
-            var current = self._elements[][index]
-            if current:
-                accumulator = callback(accumulator, current.value(), Float64(index), self)
-        return accumulator^
-
-    def reduce(
-        self,
-        callback: def(Self.T, Self.T, Float64, Self) capturing -> Self.T,
-    ) raises -> Self.T:
-        var first = self._first_present_index()
-        if first < 0:
-            raise Error("Reduce of empty JavaScript array with no initial value")
-        var accumulator = self._elements[][first].value()
-        for index in range(first + 1, len(self)):
-            var current = self._elements[][index]
-            if current:
-                accumulator = callback(accumulator, current.value(), Float64(index), self)
-        return accumulator^
-
-    def some(
-        self,
-        callback: def(Self.T, Float64, Self) capturing -> JsValue,
-    ) -> Bool:
-        for index in range(len(self)):
-            var current = self._elements[][index]
-            if current and js_truthy(callback(current.value(), Float64(index), self)):
-                return True
-        return False
-
-    def every(
-        self,
-        callback: def(Self.T, Float64, Self) capturing -> JsValue,
-    ) -> Bool:
-        for index in range(len(self)):
-            var current = self._elements[][index]
-            if current and not js_truthy(callback(current.value(), Float64(index), self)):
-                return False
-        return True
-
-    def find(
-        self,
-        callback: def(Self.T, Float64, Self) capturing -> JsValue,
-    ) -> Optional[Self.T]:
-        for index in range(len(self)):
-            var current = self._elements[][index]
-            if current and js_truthy(callback(current.value(), Float64(index), self)):
-                return current.copy()
-        return None
-
-    def find_index(
-        self,
-        callback: def(Self.T, Float64, Self) capturing -> JsValue,
-    ) -> Float64:
-        for index in range(len(self)):
-            var current = self._elements[][index]
-            if current and js_truthy(callback(current.value(), Float64(index), self)):
-                return Float64(index)
-        return -1
-
-    def find_last(
-        self,
-        callback: def(Self.T, Float64, Self) capturing -> JsValue,
-    ) -> Optional[Self.T]:
-        var index = len(self) - 1
-        while index >= 0:
-            var current = self._elements[][index]
-            if current and js_truthy(callback(current.value(), Float64(index), self)):
-                return current.copy()
-            index -= 1
-        return None
-
-    def find_last_index(
-        self,
-        callback: def(Self.T, Float64, Self) capturing -> JsValue,
-    ) -> Float64:
-        var index = len(self) - 1
-        while index >= 0:
-            var current = self._elements[][index]
-            if current and js_truthy(callback(current.value(), Float64(index), self)):
-                return Float64(index)
-            index -= 1
-        return -1
-
-    def sort(
-        mut self,
-        comparator: def(Self.T, Self.T) capturing -> Float64,
-    ) -> Self:
-        var defined = List[Self.T]()
-        var holes = 0
-        for current in self._elements[]:
-            if current:
-                defined.append(current.value())
-            else:
-                holes += 1
-        for index in range(1, len(defined)):
-            var value = defined[index]
-            var position = index
-            while position > 0 and comparator(defined[position - 1], value) > 0:
-                defined[position] = defined[position - 1]
-                position -= 1
-            defined[position] = value^
-        var sorted = List[Optional[Self.T]](capacity=len(self))
-        for value in defined:
-            sorted.append(Optional[Self.T](value.copy()))
-        for _ in range(holes):
-            sorted.append(None)
-        self._elements[] = sorted^
-        return self
-
-    def sort(mut self) -> Self where Self.T: Writable:
+    def sort(mut self) -> Self where Self.T is Writable:
         var defined = List[Self.T]()
         var holes = 0
         for current in self._elements[]:
@@ -381,18 +255,18 @@ struct JsArray[T: Copyable & Deinitable](ImplicitlyCopyable, Sized):
         self._elements = ArcPointer(elements^)
 
 
-fn _array_index(value: Float64) -> Int:
+def _array_index(value: Float64) -> Int:
     if value != value or value < 0:
         return -1
     return Int(value)
 
 
-fn _relative_index(value: Float64, length: Int) -> Int:
+def _relative_index(value: Float64, length: Int) -> Int:
     var integer = Int(value)
     return integer if integer >= 0 else length + integer
 
 
-fn _relative_start(value: Float64, length: Int) -> Int:
+def _relative_start(value: Float64, length: Int) -> Int:
     var integer = Int(value)
     if integer < 0:
         return max(length + integer, 0)

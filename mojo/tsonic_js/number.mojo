@@ -13,23 +13,25 @@ comptime NUMBER_NEGATIVE_INFINITY = FloatLiteral.negative_infinity
 comptime NUMBER_POSITIVE_INFINITY = FloatLiteral.infinity
 
 
-fn number_is_finite(value: Float64) -> Bool:
+def number_is_finite(value: Float64) -> Bool:
     return math.isfinite(value)
 
 
-fn number_is_integer(value: Float64) -> Bool:
+def number_is_integer(value: Float64) -> Bool:
     return math.isfinite(value) and math.trunc(value) == value
 
 
-fn number_is_nan(value: Float64) -> Bool:
+def number_is_nan(value: Float64) -> Bool:
     return math.isnan(value)
 
 
-fn number_is_safe_integer(value: Float64) -> Bool:
-    return number_is_integer(value) and math.abs(value) <= NUMBER_MAX_SAFE_INTEGER
+def number_is_safe_integer(value: Float64) -> Bool:
+    return (
+        number_is_integer(value) and math.abs(value) <= NUMBER_MAX_SAFE_INTEGER
+    )
 
 
-fn number_parse_float(value: JsString) -> Float64:
+def number_parse_float(value: JsString) -> Float64:
     try:
         var text = _number_prefix(value.to_native_strict(), False)
         return atof(text)
@@ -37,7 +39,7 @@ fn number_parse_float(value: JsString) -> Float64:
         return Float64(FloatLiteral.nan)
 
 
-fn number_parse_int(value: JsString, radix: Float64 = 0) -> Float64:
+def number_parse_int(value: JsString, radix: Float64 = 0) -> Float64:
     try:
         var text = value.to_native_strict().strip()
         if not text:
@@ -65,12 +67,14 @@ fn number_parse_int(value: JsString, radix: Float64 = 0) -> Float64:
             result = result * Float64(base) + Float64(digit)
             digits += 1
             offset += 1
-        return Float64(FloatLiteral.nan) if digits == 0 else Float64(sign) * result
+        return (
+            Float64(FloatLiteral.nan) if digits == 0 else Float64(sign) * result
+        )
     except:
         return Float64(FloatLiteral.nan)
 
 
-fn _number_prefix(value: String, integer_only: Bool) -> String:
+def _number_prefix(value: String, integer_only: Bool) -> String:
     var text = value.strip()
     var end = 0
     var saw_digit = False
@@ -89,11 +93,18 @@ fn _number_prefix(value: String, integer_only: Bool) -> String:
             saw_dot = True
             end += 1
             continue
-        if not integer_only and saw_digit and not saw_exponent and (byte == 69 or byte == 101):
+        if (
+            not integer_only
+            and saw_digit
+            and not saw_exponent
+            and (byte == 69 or byte == 101)
+        ):
             saw_exponent = True
             saw_digit = False
             end += 1
-            if end < text.byte_length() and (UInt8(text[byte=end]) == 43 or UInt8(text[byte=end]) == 45):
+            if end < text.byte_length() and (
+                UInt8(text[byte=end]) == 43 or UInt8(text[byte=end]) == 45
+            ):
                 end += 1
             continue
         break
@@ -102,11 +113,18 @@ fn _number_prefix(value: String, integer_only: Bool) -> String:
     return String(text[byte=0:end])
 
 
-fn _has_hex_prefix(value: String, offset: Int) -> Bool:
-    return offset + 1 < value.byte_length() and UInt8(value[byte=offset]) == 48 and (UInt8(value[byte=offset + 1]) == 88 or UInt8(value[byte=offset + 1]) == 120)
+def _has_hex_prefix(value: String, offset: Int) -> Bool:
+    return (
+        offset + 1 < value.byte_length()
+        and UInt8(value[byte=offset]) == 48
+        and (
+            UInt8(value[byte=offset + 1]) == 88
+            or UInt8(value[byte=offset + 1]) == 120
+        )
+    )
 
 
-fn _digit_value(value: UInt8) -> Int:
+def _digit_value(value: UInt8) -> Int:
     if value >= 48 and value <= 57:
         return Int(value - 48)
     if value >= 65 and value <= 90:

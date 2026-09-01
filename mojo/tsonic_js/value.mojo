@@ -15,27 +15,27 @@ comptime JsPrimitiveValue = Variant[
 comptime JsValue = JsPrimitiveValue
 
 
-fn js_value_from_bool(value: Bool) -> JsValue:
+def js_value_from_bool(value: Bool) -> JsValue:
     return JsValue(value)
 
 
-fn js_value_from_number(value: Float64) -> JsValue:
+def js_value_from_number(value: Float64) -> JsValue:
     return JsValue(value)
 
 
-fn js_value_from_string(value: JsString) -> JsValue:
+def js_value_from_string(value: JsString) -> JsValue:
     return JsValue(value)
 
 
-fn js_value_from_null() -> JsValue:
+def js_value_from_null() -> JsValue:
     return JsValue(Null())
 
 
-fn js_value_from_undefined() -> JsValue:
+def js_value_from_undefined() -> JsValue:
     return JsValue(Undefined())
 
 
-fn js_truthy(value: JsValue) -> Bool:
+def js_truthy(value: JsValue) -> Bool:
     if value.isa[Undefined]() or value.isa[Null]():
         return False
     if value.isa[Bool]():

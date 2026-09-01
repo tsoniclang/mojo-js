@@ -17,6 +17,8 @@ def main() raises:
     assert_equal(len(first), 1)
     with assert_raises(contains="unpaired UTF-16 high surrogate"):
         _ = first.to_native_strict()
+    assert_equal(first.to_native_lossy(), "�")
+    assert_equal(String(first), "�")
 
     assert_equal(JsString("a").concat(JsString("b")).to_native_strict(), "ab")
     assert_true(JsString("same") == JsString("same"))

@@ -5,7 +5,9 @@ from .array import JsArray
 from .equality import same_value_zero
 
 
-struct _JsMapEntry[K: Copyable & Deinitable, V: Copyable & Deinitable](Copyable):
+struct _JsMapEntry[K: Copyable & Deinitable, V: Copyable & Deinitable](
+    Copyable
+):
     var key: Self.K
     var value: Self.V
 
@@ -31,7 +33,9 @@ struct JsMap[
 
     def get(self, key: Self.K) -> Optional[Self.V]:
         var index = self._find(key)
-        return None if index < 0 else Optional[Self.V](self._entries[][index].value.copy())
+        return None if index < 0 else Optional[Self.V](
+            self._entries[][index].value.copy()
+        )
 
     def has(self, key: Self.K) -> Bool:
         return self._find(key) >= 0
@@ -81,10 +85,6 @@ struct JsMap[
         for entry in self._entries[]:
             result.append((entry.key.copy(), entry.value.copy()))
         return result^
-
-    def for_each(self, callback: def(Self.V, Self.K, Self) capturing):
-        for entry in self._entries[]:
-            callback(entry.value.copy(), entry.key.copy(), self)
 
     def _find(self, key: Self.K) -> Int:
         for index in range(len(self)):

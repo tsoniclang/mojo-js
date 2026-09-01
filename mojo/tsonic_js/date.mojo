@@ -67,7 +67,17 @@ struct JsDate(ImplicitlyCopyable, Sized):
 
     def set_utc_milliseconds(mut self, millisecond: Float64) -> Float64:
         var parts = _parts(self.get_time())
-        return self.set_time(_from_components(parts.year, parts.month, parts.day, parts.hour, parts.minute, parts.second, Int(millisecond)))
+        return self.set_time(
+            _from_components(
+                parts.year,
+                parts.month,
+                parts.day,
+                parts.hour,
+                parts.minute,
+                parts.second,
+                Int(millisecond),
+            )
+        )
 
     def set_utc_seconds(
         mut self,
@@ -75,8 +85,20 @@ struct JsDate(ImplicitlyCopyable, Sized):
         millisecond: Float64 = Float64(FloatLiteral.nan),
     ) -> Float64:
         var parts = _parts(self.get_time())
-        var ms = parts.millisecond if millisecond != millisecond else Int(millisecond)
-        return self.set_time(_from_components(parts.year, parts.month, parts.day, parts.hour, parts.minute, Int(second), ms))
+        var ms = parts.millisecond if millisecond != millisecond else Int(
+            millisecond
+        )
+        return self.set_time(
+            _from_components(
+                parts.year,
+                parts.month,
+                parts.day,
+                parts.hour,
+                parts.minute,
+                Int(second),
+                ms,
+            )
+        )
 
     def set_utc_minutes(
         mut self,
@@ -86,8 +108,20 @@ struct JsDate(ImplicitlyCopyable, Sized):
     ) -> Float64:
         var parts = _parts(self.get_time())
         var sec = parts.second if second != second else Int(second)
-        var ms = parts.millisecond if millisecond != millisecond else Int(millisecond)
-        return self.set_time(_from_components(parts.year, parts.month, parts.day, parts.hour, Int(minute), sec, ms))
+        var ms = parts.millisecond if millisecond != millisecond else Int(
+            millisecond
+        )
+        return self.set_time(
+            _from_components(
+                parts.year,
+                parts.month,
+                parts.day,
+                parts.hour,
+                Int(minute),
+                sec,
+                ms,
+            )
+        )
 
     def set_utc_hours(
         mut self,
@@ -99,12 +133,28 @@ struct JsDate(ImplicitlyCopyable, Sized):
         var parts = _parts(self.get_time())
         var min_ = parts.minute if minute != minute else Int(minute)
         var sec = parts.second if second != second else Int(second)
-        var ms = parts.millisecond if millisecond != millisecond else Int(millisecond)
-        return self.set_time(_from_components(parts.year, parts.month, parts.day, Int(hour), min_, sec, ms))
+        var ms = parts.millisecond if millisecond != millisecond else Int(
+            millisecond
+        )
+        return self.set_time(
+            _from_components(
+                parts.year, parts.month, parts.day, Int(hour), min_, sec, ms
+            )
+        )
 
     def set_utc_date(mut self, day: Float64) -> Float64:
         var parts = _parts(self.get_time())
-        return self.set_time(_from_components(parts.year, parts.month, Int(day), parts.hour, parts.minute, parts.second, parts.millisecond))
+        return self.set_time(
+            _from_components(
+                parts.year,
+                parts.month,
+                Int(day),
+                parts.hour,
+                parts.minute,
+                parts.second,
+                parts.millisecond,
+            )
+        )
 
     def set_utc_month(
         mut self,
@@ -113,7 +163,17 @@ struct JsDate(ImplicitlyCopyable, Sized):
     ) -> Float64:
         var parts = _parts(self.get_time())
         var day_ = parts.day if day != day else Int(day)
-        return self.set_time(_from_components(parts.year, Int(month), day_, parts.hour, parts.minute, parts.second, parts.millisecond))
+        return self.set_time(
+            _from_components(
+                parts.year,
+                Int(month),
+                day_,
+                parts.hour,
+                parts.minute,
+                parts.second,
+                parts.millisecond,
+            )
+        )
 
     def set_utc_full_year(
         mut self,
@@ -124,17 +184,37 @@ struct JsDate(ImplicitlyCopyable, Sized):
         var parts = _parts(self.get_time())
         var month_ = parts.month if month != month else Int(month)
         var day_ = parts.day if day != day else Int(day)
-        return self.set_time(_from_components(Int(year), month_, day_, parts.hour, parts.minute, parts.second, parts.millisecond))
+        return self.set_time(
+            _from_components(
+                Int(year),
+                month_,
+                day_,
+                parts.hour,
+                parts.minute,
+                parts.second,
+                parts.millisecond,
+            )
+        )
 
     def to_iso_string(self) raises -> JsString:
         if not math.isfinite(self.get_time()):
             raise Error("Invalid JavaScript Date")
         var value = _parts(self.get_time())
         return JsString(
-            _year_text(value.year) + "-" + _pad(value.month + 1, 2) + "-" +
-            _pad(value.day, 2) + "T" + _pad(value.hour, 2) + ":" +
-            _pad(value.minute, 2) + ":" + _pad(value.second, 2) + "." +
-            _pad(value.millisecond, 3) + "Z"
+            _year_text(value.year)
+            + "-"
+            + _pad(value.month + 1, 2)
+            + "-"
+            + _pad(value.day, 2)
+            + "T"
+            + _pad(value.hour, 2)
+            + ":"
+            + _pad(value.minute, 2)
+            + ":"
+            + _pad(value.second, 2)
+            + "."
+            + _pad(value.millisecond, 3)
+            + "Z"
         )
 
     def to_json(self) -> Variant[JsString, Null]:
@@ -150,43 +230,55 @@ struct JsDate(ImplicitlyCopyable, Sized):
             return JsString("Invalid Date")
         var value = _parts(self.get_time())
         return JsString(
-            _weekday_name(value.weekday) + ", " + _pad(value.day, 2) + " " +
-            _month_name(value.month) + " " + _pad(value.year, 4) + " " +
-            _pad(value.hour, 2) + ":" + _pad(value.minute, 2) + ":" +
-            _pad(value.second, 2) + " GMT"
+            _weekday_name(value.weekday)
+            + ", "
+            + _pad(value.day, 2)
+            + " "
+            + _month_name(value.month)
+            + " "
+            + _pad(value.year, 4)
+            + " "
+            + _pad(value.hour, 2)
+            + ":"
+            + _pad(value.minute, 2)
+            + ":"
+            + _pad(value.second, 2)
+            + " GMT"
         )
 
     def to_string(self) -> JsString:
         return self.to_utc_string()
 
 
-fn date_new() -> JsDate:
+def date_new() -> JsDate:
     return JsDate(date_now())
 
 
-fn date_new(value: Float64) -> JsDate:
+def date_new(value: Float64) -> JsDate:
     return JsDate(_time_clip(value))
 
 
-fn date_new(value: JsString) -> JsDate:
+def date_new(value: JsString) -> JsDate:
     return JsDate(date_parse(value))
 
 
-fn date_now() -> Float64:
+def date_now() -> Float64:
     var value = _RealtimeSpec(0, 0)
     if external_call["clock_gettime", c_int](c_int(0), Pointer(to=value)) != 0:
         return Float64(FloatLiteral.nan)
-    return Float64(value.seconds) * 1000.0 + Float64(value.nanoseconds) / 1000000.0
+    return (
+        Float64(value.seconds) * 1000.0 + Float64(value.nanoseconds) / 1000000.0
+    )
 
 
-fn date_parse(value: JsString) -> Float64:
+def date_parse(value: JsString) -> Float64:
     try:
         return _parse_iso(value.to_native_strict())
     except:
         return Float64(FloatLiteral.nan)
 
 
-fn date_utc(
+def date_utc(
     year: Float64,
     month: Float64,
     day: Float64 = 1,
@@ -198,16 +290,26 @@ fn date_utc(
     var normalized_year = Int(year)
     if normalized_year >= 0 and normalized_year <= 99:
         normalized_year += 1900
-    return _time_clip(_from_components(normalized_year, Int(month), Int(day), Int(hour), Int(minute), Int(second), Int(millisecond)))
+    return _time_clip(
+        _from_components(
+            normalized_year,
+            Int(month),
+            Int(day),
+            Int(hour),
+            Int(minute),
+            Int(second),
+            Int(millisecond),
+        )
+    )
 
 
-fn _time_clip(value: Float64) -> Float64:
+def _time_clip(value: Float64) -> Float64:
     if not math.isfinite(value) or math.abs(value) > 8640000000000000.0:
         return Float64(FloatLiteral.nan)
     return math.trunc(value)
 
 
-fn _from_components(
+def _from_components(
     year: Int,
     month: Int,
     day: Int,
@@ -218,11 +320,15 @@ fn _from_components(
 ) -> Float64:
     var normalized_year = year + _floor_div(month, 12)
     var normalized_month = _floor_mod(month, 12)
-    var days = _days_from_civil(normalized_year, normalized_month + 1, 1) + day - 1
-    return Float64((((days * 24 + hour) * 60 + minute) * 60 + second) * 1000 + millisecond)
+    var days = (
+        _days_from_civil(normalized_year, normalized_month + 1, 1) + day - 1
+    )
+    return Float64(
+        (((days * 24 + hour) * 60 + minute) * 60 + second) * 1000 + millisecond
+    )
 
 
-fn _parts(milliseconds: Float64) -> _UtcParts:
+def _parts(milliseconds: Float64) -> _UtcParts:
     if not math.isfinite(milliseconds):
         return _UtcParts(0, 0, 0, 0, 0, 0, 0, 0)
     var total = Int64(math.floor(milliseconds))
@@ -247,23 +353,32 @@ fn _parts(milliseconds: Float64) -> _UtcParts:
     )
 
 
-fn _days_from_civil(year: Int, month: Int, day: Int) -> Int:
+def _days_from_civil(year: Int, month: Int, day: Int) -> Int:
     var adjusted_year = year - (1 if month <= 2 else 0)
     var era = _floor_div(adjusted_year, 400)
     var year_of_era = adjusted_year - era * 400
     var shifted_month = month + (-3 if month > 2 else 9)
     var day_of_year = (153 * shifted_month + 2) / 5 + day - 1
-    var day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year
+    var day_of_era = (
+        year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year
+    )
     return era * 146097 + day_of_era - 719468
 
 
-fn _civil_from_days(days: Int) -> Tuple[Int, Int, Int]:
+def _civil_from_days(days: Int) -> Tuple[Int, Int, Int]:
     var shifted = days + 719468
     var era = _floor_div(shifted, 146097)
     var day_of_era = shifted - era * 146097
-    var year_of_era = (day_of_era - day_of_era / 1460 + day_of_era / 36524 - day_of_era / 146096) / 365
+    var year_of_era = (
+        day_of_era
+        - day_of_era / 1460
+        + day_of_era / 36524
+        - day_of_era / 146096
+    ) / 365
     var year = year_of_era + era * 400
-    var day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100)
+    var day_of_year = day_of_era - (
+        365 * year_of_era + year_of_era / 4 - year_of_era / 100
+    )
     var month_prime = (5 * day_of_year + 2) / 153
     var day = day_of_year - (153 * month_prime + 2) / 5 + 1
     var month = month_prime + (3 if month_prime < 10 else -9)
@@ -271,8 +386,12 @@ fn _civil_from_days(days: Int) -> Tuple[Int, Int, Int]:
     return (year, month, day)
 
 
-fn _parse_iso(value: String) -> Float64:
-    if value.byte_length() < 10 or UInt8(value[byte=4]) != 45 or UInt8(value[byte=7]) != 45:
+def _parse_iso(value: String) -> Float64:
+    if (
+        value.byte_length() < 10
+        or UInt8(value[byte=4]) != 45
+        or UInt8(value[byte=7]) != 45
+    ):
         return Float64(FloatLiteral.nan)
     var year = _digits(value, 0, 4)
     var month = _digits(value, 5, 2)
@@ -281,7 +400,12 @@ fn _parse_iso(value: String) -> Float64:
         return Float64(FloatLiteral.nan)
     if value.byte_length() == 10:
         return _time_clip(_from_components(year, month - 1, day, 0, 0, 0, 0))
-    if value.byte_length() < 20 or UInt8(value[byte=10]) != 84 or UInt8(value[byte=13]) != 58 or UInt8(value[byte=16]) != 58:
+    if (
+        value.byte_length() < 20
+        or UInt8(value[byte=10]) != 84
+        or UInt8(value[byte=13]) != 58
+        or UInt8(value[byte=16]) != 58
+    ):
         return Float64(FloatLiteral.nan)
     var hour = _digits(value, 11, 2)
     var minute = _digits(value, 14, 2)
@@ -303,18 +427,27 @@ fn _parse_iso(value: String) -> Float64:
         var sign = -1 if UInt8(value[byte=offset]) == 43 else 1
         if UInt8(value[byte=offset]) != 43 and UInt8(value[byte=offset]) != 45:
             return Float64(FloatLiteral.nan)
-        if offset + 5 >= value.byte_length() or UInt8(value[byte=offset + 3]) != 58:
+        if (
+            offset + 5 >= value.byte_length()
+            or UInt8(value[byte=offset + 3]) != 58
+        ):
             return Float64(FloatLiteral.nan)
-        timezone = sign * (_digits(value, offset + 1, 2) * 60 + _digits(value, offset + 4, 2))
+        timezone = sign * (
+            _digits(value, offset + 1, 2) * 60 + _digits(value, offset + 4, 2)
+        )
         offset += 6
     else:
         offset += 1
     if offset != value.byte_length() or hour > 23 or minute > 59 or second > 59:
         return Float64(FloatLiteral.nan)
-    return _time_clip(_from_components(year, month - 1, day, hour, minute + timezone, second, millisecond))
+    return _time_clip(
+        _from_components(
+            year, month - 1, day, hour, minute + timezone, second, millisecond
+        )
+    )
 
 
-fn _digits(value: String, start: Int, count: Int) -> Int:
+def _digits(value: String, start: Int, count: Int) -> Int:
     if start < 0 or start + count > value.byte_length():
         return -1
     var result = 0
@@ -326,25 +459,25 @@ fn _digits(value: String, start: Int, count: Int) -> Int:
     return result
 
 
-fn _digit(value: UInt8) -> Int:
+def _digit(value: UInt8) -> Int:
     return Int(value - 48) if value >= 48 and value <= 57 else -1
 
 
-fn _floor_div(value: Int, divisor: Int) -> Int:
+def _floor_div(value: Int, divisor: Int) -> Int:
     var quotient = value / divisor
     return quotient - 1 if value < 0 and value % divisor != 0 else quotient
 
 
-fn _floor_mod(value: Int, divisor: Int) -> Int:
+def _floor_mod(value: Int, divisor: Int) -> Int:
     return value - _floor_div(value, divisor) * divisor
 
 
-fn _floor_div64(value: Int64, divisor: Int64) -> Int64:
+def _floor_div64(value: Int64, divisor: Int64) -> Int64:
     var quotient = value / divisor
     return quotient - 1 if value < 0 and value % divisor != 0 else quotient
 
 
-fn _pad(value: Int, width: Int) -> String:
+def _pad(value: Int, width: Int) -> String:
     var text = String(value)
     var result = String()
     for _ in range(max(width - text.byte_length(), 0)):
@@ -352,13 +485,13 @@ fn _pad(value: Int, width: Int) -> String:
     return result + text
 
 
-fn _year_text(year: Int) -> String:
+def _year_text(year: Int) -> String:
     if year >= 0 and year <= 9999:
         return _pad(year, 4)
     return ("+" if year >= 0 else "-") + _pad(abs(year), 6)
 
 
-fn _weekday_name(value: Int) -> String:
+def _weekday_name(value: Int) -> String:
     if value == 0:
         return "Sun"
     if value == 1:
@@ -374,7 +507,7 @@ fn _weekday_name(value: Int) -> String:
     return "Sat"
 
 
-fn _month_name(value: Int) -> String:
+def _month_name(value: Int) -> String:
     if value == 0:
         return "Jan"
     if value == 1:
