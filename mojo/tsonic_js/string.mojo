@@ -180,6 +180,37 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized):
                 units.append(unit)
         return Self(code_units=units^)
 
+    def replace(self, search: Self, replacement: Self) -> Self:
+        var found = Int(self.index_of(search))
+        if found < 0:
+            return self
+        return self._range(0, found).concat(
+            _expand_replacement(replacement, self._range(found, found + len(search)), self._range(0, found), self._range(found + len(search), len(self))),
+            self._range(found + len(search), len(self)),
+        )
+
+    def replace_all(self, search: Self, replacement: Self) raises -> Self:
+        if len(search) == 0:
+            var result = Self()
+            for index in range(len(self) + 1):
+                result = result.concat(_expand_replacement(replacement, Self(), self._range(0, index), self._range(index, len(self))))
+                if index < len(self):
+                    result = result.concat(self.char_at(Float64(index)))
+            return result
+        var result = Self()
+        var start = 0
+        while start <= len(self):
+            var found = Int(self.index_of(search, Float64(start)))
+            if found < 0:
+                result = result.concat(self._range(start, len(self)))
+                break
+            result = result.concat(
+                self._range(start, found),
+                _expand_replacement(replacement, search, self._range(0, found), self._range(found + len(search), len(self))),
+            )
+            start = found + len(search)
+        return result
+
     def pad_start(self, target_length: Float64, fill: Self = Self(" ")) -> Self:
         return self._pad(target_length, fill, True)
 
@@ -314,3 +345,53 @@ fn _relative_string_index(value: Float64, length: Int) -> Int:
 
 fn _is_js_whitespace(unit: UInt16) -> Bool:
     return unit == 0x0009 or unit == 0x000A or unit == 0x000B or unit == 0x000C or unit == 0x000D or unit == 0x0020 or unit == 0x00A0 or unit == 0x1680 or unit == 0x2000 or unit == 0x2001 or unit == 0x2002 or unit == 0x2003 or unit == 0x2004 or unit == 0x2005 or unit == 0x2006 or unit == 0x2007 or unit == 0x2008 or unit == 0x2009 or unit == 0x200A or unit == 0x2028 or unit == 0x2029 or unit == 0x202F or unit == 0x205F or unit == 0x3000 or unit == 0xFEFF
+
+
+fn string_from_char_code(*codes: Float64) -> JsString:
+    var units = List[UInt16](capacity=len(codes))
+    for code in codes:
+        units.append(UInt16(UInt32(Int64(code)) & 0xFFFF))
+    return JsString(code_units=units^)
+
+
+fn string_from_code_point(*codes: Float64) raises -> JsString:
+    var units = List[UInt16]()
+    for code in codes:
+        var scalar = Int64(code)
+        if code != Float64(scalar) or scalar < 0 or scalar > 0x10FFFF:
+            raise Error("invalid JavaScript Unicode code point")
+        if scalar <= 0xFFFF:
+            units.append(UInt16(scalar))
+        else:
+            scalar -= 0x10000
+            units.append(UInt16(0xD800 + (scalar >> 10)))
+            units.append(UInt16(0xDC00 + (scalar & 0x3FF)))
+    return JsString(code_units=units^)
+
+
+fn _expand_replacement(
+    replacement: JsString,
+    matched: JsString,
+    prefix: JsString,
+    suffix: JsString,
+) -> JsString:
+    var result = JsString()
+    var index = 0
+    while index < len(replacement):
+        if replacement.code_unit_at(index).value() != 0x24 or index + 1 >= len(replacement):
+            result = result.concat(replacement.char_at(Float64(index)))
+            index += 1
+            continue
+        var marker = replacement.code_unit_at(index + 1).value()
+        if marker == 0x24:
+            result = result.concat(JsString("$"))
+        elif marker == 0x26:
+            result = result.concat(matched)
+        elif marker == 0x60:
+            result = result.concat(prefix)
+        elif marker == 0x27:
+            result = result.concat(suffix)
+        else:
+            result = result.concat(JsString("$"), replacement.char_at(Float64(index + 1)))
+        index += 2
+    return result
