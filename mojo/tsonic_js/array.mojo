@@ -229,17 +229,17 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
 
     def join(
         self, separator: JsString = JsString(",")
-    ) raises -> JsString where conforms_to(
+    ) -> JsString where conforms_to(
         Self.T, Copyable & Deinitable & Writable
     ):
-        var result = String()
+        var result = JsString()
         for index in range(len(self)):
             if index != 0:
-                result += separator.to_native_strict()
+                result += separator
             var value = self._elements[][index].copy()
             if value:
-                result += String(value.value())
-        return JsString(result^)
+                result += JsString(String(value.value()))
+        return result
 
     def sort(mut self) -> Self where conforms_to(
         Self.T, Copyable & Deinitable & Writable
