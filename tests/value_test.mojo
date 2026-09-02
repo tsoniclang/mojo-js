@@ -69,6 +69,7 @@ def main() raises:
     assert_equal(
         js_value_to_string(JsValue(JsString("text"))).to_native_strict(), "text"
     )
+    assert_equal(String(JsValue(JsString("written"))), "written")
     assert_equal(
         js_value_to_string(parsed).to_native_strict(), "[object Object]"
     )

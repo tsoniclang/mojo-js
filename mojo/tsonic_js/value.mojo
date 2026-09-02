@@ -69,7 +69,7 @@ struct _JsValueNode(Movable):
         self.children = children^
 
 
-struct JsValue(ImplicitlyCopyable):
+struct JsValue(ImplicitlyCopyable, Writable):
     var _nodes: ArcPointer[List[_JsValueNode]]
     var _index: Int
 
@@ -104,6 +104,9 @@ struct JsValue(ImplicitlyCopyable):
     ):
         self._nodes = nodes
         self._index = index
+
+    def write_to(self, mut writer: Some[Writer]):
+        writer.write(js_value_to_string(self))
 
     @staticmethod
     def null() -> Self:
