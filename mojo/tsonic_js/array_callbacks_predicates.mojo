@@ -4,10 +4,11 @@ from .array import JsArray
 
 
 def array_find_index_zero[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[], Bool]
-) raises -> Float64:
+    array: JsArray[T], callback: RaisingCallable[Tuple[], Bool, CallbackError]
+) raises CallbackError -> Float64:
     for index in range(len(array)):
         if array._elements[][index] and callback.call(()):
             return Float64(index)
@@ -15,10 +16,11 @@ def array_find_index_zero[
 
 
 def array_find_index_value[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[T], Bool]
-) raises -> Float64:
+    array: JsArray[T], callback: RaisingCallable[Tuple[T], Bool, CallbackError]
+) raises CallbackError -> Float64:
     for index in range(len(array)):
         var current = array._elements[][index].copy()
         if current and callback.call((current.value().copy(),)):
@@ -27,10 +29,12 @@ def array_find_index_value[
 
 
 def array_find_index_with_index[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[T, Float64], Bool]
-) raises -> Float64:
+    array: JsArray[T],
+    callback: RaisingCallable[Tuple[T, Float64], Bool, CallbackError],
+) raises CallbackError -> Float64:
     for index in range(len(array)):
         var current = array._elements[][index].copy()
         if current and callback.call((current.value().copy(), Float64(index))):
@@ -39,11 +43,14 @@ def array_find_index_with_index[
 
 
 def array_find_index_with_array[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
     array: JsArray[T],
-    callback: RaisingCallable[Tuple[T, Float64, JsArray[T]], Bool],
-) raises -> Float64:
+    callback: RaisingCallable[
+        Tuple[T, Float64, JsArray[T]], Bool, CallbackError
+    ],
+) raises CallbackError -> Float64:
     for index in range(len(array)):
         var current = array._elements[][index].copy()
         if current and callback.call(
@@ -54,10 +61,11 @@ def array_find_index_with_array[
 
 
 def array_find_last_index_zero[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[], Bool]
-) raises -> Float64:
+    array: JsArray[T], callback: RaisingCallable[Tuple[], Bool, CallbackError]
+) raises CallbackError -> Float64:
     var index = len(array) - 1
     while index >= 0:
         if array._elements[][index] and callback.call(()):
@@ -67,10 +75,11 @@ def array_find_last_index_zero[
 
 
 def array_find_last_index_value[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[T], Bool]
-) raises -> Float64:
+    array: JsArray[T], callback: RaisingCallable[Tuple[T], Bool, CallbackError]
+) raises CallbackError -> Float64:
     var index = len(array) - 1
     while index >= 0:
         var current = array._elements[][index].copy()
@@ -81,10 +90,12 @@ def array_find_last_index_value[
 
 
 def array_find_last_index_with_index[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[T, Float64], Bool]
-) raises -> Float64:
+    array: JsArray[T],
+    callback: RaisingCallable[Tuple[T, Float64], Bool, CallbackError],
+) raises CallbackError -> Float64:
     var index = len(array) - 1
     while index >= 0:
         var current = array._elements[][index].copy()
@@ -95,11 +106,14 @@ def array_find_last_index_with_index[
 
 
 def array_find_last_index_with_array[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
     array: JsArray[T],
-    callback: RaisingCallable[Tuple[T, Float64, JsArray[T]], Bool],
-) raises -> Float64:
+    callback: RaisingCallable[
+        Tuple[T, Float64, JsArray[T]], Bool, CallbackError
+    ],
+) raises CallbackError -> Float64:
     var index = len(array) - 1
     while index >= 0:
         var current = array._elements[][index].copy()
@@ -112,103 +126,131 @@ def array_find_last_index_with_array[
 
 
 def array_find_zero[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[], Bool]
-) raises -> Optional[T]:
+    array: JsArray[T], callback: RaisingCallable[Tuple[], Bool, CallbackError]
+) raises CallbackError -> Optional[T]:
     return _value_at(array, array_find_index_zero(array, callback))
 
 
 def array_find_value[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[T], Bool]
-) raises -> Optional[T]:
+    array: JsArray[T], callback: RaisingCallable[Tuple[T], Bool, CallbackError]
+) raises CallbackError -> Optional[T]:
     return _value_at(array, array_find_index_value(array, callback))
 
 
 def array_find_with_index[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[T, Float64], Bool]
-) raises -> Optional[T]:
+    array: JsArray[T],
+    callback: RaisingCallable[Tuple[T, Float64], Bool, CallbackError],
+) raises CallbackError -> Optional[T]:
     return _value_at(array, array_find_index_with_index(array, callback))
 
 
 def array_find_with_array[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
     array: JsArray[T],
-    callback: RaisingCallable[Tuple[T, Float64, JsArray[T]], Bool],
-) raises -> Optional[T]:
+    callback: RaisingCallable[
+        Tuple[T, Float64, JsArray[T]], Bool, CallbackError
+    ],
+) raises CallbackError -> Optional[T]:
     return _value_at(array, array_find_index_with_array(array, callback))
 
 
 def array_find_last_zero[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[], Bool]
-) raises -> Optional[T]:
+    array: JsArray[T], callback: RaisingCallable[Tuple[], Bool, CallbackError]
+) raises CallbackError -> Optional[T]:
     return _value_at(array, array_find_last_index_zero(array, callback))
 
 
 def array_find_last_value[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[T], Bool]
-) raises -> Optional[T]:
+    array: JsArray[T], callback: RaisingCallable[Tuple[T], Bool, CallbackError]
+) raises CallbackError -> Optional[T]:
     return _value_at(array, array_find_last_index_value(array, callback))
 
 
 def array_find_last_with_index[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[T, Float64], Bool]
-) raises -> Optional[T]:
+    array: JsArray[T],
+    callback: RaisingCallable[Tuple[T, Float64], Bool, CallbackError],
+) raises CallbackError -> Optional[T]:
     return _value_at(array, array_find_last_index_with_index(array, callback))
 
 
 def array_find_last_with_array[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
     array: JsArray[T],
-    callback: RaisingCallable[Tuple[T, Float64, JsArray[T]], Bool],
-) raises -> Optional[T]:
+    callback: RaisingCallable[
+        Tuple[T, Float64, JsArray[T]], Bool, CallbackError
+    ],
+) raises CallbackError -> Optional[T]:
     return _value_at(array, array_find_last_index_with_array(array, callback))
 
 
 def array_some_zero[
-    T: Copyable & Deinitable
-](array: JsArray[T], callback: RaisingCallable[Tuple[], Bool]) raises -> Bool:
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
+](
+    array: JsArray[T], callback: RaisingCallable[Tuple[], Bool, CallbackError]
+) raises CallbackError -> Bool:
     return array_find_index_zero(array, callback) >= 0
 
 
 def array_some_value[
-    T: Copyable & Deinitable
-](array: JsArray[T], callback: RaisingCallable[Tuple[T], Bool]) raises -> Bool:
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
+](
+    array: JsArray[T], callback: RaisingCallable[Tuple[T], Bool, CallbackError]
+) raises CallbackError -> Bool:
     return array_find_index_value(array, callback) >= 0
 
 
 def array_some_with_index[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[T, Float64], Bool]
-) raises -> Bool:
+    array: JsArray[T],
+    callback: RaisingCallable[Tuple[T, Float64], Bool, CallbackError],
+) raises CallbackError -> Bool:
     return array_find_index_with_index(array, callback) >= 0
 
 
 def array_some_with_array[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
     array: JsArray[T],
-    callback: RaisingCallable[Tuple[T, Float64, JsArray[T]], Bool],
-) raises -> Bool:
+    callback: RaisingCallable[
+        Tuple[T, Float64, JsArray[T]], Bool, CallbackError
+    ],
+) raises CallbackError -> Bool:
     return array_find_index_with_array(array, callback) >= 0
 
 
 def array_every_zero[
-    T: Copyable & Deinitable
-](array: JsArray[T], callback: RaisingCallable[Tuple[], Bool]) raises -> Bool:
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
+](
+    array: JsArray[T], callback: RaisingCallable[Tuple[], Bool, CallbackError]
+) raises CallbackError -> Bool:
     for index in range(len(array)):
         if array._elements[][index] and not callback.call(()):
             return False
@@ -216,8 +258,11 @@ def array_every_zero[
 
 
 def array_every_value[
-    T: Copyable & Deinitable
-](array: JsArray[T], callback: RaisingCallable[Tuple[T], Bool]) raises -> Bool:
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
+](
+    array: JsArray[T], callback: RaisingCallable[Tuple[T], Bool, CallbackError]
+) raises CallbackError -> Bool:
     for index in range(len(array)):
         var current = array._elements[][index].copy()
         if current and not callback.call((current.value().copy(),)):
@@ -226,10 +271,12 @@ def array_every_value[
 
 
 def array_every_with_index[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[T, Float64], Bool]
-) raises -> Bool:
+    array: JsArray[T],
+    callback: RaisingCallable[Tuple[T, Float64], Bool, CallbackError],
+) raises CallbackError -> Bool:
     for index in range(len(array)):
         var current = array._elements[][index].copy()
         if current and not callback.call(
@@ -240,11 +287,14 @@ def array_every_with_index[
 
 
 def array_every_with_array[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
     array: JsArray[T],
-    callback: RaisingCallable[Tuple[T, Float64, JsArray[T]], Bool],
-) raises -> Bool:
+    callback: RaisingCallable[
+        Tuple[T, Float64, JsArray[T]], Bool, CallbackError
+    ],
+) raises CallbackError -> Bool:
     for index in range(len(array)):
         var current = array._elements[][index].copy()
         if current and not callback.call(

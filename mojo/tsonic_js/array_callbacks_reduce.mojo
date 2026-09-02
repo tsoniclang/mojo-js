@@ -6,9 +6,12 @@ from .array import JsArray
 def array_reduce_initial_zero[
     U: Copyable & Deinitable,
     T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[], U], initial: U
-) raises -> U:
+    array: JsArray[T],
+    callback: RaisingCallable[Tuple[], U, CallbackError],
+    initial: U,
+) raises CallbackError -> U:
     var accumulator = initial.copy()
     for index in range(len(array)):
         if array._elements[][index]:
@@ -19,9 +22,12 @@ def array_reduce_initial_zero[
 def array_reduce_initial_accumulator[
     U: Copyable & Deinitable,
     T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[U], U], initial: U
-) raises -> U:
+    array: JsArray[T],
+    callback: RaisingCallable[Tuple[U], U, CallbackError],
+    initial: U,
+) raises CallbackError -> U:
     var accumulator = initial.copy()
     for index in range(len(array)):
         if array._elements[][index]:
@@ -32,9 +38,12 @@ def array_reduce_initial_accumulator[
 def array_reduce_initial_value[
     U: Copyable & Deinitable,
     T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    array: JsArray[T], callback: RaisingCallable[Tuple[U, T], U], initial: U
-) raises -> U:
+    array: JsArray[T],
+    callback: RaisingCallable[Tuple[U, T], U, CallbackError],
+    initial: U,
+) raises CallbackError -> U:
     var accumulator = initial.copy()
     for index in range(len(array)):
         var current = array._elements[][index].copy()
@@ -46,11 +55,12 @@ def array_reduce_initial_value[
 def array_reduce_initial_with_index[
     U: Copyable & Deinitable,
     T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
     array: JsArray[T],
-    callback: RaisingCallable[Tuple[U, T, Float64], U],
+    callback: RaisingCallable[Tuple[U, T, Float64], U, CallbackError],
     initial: U,
-) raises -> U:
+) raises CallbackError -> U:
     var accumulator = initial.copy()
     for index in range(len(array)):
         var current = array._elements[][index].copy()
@@ -64,11 +74,14 @@ def array_reduce_initial_with_index[
 def array_reduce_initial_with_array[
     U: Copyable & Deinitable,
     T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
     array: JsArray[T],
-    callback: RaisingCallable[Tuple[U, T, Float64, JsArray[T]], U],
+    callback: RaisingCallable[
+        Tuple[U, T, Float64, JsArray[T]], U, CallbackError
+    ],
     initial: U,
-) raises -> U:
+) raises CallbackError -> U:
     var accumulator = initial.copy()
     for index in range(len(array)):
         var current = array._elements[][index].copy()

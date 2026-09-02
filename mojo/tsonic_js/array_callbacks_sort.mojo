@@ -5,10 +5,12 @@ from .array import JsArray
 
 
 def array_sort_zero[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    mut array: JsArray[T], callback: RaisingCallable[Tuple[], Float64]
-) raises -> JsArray[T]:
+    mut array: JsArray[T],
+    callback: RaisingCallable[Tuple[], Float64, CallbackError],
+) raises CallbackError -> JsArray[T]:
     var defined = _defined_values(array)
     for index in range(1, len(defined)):
         var value = defined[index].copy()
@@ -22,10 +24,12 @@ def array_sort_zero[
 
 
 def array_sort_value[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    mut array: JsArray[T], callback: RaisingCallable[Tuple[T], Float64]
-) raises -> JsArray[T]:
+    mut array: JsArray[T],
+    callback: RaisingCallable[Tuple[T], Float64, CallbackError],
+) raises CallbackError -> JsArray[T]:
     var defined = _defined_values(array)
     for index in range(1, len(defined)):
         var value = defined[index].copy()
@@ -41,10 +45,12 @@ def array_sort_value[
 
 
 def array_sort_compare[
-    T: Copyable & Deinitable
+    T: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    mut array: JsArray[T], callback: RaisingCallable[Tuple[T, T], Float64]
-) raises -> JsArray[T]:
+    mut array: JsArray[T],
+    callback: RaisingCallable[Tuple[T, T], Float64, CallbackError],
+) raises CallbackError -> JsArray[T]:
     var defined = _defined_values(array)
     for index in range(1, len(defined)):
         var value = defined[index].copy()

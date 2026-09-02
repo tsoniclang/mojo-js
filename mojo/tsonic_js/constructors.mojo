@@ -25,9 +25,10 @@ def array_from(values: JsString) -> JsArray[JsString]:
 def array_from_map_value[
     T: Copyable & Deinitable,
     U: Copyable & Deinitable,
-](values: JsArray[T], callback: RaisingCallable[Tuple[T], U]) raises -> JsArray[
-    U
-]:
+    CallbackError: AnyType,
+](
+    values: JsArray[T], callback: RaisingCallable[Tuple[T], U, CallbackError]
+) raises CallbackError -> JsArray[U]:
     var result = List[U]()
     for value in values.iter_values():
         result.append(callback.call((value.copy(),)))
@@ -37,9 +38,11 @@ def array_from_map_value[
 def array_from_map_with_index[
     T: Copyable & Deinitable,
     U: Copyable & Deinitable,
+    CallbackError: AnyType,
 ](
-    values: JsArray[T], callback: RaisingCallable[Tuple[T, Float64], U]
-) raises -> JsArray[U]:
+    values: JsArray[T],
+    callback: RaisingCallable[Tuple[T, Float64], U, CallbackError],
+) raises CallbackError -> JsArray[U]:
     var result = List[U]()
     var index = 0
     for value in values.iter_values():

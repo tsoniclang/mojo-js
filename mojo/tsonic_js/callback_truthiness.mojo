@@ -10,125 +10,142 @@ from .value import JsValue, js_truthy
 
 
 @fieldwise_init
-struct _NumberTruthinessAdapter[Arguments: Movable & Deinitable]:
-    var callable: RaisingCallable[Self.Arguments, Float64]
+struct _NumberTruthinessAdapter[
+    Arguments: Movable & Deinitable,
+    CallbackError: AnyType,
+]:
+    var callable: RaisingCallable[Self.Arguments, Float64, Self.CallbackError]
 
     @staticmethod
     def invoke(
         context: ErasedCallableContext,
         var arguments: Self.Arguments,
-    ) raises -> Bool:
+    ) raises Self.CallbackError -> Bool:
         var pointer = context.unsafe_bitcast[
-            _NumberTruthinessAdapter[Self.Arguments]
+            _NumberTruthinessAdapter[Self.Arguments, Self.CallbackError]
         ]()
         var value = pointer[].callable.call(arguments^)
         return value != 0 and value == value
 
     @staticmethod
     def destroy(context: ErasedCallableContext):
-        destroy_callable_environment[_NumberTruthinessAdapter[Self.Arguments]](
-            context
-        )
+        destroy_callable_environment[
+            _NumberTruthinessAdapter[Self.Arguments, Self.CallbackError]
+        ](context)
 
 
 def adapt_truthy_number_callback[
-    Arguments: Movable & Deinitable
+    Arguments: Movable & Deinitable,
+    CallbackError: AnyType,
 ](
-    value: RaisingCallable[Arguments, Float64],
-) -> RaisingCallable[
-    Arguments, Bool
-]:
-    comptime Adapter = _NumberTruthinessAdapter[Arguments]
+    value: RaisingCallable[Arguments, Float64, CallbackError],
+) -> RaisingCallable[Arguments, Bool, CallbackError]:
+    comptime Adapter = _NumberTruthinessAdapter[Arguments, CallbackError]
     var environment = allocate_callable_environment(
         Adapter(value), Adapter.destroy
     )
-    return RaisingCallable[Arguments, Bool](environment, Adapter.invoke)
+    return RaisingCallable[Arguments, Bool, CallbackError](
+        environment, Adapter.invoke
+    )
 
 
 @fieldwise_init
-struct _StringTruthinessAdapter[Arguments: Movable & Deinitable]:
-    var callable: RaisingCallable[Self.Arguments, JsString]
+struct _StringTruthinessAdapter[
+    Arguments: Movable & Deinitable,
+    CallbackError: AnyType,
+]:
+    var callable: RaisingCallable[Self.Arguments, JsString, Self.CallbackError]
 
     @staticmethod
     def invoke(
         context: ErasedCallableContext,
         var arguments: Self.Arguments,
-    ) raises -> Bool:
+    ) raises Self.CallbackError -> Bool:
         var pointer = context.unsafe_bitcast[
-            _StringTruthinessAdapter[Self.Arguments]
+            _StringTruthinessAdapter[Self.Arguments, Self.CallbackError]
         ]()
         return len(pointer[].callable.call(arguments^)) != 0
 
     @staticmethod
     def destroy(context: ErasedCallableContext):
-        destroy_callable_environment[_StringTruthinessAdapter[Self.Arguments]](
-            context
-        )
+        destroy_callable_environment[
+            _StringTruthinessAdapter[Self.Arguments, Self.CallbackError]
+        ](context)
 
 
 def adapt_truthy_string_callback[
-    Arguments: Movable & Deinitable
+    Arguments: Movable & Deinitable,
+    CallbackError: AnyType,
 ](
-    value: RaisingCallable[Arguments, JsString],
-) -> RaisingCallable[
-    Arguments, Bool
-]:
-    comptime Adapter = _StringTruthinessAdapter[Arguments]
+    value: RaisingCallable[Arguments, JsString, CallbackError],
+) -> RaisingCallable[Arguments, Bool, CallbackError]:
+    comptime Adapter = _StringTruthinessAdapter[Arguments, CallbackError]
     var environment = allocate_callable_environment(
         Adapter(value), Adapter.destroy
     )
-    return RaisingCallable[Arguments, Bool](environment, Adapter.invoke)
+    return RaisingCallable[Arguments, Bool, CallbackError](
+        environment, Adapter.invoke
+    )
 
 
 @fieldwise_init
-struct _DynamicTruthinessAdapter[Arguments: Movable & Deinitable]:
-    var callable: RaisingCallable[Self.Arguments, JsValue]
+struct _DynamicTruthinessAdapter[
+    Arguments: Movable & Deinitable,
+    CallbackError: AnyType,
+]:
+    var callable: RaisingCallable[Self.Arguments, JsValue, Self.CallbackError]
 
     @staticmethod
     def invoke(
         context: ErasedCallableContext,
         var arguments: Self.Arguments,
-    ) raises -> Bool:
+    ) raises Self.CallbackError -> Bool:
         var pointer = context.unsafe_bitcast[
-            _DynamicTruthinessAdapter[Self.Arguments]
+            _DynamicTruthinessAdapter[Self.Arguments, Self.CallbackError]
         ]()
         return js_truthy(pointer[].callable.call(arguments^))
 
     @staticmethod
     def destroy(context: ErasedCallableContext):
-        destroy_callable_environment[_DynamicTruthinessAdapter[Self.Arguments]](
-            context
-        )
+        destroy_callable_environment[
+            _DynamicTruthinessAdapter[Self.Arguments, Self.CallbackError]
+        ](context)
 
 
 def adapt_truthy_dynamic_callback[
-    Arguments: Movable & Deinitable
+    Arguments: Movable & Deinitable,
+    CallbackError: AnyType,
 ](
-    value: RaisingCallable[Arguments, JsValue],
-) -> RaisingCallable[
-    Arguments, Bool
-]:
-    comptime Adapter = _DynamicTruthinessAdapter[Arguments]
+    value: RaisingCallable[Arguments, JsValue, CallbackError],
+) -> RaisingCallable[Arguments, Bool, CallbackError]:
+    comptime Adapter = _DynamicTruthinessAdapter[Arguments, CallbackError]
     var environment = allocate_callable_environment(
         Adapter(value), Adapter.destroy
     )
-    return RaisingCallable[Arguments, Bool](environment, Adapter.invoke)
+    return RaisingCallable[Arguments, Bool, CallbackError](
+        environment, Adapter.invoke
+    )
 
 
 @fieldwise_init
 struct _PresentTruthinessAdapter[
     Arguments: Movable & Deinitable,
     Result: Movable & Deinitable,
+    CallbackError: AnyType,
 ]:
-    var callable: RaisingCallable[Self.Arguments, Self.Result]
+    var callable: RaisingCallable[
+        Self.Arguments, Self.Result, Self.CallbackError
+    ]
 
     @staticmethod
     def invoke(
         context: ErasedCallableContext,
         var arguments: Self.Arguments,
-    ) raises -> Bool:
+    ) raises Self.CallbackError -> Bool:
         var pointer = context.unsafe_bitcast[
-            _PresentTruthinessAdapter[Self.Arguments, Self.Result]
+            _PresentTruthinessAdapter[
+                Self.Arguments, Self.Result, Self.CallbackError
+            ]
         ]()
         _ = pointer[].callable.call(arguments^)
         return True
@@ -136,39 +153,51 @@ struct _PresentTruthinessAdapter[
     @staticmethod
     def destroy(context: ErasedCallableContext):
         destroy_callable_environment[
-            _PresentTruthinessAdapter[Self.Arguments, Self.Result]
+            _PresentTruthinessAdapter[
+                Self.Arguments, Self.Result, Self.CallbackError
+            ]
         ](context)
 
 
 def adapt_truthy_always_true_callback[
     Arguments: Movable & Deinitable,
     Result: Movable & Deinitable,
+    CallbackError: AnyType,
 ](
-    value: RaisingCallable[Arguments, Result],
+    value: RaisingCallable[Arguments, Result, CallbackError],
 ) -> RaisingCallable[
-    Arguments, Bool
+    Arguments, Bool, CallbackError
 ]:
-    comptime Adapter = _PresentTruthinessAdapter[Arguments, Result]
+    comptime Adapter = _PresentTruthinessAdapter[
+        Arguments, Result, CallbackError
+    ]
     var environment = allocate_callable_environment(
         Adapter(value), Adapter.destroy
     )
-    return RaisingCallable[Arguments, Bool](environment, Adapter.invoke)
+    return RaisingCallable[Arguments, Bool, CallbackError](
+        environment, Adapter.invoke
+    )
 
 
 @fieldwise_init
 struct _AbsentTruthinessAdapter[
     Arguments: Movable & Deinitable,
     Result: Movable & Deinitable,
+    CallbackError: AnyType,
 ]:
-    var callable: RaisingCallable[Self.Arguments, Self.Result]
+    var callable: RaisingCallable[
+        Self.Arguments, Self.Result, Self.CallbackError
+    ]
 
     @staticmethod
     def invoke(
         context: ErasedCallableContext,
         var arguments: Self.Arguments,
-    ) raises -> Bool:
+    ) raises Self.CallbackError -> Bool:
         var pointer = context.unsafe_bitcast[
-            _AbsentTruthinessAdapter[Self.Arguments, Self.Result]
+            _AbsentTruthinessAdapter[
+                Self.Arguments, Self.Result, Self.CallbackError
+            ]
         ]()
         _ = pointer[].callable.call(arguments^)
         return False
@@ -176,20 +205,27 @@ struct _AbsentTruthinessAdapter[
     @staticmethod
     def destroy(context: ErasedCallableContext):
         destroy_callable_environment[
-            _AbsentTruthinessAdapter[Self.Arguments, Self.Result]
+            _AbsentTruthinessAdapter[
+                Self.Arguments, Self.Result, Self.CallbackError
+            ]
         ](context)
 
 
 def adapt_truthy_always_false_callback[
     Arguments: Movable & Deinitable,
     Result: Movable & Deinitable,
+    CallbackError: AnyType,
 ](
-    value: RaisingCallable[Arguments, Result],
+    value: RaisingCallable[Arguments, Result, CallbackError],
 ) -> RaisingCallable[
-    Arguments, Bool
+    Arguments, Bool, CallbackError
 ]:
-    comptime Adapter = _AbsentTruthinessAdapter[Arguments, Result]
+    comptime Adapter = _AbsentTruthinessAdapter[
+        Arguments, Result, CallbackError
+    ]
     var environment = allocate_callable_environment(
         Adapter(value), Adapter.destroy
     )
-    return RaisingCallable[Arguments, Bool](environment, Adapter.invoke)
+    return RaisingCallable[Arguments, Bool, CallbackError](
+        environment, Adapter.invoke
+    )

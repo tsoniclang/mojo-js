@@ -27,6 +27,14 @@ from tsonic_runtime.callable import ErasedCallableEnvironment
 
 
 @fieldwise_init
+struct TypedCallbackError(Copyable, Writable):
+    var code: Int
+
+    def write_to(self, mut writer: Some[Writer]):
+        writer.write("typed callback error ", self.code)
+
+
+@fieldwise_init
 struct CallbackEnvironment:
     var offset: Float64
     var total: Location[Float64]
@@ -110,6 +118,14 @@ struct CallbackEnvironment:
     ) raises -> None:
         _ = context
         _ = arguments
+
+    @staticmethod
+    def typed_error(
+        context: ErasedCallableContext,
+        var arguments: Tuple[Float64, Float64],
+    ) raises TypedCallbackError -> Float64:
+        _ = context
+        raise TypedCallbackError(Int(arguments[0]))
 
     @staticmethod
     def destroy(context: ErasedCallableContext):
@@ -216,3 +232,15 @@ def main() raises:
         )
     )
     assert_equal(absent_truth.call((2.0,)), False)
+
+    var typed_error_code = 0
+    try:
+        _ = array_map_with_index(
+            array,
+            RaisingCallable[
+                Tuple[Float64, Float64], Float64, TypedCallbackError
+            ](environment(0, total), CallbackEnvironment.typed_error),
+        )
+    except error:
+        typed_error_code = error.code
+    assert_equal(typed_error_code, 1)
