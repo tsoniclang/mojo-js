@@ -9,3 +9,5 @@ git diff --exit-code -- mojo tests
 for test_file in tests/*.mojo; do
   "${PIXI_BIN}" run mojo run -I mojo -I ../mojo-runtime/mojo "${test_file}"
 done
+
+bash scripts/test-native-limits.sh
