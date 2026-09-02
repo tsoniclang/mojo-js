@@ -289,7 +289,7 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         var result = List[Self.T]()
         for current in self._elements[]:
             if current:
-                result.append(current.value())
+                result.append(current.value().copy())
         return result^
 
     def _first_present_index(self) -> Int:

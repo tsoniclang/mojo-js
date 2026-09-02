@@ -30,7 +30,7 @@ def array_from_map_value[
 ) raises -> JsArray[U]:
     var result = List[U]()
     for value in values.iter_values():
-        result.append(callback.call((value,)))
+        result.append(callback.call((value.copy(),)))
     return JsArray[U](result^)
 
 
@@ -43,7 +43,7 @@ def array_from_map_with_index[
     var result = List[U]()
     var index = 0
     for value in values.iter_values():
-        result.append(callback.call((value, Float64(index))))
+        result.append(callback.call((value.copy(), Float64(index))))
         index += 1
     return JsArray[U](result^)
 
@@ -63,7 +63,7 @@ def map_new[
     for index in range(len(entries)):
         try:
             var entry = entries[Float64(index)]
-            _ = result.set(entry.get[0](), entry.get[1]())
+            _ = result.set(entry[0].copy(), entry[1].copy())
         except:
             pass
     return result
