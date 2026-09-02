@@ -44,5 +44,6 @@ from .value import (
     js_value_from_number,
     js_value_from_string,
     js_value_from_undefined,
+    js_value_to_string,
     js_truthy,
 )

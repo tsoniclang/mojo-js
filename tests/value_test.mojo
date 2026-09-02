@@ -3,6 +3,7 @@ from tsonic_js import (
     JsString,
     JsValue,
     js_truthy,
+    js_value_to_string,
     json_parse,
     json_stringify,
     object_entries,
@@ -59,6 +60,24 @@ def main() raises:
         '{"1":true,"2":"two","plain":1,"nested":[null,"😀"]}',
     )
     assert_false(Bool(json_stringify(JsValue.undefined())))
+    assert_equal(
+        js_value_to_string(JsValue.undefined()).to_native_strict(), "undefined"
+    )
+    assert_equal(js_value_to_string(JsValue.null()).to_native_strict(), "null")
+    assert_equal(js_value_to_string(JsValue(True)).to_native_strict(), "true")
+    assert_equal(js_value_to_string(JsValue(4.5)).to_native_strict(), "4.5")
+    assert_equal(
+        js_value_to_string(JsValue(JsString("text"))).to_native_strict(), "text"
+    )
+    assert_equal(
+        js_value_to_string(parsed).to_native_strict(), "[object Object]"
+    )
+    assert_equal(
+        js_value_to_string(
+            json_parse(JsString('[null,"value",[1],{}]'))
+        ).to_native_strict(),
+        ",value,1,[object Object]",
+    )
 
     try:
         _ = json_parse(JsString('{"broken":}'))

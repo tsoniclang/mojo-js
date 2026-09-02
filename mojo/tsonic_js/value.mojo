@@ -1,6 +1,8 @@
 from std.collections import List
 from std.memory import ArcPointer
 
+from .boolean import boolean_to_string
+from .number import number_to_string
 from .string import JsString
 
 
@@ -272,6 +274,32 @@ def js_value_from_null() -> JsValue:
 
 def js_value_from_undefined() -> JsValue:
     return JsValue.undefined()
+
+
+def js_value_to_string(value: JsValue) -> JsString:
+    if value.is_undefined():
+        return JsString("undefined")
+    if value.is_null():
+        return JsString("null")
+    if value.is_bool():
+        return boolean_to_string(value._bool_value())
+    if value.is_number():
+        return number_to_string(value._number_value())
+    if value.is_string():
+        return value._string_value()
+    if value.is_object():
+        return JsString("[object Object]")
+    var result = JsString()
+    for index in range(len(value._nodes[][value._index].children)):
+        if index != 0:
+            result += JsString(",")
+        var child = JsValue(
+            value._nodes,
+            value._nodes[][value._index].children[index],
+        )
+        if not child.is_null() and not child.is_undefined():
+            result += js_value_to_string(child)
+    return result
 
 
 def js_truthy(value: JsValue) -> Bool:
