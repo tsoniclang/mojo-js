@@ -7,20 +7,16 @@ from .equality import same_value_zero
 
 
 struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
-    comptime Storage = downcast[
-        List[Optional[Self.T]], Movable & Deinitable
-    ]
+    comptime Storage = downcast[List[Optional[Self.T]], Movable & Deinitable]
     var _elements: ArcPointer[Self.Storage]
 
-    def __init__(out self) where conforms_to(
-        Self.T, Copyable & Deinitable
-    ):
+    def __init__(out self) where conforms_to(Self.T, Copyable & Deinitable):
         var elements = rebind_var[Self.Storage](List[Optional[Self.T]]())
         self._elements = ArcPointer(elements^)
 
-    def __init__(out self, var values: List[Self.T]) where conforms_to(
-        Self.T, Copyable & Deinitable
-    ):
+    def __init__(
+        out self, var values: List[Self.T]
+    ) where conforms_to(Self.T, Copyable & Deinitable):
         var elements = List[Optional[Self.T]](capacity=len(values))
         for value in values^:
             elements.append(Optional[Self.T](value.copy()))
@@ -33,36 +29,36 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
     def js_length(self) -> Float64:
         return Float64(len(self))
 
-    def push(mut self, *values: Self.T) -> Float64 where conforms_to(
-        Self.T, Copyable & Deinitable
-    ):
+    def push(
+        mut self, *values: Self.T
+    ) -> Float64 where conforms_to(Self.T, Copyable & Deinitable):
         for value in values:
             self._elements[].append(Optional[Self.T](value.copy()))
         return self.js_length()
 
-    def get(self, index: Int) -> Optional[Self.T] where conforms_to(
-        Self.T, Copyable & Deinitable
-    ):
+    def get(
+        self, index: Int
+    ) -> Optional[Self.T] where conforms_to(Self.T, Copyable & Deinitable):
         if index < 0 or index >= len(self):
             return None
         return self._elements[][index].copy()
 
-    def get_index(self, index: Float64) -> Optional[Self.T] where conforms_to(
-        Self.T, Copyable & Deinitable
-    ):
+    def get_index(
+        self, index: Float64
+    ) -> Optional[Self.T] where conforms_to(Self.T, Copyable & Deinitable):
         return self.get(_array_index(index))
 
-    def __getitem__(self, index: Float64) raises -> Self.T where conforms_to(
-        Self.T, Copyable & Deinitable
-    ):
+    def __getitem__(
+        self, index: Float64
+    ) raises -> Self.T where conforms_to(Self.T, Copyable & Deinitable):
         var value = self.get(_array_index(index))
         if not value:
             raise Error("JavaScript array index is absent")
         return value.value().copy()
 
-    def set(mut self, index: Int, var value: Self.T) where conforms_to(
-        Self.T, Copyable & Deinitable
-    ):
+    def set(
+        mut self, index: Int, var value: Self.T
+    ) where conforms_to(Self.T, Copyable & Deinitable):
         if index < 0:
             return
         while len(self) <= index:
@@ -74,16 +70,16 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
     ) where conforms_to(Self.T, Copyable & Deinitable):
         self.set(_array_index(index), value^)
 
-    def pop(mut self) -> Optional[Self.T] where conforms_to(
-        Self.T, Copyable & Deinitable
-    ):
+    def pop(
+        mut self,
+    ) -> Optional[Self.T] where conforms_to(Self.T, Copyable & Deinitable):
         if len(self) == 0:
             return None
         return self._elements[].pop()
 
-    def shift(mut self) -> Optional[Self.T] where conforms_to(
-        Self.T, Copyable & Deinitable
-    ):
+    def shift(
+        mut self,
+    ) -> Optional[Self.T] where conforms_to(Self.T, Copyable & Deinitable):
         if len(self) == 0:
             return None
         var first = self._elements[][0].copy()
@@ -93,9 +89,9 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         self._elements[] = rebind_var[Self.Storage](next^)
         return first^
 
-    def unshift(mut self, *values: Self.T) -> Float64 where conforms_to(
-        Self.T, Copyable & Deinitable
-    ):
+    def unshift(
+        mut self, *values: Self.T
+    ) -> Float64 where conforms_to(Self.T, Copyable & Deinitable):
         var next = List[Optional[Self.T]](capacity=len(self) + len(values))
         for value in values:
             next.append(Optional[Self.T](value.copy()))
@@ -104,9 +100,9 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         self._elements[] = rebind_var[Self.Storage](next^)
         return self.js_length()
 
-    def reverse(mut self) -> Self where conforms_to(
-        Self.T, Copyable & Deinitable
-    ):
+    def reverse(
+        mut self,
+    ) -> Self where conforms_to(Self.T, Copyable & Deinitable):
         self._elements[].reverse()
         return self
 
@@ -168,9 +164,9 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         self._elements[] = rebind_var[Self.Storage](next^)
         return Self(elements=removed^)
 
-    def at(self, index: Float64) -> Optional[Self.T] where conforms_to(
-        Self.T, Copyable & Deinitable
-    ):
+    def at(
+        self, index: Float64
+    ) -> Optional[Self.T] where conforms_to(Self.T, Copyable & Deinitable):
         var normalized = _relative_index(index, len(self))
         return self.get(normalized)
 
@@ -186,9 +182,7 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
 
     def index_of(
         self, value: Self.T, from_index: Float64 = 0
-    ) -> Float64 where conforms_to(
-        Self.T, Copyable & Deinitable & Equatable
-    ):
+    ) -> Float64 where conforms_to(Self.T, Copyable & Deinitable & Equatable):
         var start = _relative_start(from_index, len(self))
         for index in range(start, len(self)):
             var current = self._elements[][index].copy()
@@ -200,9 +194,7 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         self,
         value: Self.T,
         from_index: Float64 = Float64(FloatLiteral.infinity),
-    ) -> Float64 where conforms_to(
-        Self.T, Copyable & Deinitable & Equatable
-    ):
+    ) -> Float64 where conforms_to(Self.T, Copyable & Deinitable & Equatable):
         var index = len(self) - 1 if from_index == Float64(
             FloatLiteral.infinity
         ) else min(Int(from_index), len(self) - 1)
@@ -229,9 +221,7 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
 
     def join(
         self, separator: JsString = JsString(",")
-    ) -> JsString where conforms_to(
-        Self.T, Copyable & Deinitable & Writable
-    ):
+    ) -> JsString where conforms_to(Self.T, Copyable & Deinitable & Writable):
         var result = JsString()
         for index in range(len(self)):
             if index != 0:
@@ -241,9 +231,9 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
                 result += JsString(String(value.value()))
         return result
 
-    def sort(mut self) -> Self where conforms_to(
-        Self.T, Copyable & Deinitable & Writable
-    ):
+    def sort(
+        mut self,
+    ) -> Self where conforms_to(Self.T, Copyable & Deinitable & Writable):
         var defined = List[Self.T]()
         var holes = 0
         for current in self._elements[]:
@@ -267,9 +257,9 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         self._elements[] = rebind_var[Self.Storage](sorted^)
         return self
 
-    def delete(mut self, index: Int) -> Bool where conforms_to(
-        Self.T, Copyable & Deinitable
-    ):
+    def delete(
+        mut self, index: Int
+    ) -> Bool where conforms_to(Self.T, Copyable & Deinitable):
         if index < 0 or index >= len(self):
             return True
         self._elements[][index] = None
@@ -283,9 +273,9 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
     def same_storage(self, other: Self) -> Bool:
         return self._elements is other._elements
 
-    def iter_values(self) -> List[Self.T] where conforms_to(
-        Self.T, Copyable & Deinitable
-    ):
+    def iter_values(
+        self,
+    ) -> List[Self.T] where conforms_to(Self.T, Copyable & Deinitable):
         var result = List[Self.T]()
         for current in self._elements[]:
             if current:

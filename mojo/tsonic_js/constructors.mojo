@@ -25,9 +25,9 @@ def array_from(values: JsString) -> JsArray[JsString]:
 def array_from_map_value[
     T: Copyable & Deinitable,
     U: Copyable & Deinitable,
-](
-    values: JsArray[T], callback: RaisingCallable[Tuple[T], U]
-) raises -> JsArray[U]:
+](values: JsArray[T], callback: RaisingCallable[Tuple[T], U]) raises -> JsArray[
+    U
+]:
     var result = List[U]()
     for value in values.iter_values():
         result.append(callback.call((value.copy(),)))
