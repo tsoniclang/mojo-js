@@ -26,10 +26,12 @@ comptime _STRING_CALLBACK_REPLACE_ALL = 14
 struct _RegExpNativeState(Movable):
     var handle: OptionalPointer[NoneType, MutUntrackedOrigin]
 
-    def __init__(out self, handle: OptionalPointer[NoneType, MutUntrackedOrigin]):
+    def __init__(
+        out self, handle: OptionalPointer[NoneType, MutUntrackedOrigin]
+    ):
         self.handle = handle
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         if self.handle:
             external_call["tsonic_js_regexp_free", NoneType](
                 self.handle.value()
@@ -110,19 +112,13 @@ struct _RegExpBridge(ImplicitlyCopyable):
     def split(self, input: JsString, limit: Float64) raises -> JsValue:
         return self._command(_REGEXP_SPLIT, input, number=limit)
 
-    def replace(
-        self, input: JsString, replacement: JsString
-    ) raises -> JsValue:
-        return self._command(
-            _REGEXP_REPLACE, input, argument=replacement
-        )
+    def replace(self, input: JsString, replacement: JsString) raises -> JsValue:
+        return self._command(_REGEXP_REPLACE, input, argument=replacement)
 
     def replace_all(
         self, input: JsString, replacement: JsString
     ) raises -> JsValue:
-        return self._command(
-            _REGEXP_REPLACE_ALL, input, argument=replacement
-        )
+        return self._command(_REGEXP_REPLACE_ALL, input, argument=replacement)
 
     def describe(self) raises -> JsValue:
         return self._command(_REGEXP_DESCRIBE, JsString())
@@ -139,9 +135,7 @@ struct _RegExpBridge(ImplicitlyCopyable):
     def string_callback_replace(
         self, input: JsString, search: JsString
     ) raises -> JsValue:
-        return self._command(
-            _STRING_CALLBACK_REPLACE, input, argument=search
-        )
+        return self._command(_STRING_CALLBACK_REPLACE, input, argument=search)
 
     def string_callback_replace_all(
         self, input: JsString, search: JsString
@@ -189,18 +183,18 @@ struct _RegExpBridge(ImplicitlyCopyable):
         ](result_pointer)
         if error:
             var message = String(unsafe_from_utf8_ptr=error.value())
-            external_call[
-                "tsonic_js_regexp_command_result_free", NoneType
-            ](result_pointer)
+            external_call["tsonic_js_regexp_command_result_free", NoneType](
+                result_pointer
+            )
             raise Error(message)
         var json = external_call[
             "tsonic_js_regexp_command_json",
             OptionalPointer[UInt8, ImmUntrackedOrigin],
         ](result_pointer)
         if not json:
-            external_call[
-                "tsonic_js_regexp_command_result_free", NoneType
-            ](result_pointer)
+            external_call["tsonic_js_regexp_command_result_free", NoneType](
+                result_pointer
+            )
             raise Error("JavaScript RegExp command produced no result")
         var text = String(unsafe_from_utf8_ptr=json.value())
         external_call["tsonic_js_regexp_command_result_free", NoneType](
@@ -212,15 +206,11 @@ struct _RegExpBridge(ImplicitlyCopyable):
         return self._state[].handle.value()
 
 
-def _create_error(
-    result: Pointer[NoneType, MutUntrackedOrigin]
-) -> String:
+def _create_error(result: Pointer[NoneType, MutUntrackedOrigin]) -> String:
     var error = external_call[
         "tsonic_js_regexp_create_error",
         OptionalPointer[UInt8, ImmUntrackedOrigin],
     ](result)
-    return (
-        String(unsafe_from_utf8_ptr=error.value())
-        if error
-        else String("JavaScript RegExp construction failed")
+    return String(unsafe_from_utf8_ptr=error.value()) if error else String(
+        "JavaScript RegExp construction failed"
     )

@@ -1,8 +1,10 @@
+from std.collections import List
 from std.testing import assert_equal, assert_false, assert_true
 from tsonic_js import (
     JsString,
     JsValue,
     js_truthy,
+    js_value_structured_clone,
     js_value_to_string,
     json_parse,
     json_stringify,
@@ -11,7 +13,9 @@ from tsonic_js import (
     object_is,
     object_keys,
     object_values,
+    symbol_new,
 )
+from tsonic_js.value import _JsValueBuilder
 
 from tsonic_js import boolean_to_string, boolean_value_of
 
@@ -79,6 +83,40 @@ def main() raises:
         ).to_native_strict(),
         ",value,1,[object Object]",
     )
+
+    var graph = _JsValueBuilder()
+    var shared = graph.append_string(JsString("shared"))
+    var children = List[Int]()
+    children.append(shared)
+    children.append(shared)
+    var original = graph.value(graph.append_array(children^))
+    var cloned = js_value_structured_clone(original)
+    assert_false(cloned.same_identity(original))
+    assert_true(cloned.array_at(0).same_identity(cloned.array_at(1)))
+    assert_false(cloned.array_at(0).same_identity(original.array_at(0)))
+    assert_equal(cloned.array_at(0).string_value().to_native_strict(), "shared")
+
+    var unrelated = _JsValueBuilder()
+    _ = unrelated.append_symbol(symbol_new(JsString("not reachable")))
+    var reachable = unrelated.value(
+        unrelated.append_string(JsString("reachable"))
+    )
+    assert_equal(
+        js_value_structured_clone(reachable).string_value().to_native_strict(),
+        "reachable",
+    )
+
+    var symbol_graph = _JsValueBuilder()
+    var symbol = symbol_graph.value(
+        symbol_graph.append_symbol(symbol_new(JsString("identity")))
+    )
+    try:
+        _ = js_value_structured_clone(symbol)
+        raise Error("symbol unexpectedly structured-cloned")
+    except error:
+        assert_equal(
+            String(error), "JavaScript symbols cannot be structured-cloned"
+        )
 
     try:
         _ = json_parse(JsString('{"broken":}'))

@@ -5,3 +5,7 @@ platforms = ["linux-64"]
 
 [dependencies]
 mojo = "==1.1.0.dev2026083005"
+c-compiler = "==2.0.0"
+icu = "==78.3"
+quickjs = "==2025.09.13"
+sysroot_linux-64 = "==2.34"

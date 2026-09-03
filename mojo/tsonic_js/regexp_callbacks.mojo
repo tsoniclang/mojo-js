@@ -11,11 +11,11 @@ from .value import JsValue, _js_value_from_tagged_callback_argument
 
 
 struct RegExpNativeResult[T: Movable & Deinitable](Movable):
-    var _value: Optional[T]
+    var _value: Optional[Self.T]
     var _error: Optional[Error]
 
-    def __init__(out self, var value: T):
-        self._value = Optional[T](value^)
+    def __init__(out self, var value: Self.T):
+        self._value = Optional[Self.T](value^)
         self._error = None
 
     def __init__(out self, var error: Error):
@@ -25,13 +25,13 @@ struct RegExpNativeResult[T: Movable & Deinitable](Movable):
     def is_success(self) -> Bool:
         return Bool(self._value)
 
-    def take_value(mut self) -> T:
+    def take_value(mut self) -> Self.T:
         return self._value.take()
 
     def take_error(mut self) -> Error:
         return self._error.take()
 
-    def unwrap(deinit self) raises -> T:
+    def unwrap(deinit self) raises -> Self.T:
         if self._error:
             raise self._error.take()
         return self._value.take()
@@ -42,14 +42,12 @@ struct _RegExpCallbackRecord(ImplicitlyCopyable):
     var end: Int
     var arguments: JsArray[JsValue]
 
-    def __init__(
-        out self, start: Int, end: Int, arguments: JsArray[JsValue]
-    ):
+    def __init__(out self, start: Int, end: Int, arguments: JsArray[JsValue]):
         self.start = start
         self.end = end
         self.arguments = arguments
 
-    def matched(self) -> JsString:
+    def matched(self) raises -> JsString:
         return self.argument(0).string_value()
 
     def argument(self, index: Int) -> JsValue:
@@ -87,11 +85,9 @@ def _prepare_regexp_callback(
     replace_all: Bool,
 ) -> RegExpNativeResult[_RegExpCallbackBatch]:
     try:
-        var command = (
-            expression._bridge.callback_replace_all(input)
-            if replace_all
-            else expression._bridge.callback_replace(input)
-        )
+        var command = expression._bridge.callback_replace_all(
+            input
+        ) if replace_all else expression._bridge.callback_replace(input)
         return RegExpNativeResult[_RegExpCallbackBatch](
             _parse_callback_batch(input, command)
         )
@@ -106,11 +102,9 @@ def _prepare_string_callback(
 ) -> RegExpNativeResult[_RegExpCallbackBatch]:
     try:
         var bridge = _RegExpBridge()
-        var command = (
-            bridge.string_callback_replace_all(input, search)
-            if replace_all
-            else bridge.string_callback_replace(input, search)
-        )
+        var command = bridge.string_callback_replace_all(
+            input, search
+        ) if replace_all else bridge.string_callback_replace(input, search)
         return RegExpNativeResult[_RegExpCallbackBatch](
             _parse_callback_batch(input, command)
         )
@@ -119,7 +113,7 @@ def _prepare_string_callback(
 
 
 def _prepare_native_callback(
-    var prepared: RegExpNativeResult[_RegExpCallbackBatch]
+    var prepared: RegExpNativeResult[_RegExpCallbackBatch],
 ) -> RegExpNativeResult[_NativeRegExpCallbackBatch]:
     if not prepared.is_success():
         return RegExpNativeResult[_NativeRegExpCallbackBatch](
@@ -131,9 +125,7 @@ def _prepare_native_callback(
         for record in exact.records.iter_values():
             matches.append(record.matched().to_native_strict())
         return RegExpNativeResult[_NativeRegExpCallbackBatch](
-            _NativeRegExpCallbackBatch(
-                exact, JsArray[String](matches^)
-            )
+            _NativeRegExpCallbackBatch(exact, JsArray[String](matches^))
         )
     except error:
         return RegExpNativeResult[_NativeRegExpCallbackBatch](error^)
@@ -157,7 +149,9 @@ def _parse_callback_batch(
             raise Error("JavaScript RegExp callback spans are not ordered")
         var encoded_arguments = _required_object_field(encoded, "arguments")
         if encoded_arguments.array_length() < 3:
-            raise Error("JavaScript RegExp callback record has too few arguments")
+            raise Error(
+                "JavaScript RegExp callback record has too few arguments"
+            )
         var arguments = List[JsValue]()
         for argument_index in range(encoded_arguments.array_length()):
             arguments.append(
@@ -169,15 +163,14 @@ def _parse_callback_batch(
             start, end, JsArray[JsValue](arguments^)
         )
         var matched = record.matched()
-        if end - start != len(matched) or input.slice(
-            Float64(start), Float64(end)
-        ) != matched:
+        if (
+            end - start != len(matched)
+            or input.slice(Float64(start), Float64(end)) != matched
+        ):
             raise Error("JavaScript RegExp callback span does not match input")
         records.append(record)
         previous_end = end
-    return _RegExpCallbackBatch(
-        input, JsArray[_RegExpCallbackRecord](records^)
-    )
+    return _RegExpCallbackBatch(input, JsArray[_RegExpCallbackRecord](records^))
 
 
 def _callback_index(value: JsValue, input_length: Int) raises -> Int:
@@ -204,9 +197,7 @@ def _complete_native_callback(
     var exact_replacements = List[JsString]()
     for replacement in replacements:
         exact_replacements.append(JsString(replacement))
-    var exact = _reconstruct_callback_output(
-        batch.exact, exact_replacements^
-    )
+    var exact = _reconstruct_callback_output(batch.exact, exact_replacements^)
     try:
         return RegExpNativeResult[String](exact.to_native_strict())
     except error:
@@ -221,7 +212,9 @@ def _reconstruct_callback_output(
     for index in range(len(batch.records)):
         var record = batch.records.get_index(Float64(index)).value()
         _append_code_units(units, batch.input, cursor, record.start)
-        _append_code_units(units, replacements[index], 0, len(replacements[index]))
+        _append_code_units(
+            units, replacements[index], 0, len(replacements[index])
+        )
         cursor = record.end
     _append_code_units(units, batch.input, cursor, len(batch.input))
     return JsString(code_units=units^)
@@ -237,7 +230,9 @@ def _append_code_units(
         destination.append(value.code_unit_at(index).value())
 
 
-def _apply_exact_callback_0[CallbackError: AnyType](
+def _apply_exact_callback_0[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_RegExpCallbackBatch],
     callback: RaisingCallable[Tuple[], JsString, CallbackError],
 ) raises CallbackError -> RegExpNativeResult[JsString]:
@@ -250,7 +245,9 @@ def _apply_exact_callback_0[CallbackError: AnyType](
     return _complete_exact_callback(batch, replacements^)
 
 
-def _apply_native_callback_0[CallbackError: AnyType](
+def _apply_native_callback_0[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_NativeRegExpCallbackBatch],
     callback: RaisingCallable[Tuple[], String, CallbackError],
 ) raises CallbackError -> RegExpNativeResult[String]:
@@ -263,7 +260,9 @@ def _apply_native_callback_0[CallbackError: AnyType](
     return _complete_native_callback(batch, replacements^)
 
 
-def _apply_exact_callback_1[CallbackError: AnyType](
+def _apply_exact_callback_1[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_RegExpCallbackBatch],
     callback: RaisingCallable[Tuple[JsString], JsString, CallbackError],
 ) raises CallbackError -> RegExpNativeResult[JsString]:
@@ -276,7 +275,9 @@ def _apply_exact_callback_1[CallbackError: AnyType](
     return _complete_exact_callback(batch, replacements^)
 
 
-def _apply_native_callback_1[CallbackError: AnyType](
+def _apply_native_callback_1[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_NativeRegExpCallbackBatch],
     callback: RaisingCallable[Tuple[String], String, CallbackError],
 ) raises CallbackError -> RegExpNativeResult[String]:
@@ -291,7 +292,9 @@ def _apply_native_callback_1[CallbackError: AnyType](
     return _complete_native_callback(batch, replacements^)
 
 
-def _apply_exact_callback_2[CallbackError: AnyType](
+def _apply_exact_callback_2[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_RegExpCallbackBatch],
     callback: RaisingCallable[
         Tuple[JsString, JsValue], JsString, CallbackError
@@ -308,11 +311,11 @@ def _apply_exact_callback_2[CallbackError: AnyType](
     return _complete_exact_callback(batch, replacements^)
 
 
-def _apply_native_callback_2[CallbackError: AnyType](
+def _apply_native_callback_2[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_NativeRegExpCallbackBatch],
-    callback: RaisingCallable[
-        Tuple[String, JsValue], String, CallbackError
-    ],
+    callback: RaisingCallable[Tuple[String, JsValue], String, CallbackError],
 ) raises CallbackError -> RegExpNativeResult[String]:
     if not prepared.is_success():
         return RegExpNativeResult[String](prepared.take_error())
@@ -331,7 +334,9 @@ def _apply_native_callback_2[CallbackError: AnyType](
     return _complete_native_callback(batch, replacements^)
 
 
-def _apply_exact_callback_3[CallbackError: AnyType](
+def _apply_exact_callback_3[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_RegExpCallbackBatch],
     callback: RaisingCallable[
         Tuple[JsString, JsValue, JsValue], JsString, CallbackError
@@ -350,7 +355,9 @@ def _apply_exact_callback_3[CallbackError: AnyType](
     return _complete_exact_callback(batch, replacements^)
 
 
-def _apply_native_callback_3[CallbackError: AnyType](
+def _apply_native_callback_3[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_NativeRegExpCallbackBatch],
     callback: RaisingCallable[
         Tuple[String, JsValue, JsValue], String, CallbackError
@@ -374,7 +381,9 @@ def _apply_native_callback_3[CallbackError: AnyType](
     return _complete_native_callback(batch, replacements^)
 
 
-def _apply_exact_callback_4[CallbackError: AnyType](
+def _apply_exact_callback_4[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_RegExpCallbackBatch],
     callback: RaisingCallable[
         Tuple[JsString, JsValue, JsValue, JsValue], JsString, CallbackError
@@ -398,7 +407,9 @@ def _apply_exact_callback_4[CallbackError: AnyType](
     return _complete_exact_callback(batch, replacements^)
 
 
-def _apply_native_callback_4[CallbackError: AnyType](
+def _apply_native_callback_4[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_NativeRegExpCallbackBatch],
     callback: RaisingCallable[
         Tuple[String, JsValue, JsValue, JsValue], String, CallbackError
@@ -423,7 +434,9 @@ def _apply_native_callback_4[CallbackError: AnyType](
     return _complete_native_callback(batch, replacements^)
 
 
-def _apply_exact_callback_5[CallbackError: AnyType](
+def _apply_exact_callback_5[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_RegExpCallbackBatch],
     callback: RaisingCallable[
         Tuple[JsString, JsValue, JsValue, JsValue, JsValue],
@@ -450,7 +463,9 @@ def _apply_exact_callback_5[CallbackError: AnyType](
     return _complete_exact_callback(batch, replacements^)
 
 
-def _apply_native_callback_5[CallbackError: AnyType](
+def _apply_native_callback_5[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_NativeRegExpCallbackBatch],
     callback: RaisingCallable[
         Tuple[String, JsValue, JsValue, JsValue, JsValue],
@@ -478,7 +493,9 @@ def _apply_native_callback_5[CallbackError: AnyType](
     return _complete_native_callback(batch, replacements^)
 
 
-def _apply_exact_callback_6[CallbackError: AnyType](
+def _apply_exact_callback_6[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_RegExpCallbackBatch],
     callback: RaisingCallable[
         Tuple[JsString, JsValue, JsValue, JsValue, JsValue, JsValue],
@@ -506,7 +523,9 @@ def _apply_exact_callback_6[CallbackError: AnyType](
     return _complete_exact_callback(batch, replacements^)
 
 
-def _apply_native_callback_6[CallbackError: AnyType](
+def _apply_native_callback_6[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_NativeRegExpCallbackBatch],
     callback: RaisingCallable[
         Tuple[String, JsValue, JsValue, JsValue, JsValue, JsValue],
@@ -535,12 +554,12 @@ def _apply_native_callback_6[CallbackError: AnyType](
     return _complete_native_callback(batch, replacements^)
 
 
-def _apply_exact_callback_7[CallbackError: AnyType](
+def _apply_exact_callback_7[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_RegExpCallbackBatch],
     callback: RaisingCallable[
-        Tuple[
-            JsString, JsValue, JsValue, JsValue, JsValue, JsValue, JsValue
-        ],
+        Tuple[JsString, JsValue, JsValue, JsValue, JsValue, JsValue, JsValue],
         JsString,
         CallbackError,
     ],
@@ -566,7 +585,9 @@ def _apply_exact_callback_7[CallbackError: AnyType](
     return _complete_exact_callback(batch, replacements^)
 
 
-def _apply_native_callback_7[CallbackError: AnyType](
+def _apply_native_callback_7[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_NativeRegExpCallbackBatch],
     callback: RaisingCallable[
         Tuple[String, JsValue, JsValue, JsValue, JsValue, JsValue, JsValue],
@@ -596,7 +617,9 @@ def _apply_native_callback_7[CallbackError: AnyType](
     return _complete_native_callback(batch, replacements^)
 
 
-def _apply_exact_callback_8[CallbackError: AnyType](
+def _apply_exact_callback_8[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_RegExpCallbackBatch],
     callback: RaisingCallable[
         Tuple[
@@ -635,7 +658,9 @@ def _apply_exact_callback_8[CallbackError: AnyType](
     return _complete_exact_callback(batch, replacements^)
 
 
-def _apply_native_callback_8[CallbackError: AnyType](
+def _apply_native_callback_8[
+    CallbackError: AnyType
+](
     var prepared: RegExpNativeResult[_NativeRegExpCallbackBatch],
     callback: RaisingCallable[
         Tuple[

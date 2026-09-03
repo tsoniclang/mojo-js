@@ -117,7 +117,9 @@ def adapt_truthy_native_string_callback[
     CallbackError: AnyType,
 ](
     value: RaisingCallable[Arguments, String, CallbackError],
-) -> RaisingCallable[Arguments, Bool, CallbackError]:
+) -> RaisingCallable[
+    Arguments, Bool, CallbackError
+]:
     comptime Adapter = _NativeStringTruthinessAdapter[Arguments, CallbackError]
     var environment = allocate_callable_environment(
         Adapter(value), Adapter.destroy

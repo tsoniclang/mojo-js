@@ -6,7 +6,7 @@ from .string import JsString
 from .value import JsValue
 
 
-alias RegExpIndexPair = Tuple[Float64, Float64]
+comptime RegExpIndexPair = Tuple[Float64, Float64]
 
 
 @fieldwise_init
@@ -60,9 +60,9 @@ struct JsRegExpNamedGroups(ImplicitlyCopyable):
             entries.append(
                 _NativeNamedGroupEntry(
                     entry.name.to_native_strict(),
-                    Optional[String](entry.value.value().to_native_strict())
-                    if entry.value
-                    else None,
+                    Optional[String](
+                        entry.value.value().to_native_strict()
+                    ) if entry.value else None,
                 )
             )
         return RegExpNamedGroups(entries^)
@@ -238,9 +238,9 @@ struct JsRegExpIndicesArray(ImplicitlyCopyable, Sized):
     def _native(self) raises -> RegExpIndicesArray:
         return RegExpIndicesArray(
             self._values,
-            Optional[RegExpNamedIndices](self._groups.value()._native())
-            if self._groups
-            else None,
+            Optional[RegExpNamedIndices](
+                self._groups.value()._native()
+            ) if self._groups else None,
         )
 
 
@@ -330,32 +330,32 @@ struct JsRegExpMatchArray(ImplicitlyCopyable, Sized):
 
     def _native(self) raises -> RegExpMatchArray:
         var values = List[Optional[String]]()
-        for value in self._values.values():
+        for value in self._values.iter_values():
             values.append(
-                Optional[String](value.value().to_native_strict())
-                if value
-                else None
+                Optional[String](
+                    value.value().to_native_strict()
+                ) if value else None
             )
         return RegExpMatchArray(
             JsArray[Optional[String]](values^),
             self._index,
-            Optional[String](self._input.value().to_native_strict())
-            if self._input
-            else None,
-            Optional[RegExpNamedGroups](self._groups.value()._native())
-            if self._groups
-            else None,
-            Optional[RegExpIndicesArray](self._indices.value()._native())
-            if self._indices
-            else None,
+            Optional[String](
+                self._input.value().to_native_strict()
+            ) if self._input else None,
+            Optional[RegExpNamedGroups](
+                self._groups.value()._native()
+            ) if self._groups else None,
+            Optional[RegExpIndicesArray](
+                self._indices.value()._native()
+            ) if self._indices else None,
         )
 
 
 struct JsRegExpExecArray(ImplicitlyCopyable, Sized):
     var _match: JsRegExpMatchArray
 
-    def __init__(out self, match: JsRegExpMatchArray):
-        self._match = match
+    def __init__(out self, match_result: JsRegExpMatchArray):
+        self._match = match_result
 
     def __len__(self) -> Int:
         return len(self._match)
@@ -447,8 +447,8 @@ struct RegExpMatchArray(ImplicitlyCopyable, Sized):
 struct RegExpExecArray(ImplicitlyCopyable, Sized):
     var _match: RegExpMatchArray
 
-    def __init__(out self, match: RegExpMatchArray):
-        self._match = match
+    def __init__(out self, match_result: RegExpMatchArray):
+        self._match = match_result
 
     def __len__(self) -> Int:
         return len(self._match)
@@ -508,7 +508,9 @@ def _parse_exact_match(value: JsValue) raises -> Optional[JsRegExpMatchArray]:
     var values = List[Optional[JsString]]()
     for index in range(values_value.array_length()):
         var item = values_value.array_at(index)
-        values.append(None if item.is_null() else Optional[JsString](item.string_value()))
+        values.append(
+            None if item.is_null() else Optional[JsString](item.string_value())
+        )
     var index_value = _optional_number(_required_object_field(value, "index"))
     var input = _optional_string(_required_object_field(value, "input"))
     var groups = _parse_groups(_required_object_field(value, "groups"))
@@ -525,12 +527,10 @@ def _parse_exact_match(value: JsValue) raises -> Optional[JsRegExpMatchArray]:
 
 
 def _parse_exact_exec(value: JsValue) raises -> Optional[JsRegExpExecArray]:
-    var match = _parse_exact_match(value)
-    return (
-        Optional[JsRegExpExecArray](JsRegExpExecArray(match.value()))
-        if match
-        else None
-    )
+    var match_result = _parse_exact_match(value)
+    return Optional[JsRegExpExecArray](
+        JsRegExpExecArray(match_result.value())
+    ) if match_result else None
 
 
 def _parse_exact_match_all(value: JsValue) raises -> JsRegExpStringIterator:
@@ -549,13 +549,17 @@ def _parse_groups(value: JsValue) raises -> Optional[JsRegExpNamedGroups]:
         entries.append(
             _JsNamedGroupEntry(
                 value.object_key(index),
-                None if item.is_null() else Optional[JsString](item.string_value()),
+                None if item.is_null() else Optional[JsString](
+                    item.string_value()
+                ),
             )
         )
     return Optional[JsRegExpNamedGroups](JsRegExpNamedGroups(entries^))
 
 
-def _parse_named_indices(value: JsValue) raises -> Optional[JsRegExpNamedIndices]:
+def _parse_named_indices(
+    value: JsValue,
+) raises -> Optional[JsRegExpNamedIndices]:
     if value.is_null():
         return None
     var entries = List[_NamedIndexEntry]()

@@ -1,0 +1,10 @@
+[
+  { "pattern": "abc", "flags": "", "input": "xxabcxx", "test": true, "search": 2 },
+  { "pattern": "a.c", "flags": "s", "input": "a\nc", "test": true, "search": 0 },
+  { "pattern": "(?<=a)b", "flags": "", "input": "zab", "test": true, "search": 2 },
+  { "pattern": "(a)\\1", "flags": "", "input": "zaaz", "test": true, "search": 1 },
+  { "pattern": "\\p{Script=Greek}+", "flags": "u", "input": "aαβz", "test": true, "search": 1 },
+  { "pattern": "[\\p{ASCII}&&\\p{Letter}]+", "flags": "v", "input": "éAb9", "test": true, "search": 1 },
+  { "pattern": ".", "flags": "u", "input": "😀", "test": true, "search": 0 },
+  { "pattern": "missing", "flags": "", "input": "present", "test": false, "search": -1 }
+]

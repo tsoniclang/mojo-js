@@ -1,11 +1,13 @@
 from std.collections import List
-from std.ffi import c_int, external_call
+from std.ffi import c_int, c_size_t, external_call
 
 from .string import JsString
 
 
-comptime _U_ZERO_ERROR = 0
-comptime _U_BUFFER_OVERFLOW_ERROR = 15
+comptime _NFC = 1
+comptime _NFD = 2
+comptime _NFKC = 3
+comptime _NFKD = 4
 
 
 def string_normalize(value: String) raises -> String:
@@ -25,67 +27,59 @@ def js_string_normalize(value: JsString, form: String) raises -> JsString:
 
 
 def _normalize(value: JsString, form: String) raises -> JsString:
-    var status = c_int(_U_ZERO_ERROR)
-    var normalizer = _normalizer(form, Pointer(to=status))
-    if not normalizer or status != _U_ZERO_ERROR:
-        raise Error("Unable to initialize Unicode normalization form " + form)
     var source = value._copy_code_units()
-    status = c_int(_U_ZERO_ERROR)
-    var required = Int(
-        external_call["unorm2_normalize_78", c_int](
-            normalizer.value(),
-            source.unsafe_ptr(),
-            c_int(len(source)),
-            OptionalPointer[UInt16, MutUntrackedOrigin](),
-            c_int(0),
-            Pointer(to=status),
-        )
-    )
-    if required < 0 or (
-        status != _U_ZERO_ERROR and status != _U_BUFFER_OVERFLOW_ERROR
+    var result = external_call[
+        "tsonic_js_unicode_normalize",
+        OptionalPointer[NoneType, MutUntrackedOrigin],
+    ](source.unsafe_ptr(), c_size_t(len(source)), _normalization_form(form))
+    if not result:
+        raise Error("Unable to allocate Unicode normalization result")
+    var result_pointer = result.value()
+    if external_call["tsonic_js_unicode_normalize_failed", c_int](
+        result_pointer
     ):
-        raise Error("Unable to measure normalized Unicode string")
-    var output = List[UInt16](capacity=required)
-    for _ in range(required):
-        output.append(0)
-    status = c_int(_U_ZERO_ERROR)
-    var written = Int(
-        external_call["unorm2_normalize_78", c_int](
-            normalizer.value(),
-            source.unsafe_ptr(),
-            c_int(len(source)),
-            output.unsafe_ptr(),
-            c_int(required),
-            Pointer(to=status),
+        var error = external_call[
+            "tsonic_js_unicode_normalize_error",
+            OptionalPointer[UInt8, ImmUntrackedOrigin],
+        ](result_pointer)
+        var message = String(
+            unsafe_from_utf8_ptr=error.value()
+        ) if error else String("Unicode normalization failed")
+        external_call["tsonic_js_unicode_normalize_result_free", NoneType](
+            result_pointer
+        )
+        raise Error(message^)
+    var length = Int(
+        external_call["tsonic_js_unicode_normalize_length", c_size_t](
+            result_pointer
         )
     )
-    if status != _U_ZERO_ERROR or written != required:
-        raise Error("Unable to normalize Unicode string")
+    var units = external_call[
+        "tsonic_js_unicode_normalize_units",
+        OptionalPointer[UInt16, ImmUntrackedOrigin],
+    ](result_pointer)
+    if length != 0 and not units:
+        external_call["tsonic_js_unicode_normalize_result_free", NoneType](
+            result_pointer
+        )
+        raise Error("Unicode normalization produced no output")
+    var output = List[UInt16](capacity=length)
+    if units:
+        for index in range(length):
+            output.append(units.value()[unsafe_offset=index])
+    external_call["tsonic_js_unicode_normalize_result_free", NoneType](
+        result_pointer
+    )
     return JsString(code_units=output^)
 
 
-def _normalizer(
-    form: String,
-    status: Pointer[c_int, MutAnyOrigin],
-) -> OptionalPointer[NoneType, ImmUntrackedOrigin]:
+def _normalization_form(form: String) raises -> c_int:
     if form == "NFC":
-        return external_call[
-            "unorm2_getNFCInstance_78",
-            OptionalPointer[NoneType, ImmUntrackedOrigin],
-        ](status)
+        return c_int(_NFC)
     if form == "NFD":
-        return external_call[
-            "unorm2_getNFDInstance_78",
-            OptionalPointer[NoneType, ImmUntrackedOrigin],
-        ](status)
+        return c_int(_NFD)
     if form == "NFKC":
-        return external_call[
-            "unorm2_getNFKCInstance_78",
-            OptionalPointer[NoneType, ImmUntrackedOrigin],
-        ](status)
+        return c_int(_NFKC)
     if form == "NFKD":
-        return external_call[
-            "unorm2_getNFKDInstance_78",
-            OptionalPointer[NoneType, ImmUntrackedOrigin],
-        ](status)
-    return OptionalPointer[NoneType, ImmUntrackedOrigin]()
+        return c_int(_NFKD)
+    raise Error("Invalid Unicode normalization form " + form)

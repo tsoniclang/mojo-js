@@ -66,6 +66,7 @@ from .value import (
     js_value_from_symbol,
     js_value_from_undefined,
     js_value_error,
+    js_value_structured_clone,
     js_value_to_string,
     js_truthy,
     js_event_key_equal,

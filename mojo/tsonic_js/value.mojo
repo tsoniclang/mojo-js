@@ -338,7 +338,9 @@ def _append_tagged_callback_argument(
         for index in range(entries.array_length()):
             var entry = entries.array_at(index)
             if entry.array_length() != 2:
-                raise Error("JavaScript callback object entry has invalid arity")
+                raise Error(
+                    "JavaScript callback object entry has invalid arity"
+                )
             keys.append(entry.array_at(0).string_value())
             children.append(
                 _append_tagged_callback_argument(builder, entry.array_at(1))
@@ -389,6 +391,59 @@ def js_value_error(message: String) raises -> JsValue:
     return builder.value(builder.append_object(keys^, children^))
 
 
+def js_value_structured_clone(value: JsValue) raises -> JsValue:
+    var reachable = List[Bool](capacity=len(value._nodes[]))
+    var remapped = List[Int](capacity=len(value._nodes[]))
+    for _ in range(len(value._nodes[])):
+        reachable.append(False)
+        remapped.append(-1)
+    var pending = List[Int]()
+    pending.append(value._index)
+    while len(pending) != 0:
+        var index = pending.pop()
+        if index < 0 or index >= len(value._nodes[]):
+            raise Error("JavaScript value graph contains an invalid reference")
+        if reachable[index]:
+            continue
+        reachable[index] = True
+        var kind = value._nodes[][index].kind
+        if kind == _ARRAY or kind == _OBJECT:
+            for child in value._nodes[][index].children:
+                pending.append(child)
+
+    var nodes = List[_JsValueNode](capacity=len(value._nodes[]))
+    for index in range(len(value._nodes[])):
+        if not reachable[index]:
+            continue
+        var kind = value._nodes[][index].kind
+        if kind == _SYMBOL:
+            raise Error("JavaScript symbols cannot be structured-cloned")
+        remapped[index] = len(nodes)
+        if kind == _BOOL:
+            nodes.append(_JsValueNode(value._nodes[][index].bool_value))
+        elif kind == _NUMBER:
+            nodes.append(_JsValueNode(value._nodes[][index].number_value))
+        elif kind == _STRING:
+            nodes.append(_JsValueNode(value._nodes[][index].string_value))
+        elif kind == _ARRAY or kind == _OBJECT:
+            var keys = List[JsString](capacity=len(value._nodes[][index].keys))
+            for key in value._nodes[][index].keys:
+                keys.append(key)
+            var children = List[Int](
+                capacity=len(value._nodes[][index].children)
+            )
+            for child in value._nodes[][index].children:
+                if child < 0 or child >= index or remapped[child] < 0:
+                    raise Error(
+                        "JavaScript value graph is not in canonical order"
+                    )
+                children.append(remapped[child])
+            nodes.append(_JsValueNode(kind, keys^, children^))
+        else:
+            nodes.append(_JsValueNode(kind))
+    return JsValue(ArcPointer(nodes^), remapped[value._index])
+
+
 def js_value_to_string(value: JsValue) -> JsString:
     if value.is_undefined():
         return JsString("undefined")
@@ -401,11 +456,13 @@ def js_value_to_string(value: JsValue) -> JsString:
     if value.is_string():
         return value._string_value()
     if value.is_symbol():
-        var description = value.symbol_value().description()
+        var description = (
+            value._nodes[][value._index].symbol_value.value().description()
+        )
         return (
-            JsString("Symbol(") + description.value() + JsString(")")
-            if description
-            else JsString("Symbol()")
+            JsString("Symbol(")
+            + description.value()
+            + JsString(")") if description else JsString("Symbol()")
         )
     if value.is_object():
         return JsString("[object Object]")
@@ -439,7 +496,9 @@ def js_event_key_equal(left: JsValue, right: JsValue) -> Bool:
     if left.is_string() and right.is_string():
         return left._string_value() == right._string_value()
     if left.is_symbol() and right.is_symbol():
-        return left._nodes[][left._index].symbol_value.value().same(
-            right._nodes[][right._index].symbol_value.value()
+        return (
+            left._nodes[][left._index]
+            .symbol_value.value()
+            .same(right._nodes[][right._index].symbol_value.value())
         )
     return False

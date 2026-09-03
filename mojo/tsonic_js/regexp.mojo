@@ -21,7 +21,7 @@ from .string_array import string_split
 from .value import JsValue
 
 
-struct JsRegExp(ImplicitlyCopyable, Sized, Writable):
+struct JsRegExp(ImplicitlyCopyable, Writable):
     var _bridge: _RegExpBridge
 
     def __init__(out self) raises:
@@ -41,11 +41,9 @@ struct JsRegExp(ImplicitlyCopyable, Sized, Writable):
 
     def exec_native(self, input: String) raises -> Optional[RegExpExecArray]:
         var result = self.exec(JsString(input))
-        return (
-            Optional[RegExpExecArray](result.value()._native())
-            if result
-            else None
-        )
+        return Optional[RegExpExecArray](
+            result.value()._native()
+        ) if result else None
 
     def test(self, input: JsString) raises -> Bool:
         return _result(self._bridge.test(input)).bool_value()
@@ -58,11 +56,9 @@ struct JsRegExp(ImplicitlyCopyable, Sized, Writable):
 
     def match_native(self, input: String) raises -> Optional[RegExpMatchArray]:
         var result = self.match(JsString(input))
-        return (
-            Optional[RegExpMatchArray](result.value()._native())
-            if result
-            else None
-        )
+        return Optional[RegExpMatchArray](
+            result.value()._native()
+        ) if result else None
 
     def match_all(self, input: JsString) raises -> JsRegExpStringIterator:
         return _parse_exact_match_all(_result(self._bridge.match_all(input)))
@@ -83,7 +79,9 @@ struct JsRegExp(ImplicitlyCopyable, Sized, Writable):
     def split(self, input: JsString) raises -> JsArray[JsString]:
         return _string_array(_result(self._bridge.split(input)))
 
-    def split(self, input: JsString, limit: Float64) raises -> JsArray[JsString]:
+    def split(
+        self, input: JsString, limit: Float64
+    ) raises -> JsArray[JsString]:
         return _string_array(_result(self._bridge.split(input, limit)))
 
     def split_native(self, input: String) raises -> JsArray[String]:
@@ -121,10 +119,18 @@ struct JsRegExp(ImplicitlyCopyable, Sized, Writable):
         ).to_native_strict()
 
     def source(self) raises -> String:
-        return _description(self._bridge, "source").string_value().to_native_strict()
+        return (
+            _description(self._bridge, "source")
+            .string_value()
+            .to_native_strict()
+        )
 
     def flags(self) raises -> String:
-        return _description(self._bridge, "flags").string_value().to_native_strict()
+        return (
+            _description(self._bridge, "flags")
+            .string_value()
+            .to_native_strict()
+        )
 
     def global_(self) raises -> Bool:
         return _description(self._bridge, "global").bool_value()
@@ -157,7 +163,9 @@ struct JsRegExp(ImplicitlyCopyable, Sized, Writable):
         self._bridge.set_last_index(value)
 
     def to_string(self) raises -> String:
-        return _description(self._bridge, "text").string_value().to_native_strict()
+        return (
+            _description(self._bridge, "text").string_value().to_native_strict()
+        )
 
 
 def regexp_construct() raises -> JsRegExp:
@@ -298,11 +306,15 @@ def _native_string_array(value: JsArray[JsString]) raises -> JsArray[String]:
     return JsArray[String](result^)
 
 
-def exec_value(expression: JsRegExp, input: String) raises -> Optional[RegExpExecArray]:
+def exec_value(
+    expression: JsRegExp, input: String
+) raises -> Optional[RegExpExecArray]:
     return expression.exec_native(input)
 
 
-def exec_value(expression: JsRegExp, input: JsString) raises -> Optional[JsRegExpExecArray]:
+def exec_value(
+    expression: JsRegExp, input: JsString
+) raises -> Optional[JsRegExpExecArray]:
     return expression.exec(input)
 
 
@@ -314,27 +326,39 @@ def test_value(expression: JsRegExp, input: JsString) raises -> Bool:
     return expression.test(input)
 
 
-def match_value(expression: JsRegExp, input: String) raises -> Optional[RegExpMatchArray]:
+def match_value(
+    expression: JsRegExp, input: String
+) raises -> Optional[RegExpMatchArray]:
     return expression.match_native(input)
 
 
-def match_value(expression: JsRegExp, input: JsString) raises -> Optional[JsRegExpMatchArray]:
+def match_value(
+    expression: JsRegExp, input: JsString
+) raises -> Optional[JsRegExpMatchArray]:
     return expression.match(input)
 
 
-def match_all_value(expression: JsRegExp, input: String) raises -> RegExpStringIterator:
+def match_all_value(
+    expression: JsRegExp, input: String
+) raises -> RegExpStringIterator:
     return expression.match_all_native(input)
 
 
-def match_all_value(expression: JsRegExp, input: JsString) raises -> JsRegExpStringIterator:
+def match_all_value(
+    expression: JsRegExp, input: JsString
+) raises -> JsRegExpStringIterator:
     return expression.match_all(input)
 
 
-def replace_value(expression: JsRegExp, input: String, replacement: String) raises -> String:
+def replace_value(
+    expression: JsRegExp, input: String, replacement: String
+) raises -> String:
     return expression.replace_native(input, replacement)
 
 
-def replace_value(expression: JsRegExp, input: JsString, replacement: JsString) raises -> JsString:
+def replace_value(
+    expression: JsRegExp, input: JsString, replacement: JsString
+) raises -> JsString:
     return expression.replace(input, replacement)
 
 
@@ -350,71 +374,113 @@ def split_value(expression: JsRegExp, input: String) raises -> JsArray[String]:
     return expression.split_native(input)
 
 
-def split_value(expression: JsRegExp, input: String, limit: Float64) raises -> JsArray[String]:
+def split_value(
+    expression: JsRegExp, input: String, limit: Float64
+) raises -> JsArray[String]:
     return expression.split_native(input, limit)
 
 
-def split_value(expression: JsRegExp, input: JsString) raises -> JsArray[JsString]:
+def split_value(
+    expression: JsRegExp, input: JsString
+) raises -> JsArray[JsString]:
     return expression.split(input)
 
 
-def split_value(expression: JsRegExp, input: JsString, limit: Float64) raises -> JsArray[JsString]:
+def split_value(
+    expression: JsRegExp, input: JsString, limit: Float64
+) raises -> JsArray[JsString]:
     return expression.split(input, limit)
 
 
-def string_match_pattern(value: String, pattern: String) raises -> Optional[RegExpMatchArray]:
+def string_match_pattern(
+    value: String, pattern: String
+) raises -> Optional[RegExpMatchArray]:
     return JsRegExp(JsString(pattern)).match_native(value)
 
 
-def string_match_pattern(value: String, pattern: JsRegExp) raises -> Optional[RegExpMatchArray]:
+def string_match_pattern(
+    value: String, pattern: JsRegExp
+) raises -> Optional[RegExpMatchArray]:
     return pattern.match_native(value)
 
 
-def js_string_match_pattern(value: JsString, pattern: JsString) raises -> Optional[JsRegExpMatchArray]:
+def js_string_match_pattern(
+    value: JsString, pattern: JsString
+) raises -> Optional[JsRegExpMatchArray]:
     return JsRegExp(pattern).match(value)
 
 
-def js_string_match_pattern(value: JsString, pattern: JsRegExp) raises -> Optional[JsRegExpMatchArray]:
+def js_string_match_pattern(
+    value: JsString, pattern: JsRegExp
+) raises -> Optional[JsRegExpMatchArray]:
     return pattern.match(value)
 
 
-def string_match_all_pattern(value: String, pattern: JsRegExp) raises -> RegExpStringIterator:
+def string_match_all_pattern(
+    value: String, pattern: JsRegExp
+) raises -> RegExpStringIterator:
     return pattern.match_all_native(value)
 
 
-def js_string_match_all_pattern(value: JsString, pattern: JsRegExp) raises -> JsRegExpStringIterator:
+def js_string_match_all_pattern(
+    value: JsString, pattern: JsRegExp
+) raises -> JsRegExpStringIterator:
     return pattern.match_all(value)
 
 
-def string_replace_pattern(value: String, search: String, replacement: String) raises -> String:
-    return JsString(value).replace(JsString(search), JsString(replacement)).to_native_strict()
+def string_replace_pattern(
+    value: String, search: String, replacement: String
+) raises -> String:
+    return (
+        JsString(value)
+        .replace(JsString(search), JsString(replacement))
+        .to_native_strict()
+    )
 
 
-def string_replace_pattern(value: String, search: JsRegExp, replacement: String) raises -> String:
+def string_replace_pattern(
+    value: String, search: JsRegExp, replacement: String
+) raises -> String:
     return search.replace_native(value, replacement)
 
 
-def js_string_replace_pattern(value: JsString, search: JsString, replacement: JsString) raises -> JsString:
+def js_string_replace_pattern(
+    value: JsString, search: JsString, replacement: JsString
+) raises -> JsString:
     return value.replace(search, replacement)
 
 
-def js_string_replace_pattern(value: JsString, search: JsRegExp, replacement: JsString) raises -> JsString:
+def js_string_replace_pattern(
+    value: JsString, search: JsRegExp, replacement: JsString
+) raises -> JsString:
     return search.replace(value, replacement)
 
 
-def string_replace_all_pattern(value: String, search: String, replacement: String) raises -> String:
-    return JsString(value).replace_all(JsString(search), JsString(replacement)).to_native_strict()
+def string_replace_all_pattern(
+    value: String, search: String, replacement: String
+) raises -> String:
+    return (
+        JsString(value)
+        .replace_all(JsString(search), JsString(replacement))
+        .to_native_strict()
+    )
 
 
-def string_replace_all_pattern(value: String, search: JsRegExp, replacement: String) raises -> String:
+def string_replace_all_pattern(
+    value: String, search: JsRegExp, replacement: String
+) raises -> String:
     return search.replace_all_native(value, replacement)
 
 
-def js_string_replace_all_pattern(value: JsString, search: JsString, replacement: JsString) raises -> JsString:
+def js_string_replace_all_pattern(
+    value: JsString, search: JsString, replacement: JsString
+) raises -> JsString:
     return value.replace_all(search, replacement)
 
 
-def js_string_replace_all_pattern(value: JsString, search: JsRegExp, replacement: JsString) raises -> JsString:
+def js_string_replace_all_pattern(
+    value: JsString, search: JsRegExp, replacement: JsString
+) raises -> JsString:
     return search.replace_all(value, replacement)
 
 
@@ -426,41 +492,65 @@ def string_search_pattern(value: String, pattern: JsRegExp) raises -> Float64:
     return pattern.search_native(value)
 
 
-def js_string_search_pattern(value: JsString, pattern: JsString) raises -> Float64:
+def js_string_search_pattern(
+    value: JsString, pattern: JsString
+) raises -> Float64:
     return JsRegExp(pattern).search(value)
 
 
-def js_string_search_pattern(value: JsString, pattern: JsRegExp) raises -> Float64:
+def js_string_search_pattern(
+    value: JsString, pattern: JsRegExp
+) raises -> Float64:
     return pattern.search(value)
 
 
-def string_split_pattern(value: String, separator: String) raises -> JsArray[String]:
-    return _native_string_array(string_split(JsString(value), JsString(separator)))
+def string_split_pattern(
+    value: String, separator: String
+) raises -> JsArray[String]:
+    return _native_string_array(
+        string_split(JsString(value), JsString(separator))
+    )
 
 
-def string_split_pattern(value: String, separator: String, limit: Float64) raises -> JsArray[String]:
-    return _native_string_array(string_split(JsString(value), JsString(separator), limit))
+def string_split_pattern(
+    value: String, separator: String, limit: Float64
+) raises -> JsArray[String]:
+    return _native_string_array(
+        string_split(JsString(value), JsString(separator), limit)
+    )
 
 
-def string_split_pattern(value: String, separator: JsRegExp) raises -> JsArray[String]:
+def string_split_pattern(
+    value: String, separator: JsRegExp
+) raises -> JsArray[String]:
     return separator.split_native(value)
 
 
-def string_split_pattern(value: String, separator: JsRegExp, limit: Float64) raises -> JsArray[String]:
+def string_split_pattern(
+    value: String, separator: JsRegExp, limit: Float64
+) raises -> JsArray[String]:
     return separator.split_native(value, limit)
 
 
-def js_string_split_pattern(value: JsString, separator: JsString) -> JsArray[JsString]:
+def js_string_split_pattern(
+    value: JsString, separator: JsString
+) -> JsArray[JsString]:
     return string_split(value, separator)
 
 
-def js_string_split_pattern(value: JsString, separator: JsString, limit: Float64) -> JsArray[JsString]:
+def js_string_split_pattern(
+    value: JsString, separator: JsString, limit: Float64
+) -> JsArray[JsString]:
     return string_split(value, separator, limit)
 
 
-def js_string_split_pattern(value: JsString, separator: JsRegExp) raises -> JsArray[JsString]:
+def js_string_split_pattern(
+    value: JsString, separator: JsRegExp
+) raises -> JsArray[JsString]:
     return separator.split(value)
 
 
-def js_string_split_pattern(value: JsString, separator: JsRegExp, limit: Float64) raises -> JsArray[JsString]:
+def js_string_split_pattern(
+    value: JsString, separator: JsRegExp, limit: Float64
+) raises -> JsArray[JsString]:
     return separator.split(value, limit)
