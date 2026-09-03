@@ -89,6 +89,45 @@ def adapt_truthy_string_callback[
 
 
 @fieldwise_init
+struct _NativeStringTruthinessAdapter[
+    Arguments: Movable & Deinitable,
+    CallbackError: AnyType,
+]:
+    var callable: RaisingCallable[Self.Arguments, String, Self.CallbackError]
+
+    @staticmethod
+    def invoke(
+        context: ErasedCallableContext,
+        var arguments: Self.Arguments,
+    ) raises Self.CallbackError -> Bool:
+        var pointer = context.unsafe_bitcast[
+            _NativeStringTruthinessAdapter[Self.Arguments, Self.CallbackError]
+        ]()
+        return pointer[].callable.call(arguments^).byte_length() != 0
+
+    @staticmethod
+    def destroy(context: ErasedCallableContext):
+        destroy_callable_environment[
+            _NativeStringTruthinessAdapter[Self.Arguments, Self.CallbackError]
+        ](context)
+
+
+def adapt_truthy_native_string_callback[
+    Arguments: Movable & Deinitable,
+    CallbackError: AnyType,
+](
+    value: RaisingCallable[Arguments, String, CallbackError],
+) -> RaisingCallable[Arguments, Bool, CallbackError]:
+    comptime Adapter = _NativeStringTruthinessAdapter[Arguments, CallbackError]
+    var environment = allocate_callable_environment(
+        Adapter(value), Adapter.destroy
+    )
+    return RaisingCallable[Arguments, Bool, CallbackError](
+        environment, Adapter.invoke
+    )
+
+
+@fieldwise_init
 struct _DynamicTruthinessAdapter[
     Arguments: Movable & Deinitable,
     CallbackError: AnyType,

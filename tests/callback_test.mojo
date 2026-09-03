@@ -8,6 +8,7 @@ from tsonic_js import (
     adapt_truthy_always_false_callback,
     adapt_truthy_always_true_callback,
     adapt_truthy_dynamic_callback,
+    adapt_truthy_native_string_callback,
     adapt_truthy_number_callback,
     adapt_truthy_string_callback,
     array_filter_value,
@@ -94,6 +95,14 @@ struct CallbackEnvironment:
     ) raises -> JsString:
         _ = context
         return JsString("") if arguments[0] == 0 else JsString("present")
+
+    @staticmethod
+    def native_string_truth(
+        context: ErasedCallableContext,
+        var arguments: Tuple[Float64],
+    ) raises -> String:
+        _ = context
+        return "" if arguments[0] == 0 else "present"
 
     @staticmethod
     def dynamic_truth(
@@ -210,6 +219,14 @@ def main() raises:
     )
     assert_equal(string_truth.call((0.0,)), False)
     assert_equal(string_truth.call((2.0,)), True)
+
+    var native_string_truth = adapt_truthy_native_string_callback(
+        RaisingCallable[Tuple[Float64], String](
+            environment(0, total), CallbackEnvironment.native_string_truth
+        )
+    )
+    assert_equal(native_string_truth.call((0.0,)), False)
+    assert_equal(native_string_truth.call((2.0,)), True)
 
     var dynamic_truth = adapt_truthy_dynamic_callback(
         RaisingCallable[Tuple[Float64], JsValue](
