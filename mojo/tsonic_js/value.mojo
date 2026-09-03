@@ -4,6 +4,7 @@ from std.memory import ArcPointer
 from .boolean import boolean_to_string
 from .number import number_to_string
 from .string import JsString
+from .symbol import JsSymbol
 
 
 comptime _UNDEFINED = 0
@@ -13,6 +14,7 @@ comptime _NUMBER = 3
 comptime _STRING = 4
 comptime _ARRAY = 5
 comptime _OBJECT = 6
+comptime _SYMBOL = 7
 
 
 struct _JsValueNode(Movable):
@@ -20,6 +22,7 @@ struct _JsValueNode(Movable):
     var bool_value: Bool
     var number_value: Float64
     var string_value: JsString
+    var symbol_value: Optional[JsSymbol]
     var keys: List[JsString]
     var children: List[Int]
 
@@ -28,6 +31,7 @@ struct _JsValueNode(Movable):
         self.bool_value = False
         self.number_value = 0
         self.string_value = JsString()
+        self.symbol_value = None
         self.keys = List[JsString]()
         self.children = List[Int]()
 
@@ -36,6 +40,7 @@ struct _JsValueNode(Movable):
         self.bool_value = value
         self.number_value = 0
         self.string_value = JsString()
+        self.symbol_value = None
         self.keys = List[JsString]()
         self.children = List[Int]()
 
@@ -44,6 +49,7 @@ struct _JsValueNode(Movable):
         self.bool_value = False
         self.number_value = value
         self.string_value = JsString()
+        self.symbol_value = None
         self.keys = List[JsString]()
         self.children = List[Int]()
 
@@ -52,6 +58,16 @@ struct _JsValueNode(Movable):
         self.bool_value = False
         self.number_value = 0
         self.string_value = value
+        self.symbol_value = None
+        self.keys = List[JsString]()
+        self.children = List[Int]()
+
+    def __init__(out self, value: JsSymbol):
+        self.kind = _SYMBOL
+        self.bool_value = False
+        self.number_value = 0
+        self.string_value = JsString()
+        self.symbol_value = Optional[JsSymbol](value)
         self.keys = List[JsString]()
         self.children = List[Int]()
 
@@ -65,6 +81,7 @@ struct _JsValueNode(Movable):
         self.bool_value = False
         self.number_value = 0
         self.string_value = JsString()
+        self.symbol_value = None
         self.keys = keys^
         self.children = children^
 
@@ -92,6 +109,12 @@ struct JsValue(ImplicitlyCopyable, Writable):
         self._index = 0
 
     def __init__(out self, value: JsString):
+        var nodes = List[_JsValueNode]()
+        nodes.append(_JsValueNode(value))
+        self._nodes = ArcPointer(nodes^)
+        self._index = 0
+
+    def __init__(out self, value: JsSymbol):
         var nodes = List[_JsValueNode]()
         nodes.append(_JsValueNode(value))
         self._nodes = ArcPointer(nodes^)
@@ -133,6 +156,9 @@ struct JsValue(ImplicitlyCopyable, Writable):
     def is_string(self) -> Bool:
         return self._kind() == _STRING
 
+    def is_symbol(self) -> Bool:
+        return self._kind() == _SYMBOL
+
     def is_array(self) -> Bool:
         return self._kind() == _ARRAY
 
@@ -153,6 +179,11 @@ struct JsValue(ImplicitlyCopyable, Writable):
         if not self.is_string():
             raise Error("JavaScript value is not a string")
         return self._string_value()
+
+    def symbol_value(self) raises -> JsSymbol:
+        if not self.is_symbol():
+            raise Error("JavaScript value is not a symbol")
+        return self._nodes[][self._index].symbol_value.value()
 
     def array_length(self) raises -> Int:
         if not self.is_array():
@@ -250,6 +281,9 @@ struct _JsValueBuilder(ImplicitlyCopyable):
     def append_string(mut self, value: JsString) raises -> Int:
         return self._append(_JsValueNode(value))
 
+    def append_symbol(mut self, value: JsSymbol) raises -> Int:
+        return self._append(_JsValueNode(value))
+
     def append_array(mut self, var children: List[Int]) raises -> Int:
         return self._append(_JsValueNode(_ARRAY, List[JsString](), children^))
 
@@ -332,12 +366,27 @@ def js_value_from_string(value: JsString) -> JsValue:
     return JsValue(value)
 
 
+def js_value_from_symbol(value: JsSymbol) -> JsValue:
+    return JsValue(value)
+
+
 def js_value_from_null() -> JsValue:
     return JsValue.null()
 
 
 def js_value_from_undefined() -> JsValue:
     return JsValue.undefined()
+
+
+def js_value_error(message: String) raises -> JsValue:
+    var builder = _JsValueBuilder()
+    var keys = List[JsString]()
+    var children = List[Int]()
+    keys.append(JsString("name"))
+    children.append(builder.append_string(JsString("Error")))
+    keys.append(JsString("message"))
+    children.append(builder.append_string(JsString(message)))
+    return builder.value(builder.append_object(keys^, children^))
 
 
 def js_value_to_string(value: JsValue) -> JsString:
@@ -351,6 +400,13 @@ def js_value_to_string(value: JsValue) -> JsString:
         return number_to_string(value._number_value())
     if value.is_string():
         return value._string_value()
+    if value.is_symbol():
+        var description = value.symbol_value().description()
+        return (
+            JsString("Symbol(") + description.value() + JsString(")")
+            if description
+            else JsString("Symbol()")
+        )
     if value.is_object():
         return JsString("[object Object]")
     var result = JsString()
@@ -377,3 +433,13 @@ def js_truthy(value: JsValue) -> Bool:
     if value.is_string():
         return len(value._string_value()) != 0
     return True
+
+
+def js_event_key_equal(left: JsValue, right: JsValue) -> Bool:
+    if left.is_string() and right.is_string():
+        return left._string_value() == right._string_value()
+    if left.is_symbol() and right.is_symbol():
+        return left._nodes[][left._index].symbol_value.value().same(
+            right._nodes[][right._index].symbol_value.value()
+        )
+    return False

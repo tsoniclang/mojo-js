@@ -54,6 +54,7 @@ from .regexp_results import (
 )
 from .set import JsSet
 from .string import JsString, string_from_char_code, string_from_code_point
+from .symbol import JsSymbol, symbol_new
 from .string_array import string_split
 from .unicode_normalization import js_string_normalize, string_normalize
 from .value import (
@@ -62,7 +63,10 @@ from .value import (
     js_value_from_null,
     js_value_from_number,
     js_value_from_string,
+    js_value_from_symbol,
     js_value_from_undefined,
+    js_value_error,
     js_value_to_string,
     js_truthy,
+    js_event_key_equal,
 )
