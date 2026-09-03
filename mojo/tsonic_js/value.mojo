@@ -195,6 +195,18 @@ struct JsValue(ImplicitlyCopyable, Writable):
                 return True
         return False
 
+    def object_get(self, key: JsString) raises -> Optional[Self]:
+        var length = self.object_length()
+        for index in range(length):
+            if self._nodes[][self._index].keys[index] == key:
+                return Optional[Self](
+                    Self(
+                        self._nodes,
+                        self._nodes[][self._index].children[index],
+                    )
+                )
+        return None
+
     def same_identity(self, other: Self) -> Bool:
         return self._nodes is other._nodes and self._index == other._index
 
@@ -257,6 +269,55 @@ struct _JsValueBuilder(ImplicitlyCopyable):
         var index = len(self._nodes[])
         self._nodes[].append(node^)
         return index
+
+
+def _js_value_from_tagged_callback_argument(value: JsValue) raises -> JsValue:
+    var builder = _JsValueBuilder()
+    var root = _append_tagged_callback_argument(builder, value)
+    return builder.value(root)
+
+
+def _append_tagged_callback_argument(
+    mut builder: _JsValueBuilder, value: JsValue
+) raises -> Int:
+    var kind = _required_tagged_field(value, "kind").string_value()
+    if kind == JsString("undefined"):
+        return builder.append_undefined()
+    if kind == JsString("null"):
+        return builder.append_null()
+    if kind == JsString("boolean"):
+        return builder.append_bool(
+            _required_tagged_field(value, "value").bool_value()
+        )
+    if kind == JsString("number"):
+        return builder.append_number(
+            _required_tagged_field(value, "value").number_value()
+        )
+    if kind == JsString("string"):
+        return builder.append_string(
+            _required_tagged_field(value, "value").string_value()
+        )
+    if kind == JsString("object"):
+        var entries = _required_tagged_field(value, "entries")
+        var keys = List[JsString]()
+        var children = List[Int]()
+        for index in range(entries.array_length()):
+            var entry = entries.array_at(index)
+            if entry.array_length() != 2:
+                raise Error("JavaScript callback object entry has invalid arity")
+            keys.append(entry.array_at(0).string_value())
+            children.append(
+                _append_tagged_callback_argument(builder, entry.array_at(1))
+            )
+        return builder.append_object(keys^, children^)
+    raise Error("JavaScript callback argument has an unsupported tagged kind")
+
+
+def _required_tagged_field(value: JsValue, name: String) raises -> JsValue:
+    var field = value.object_get(JsString(name))
+    if not field:
+        raise Error("JavaScript callback argument is missing field " + name)
+    return field.value()
 
 
 def js_value_from_bool(value: Bool) -> JsValue:

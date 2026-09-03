@@ -34,9 +34,28 @@ from .object import (
     object_keys,
     object_values,
 )
+from .regexp import *
+from .regexp_callbacks import RegExpNativeResult
+from .regexp_callbacks_exact import *
+from .regexp_callbacks_native import *
+from .regexp_results import (
+    JsRegExpExecArray,
+    JsRegExpIndicesArray,
+    JsRegExpMatchArray,
+    JsRegExpNamedGroups,
+    JsRegExpNamedIndices,
+    JsRegExpStringIterator,
+    RegExpExecArray,
+    RegExpIndicesArray,
+    RegExpMatchArray,
+    RegExpNamedGroups,
+    RegExpNamedIndices,
+    RegExpStringIterator,
+)
 from .set import JsSet
 from .string import JsString, string_from_char_code, string_from_code_point
 from .string_array import string_split
+from .unicode_normalization import js_string_normalize, string_normalize
 from .value import (
     JsValue,
     js_value_from_bool,
