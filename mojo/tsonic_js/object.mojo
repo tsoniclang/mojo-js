@@ -36,7 +36,7 @@ def object_is(left: JsValue, right: JsValue) -> Bool:
             .symbol_value.value()
             .same(right._nodes[][right._index].symbol_value.value())
         )
-    if left.is_array() or left.is_object():
+    if left.is_array() or left.is_object() or left.is_json_projection():
         return right._kind() == left._kind() and left.same_identity(right)
     return False
 

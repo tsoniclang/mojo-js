@@ -343,11 +343,18 @@ struct _JsonWriter:
         mut self, key: JsString, value: JsValue, depth: Int
     ) raises -> Bool:
         var selected = value
+        var projected = selected.is_json_projection()
+        if projected:
+            self._enter(selected)
+            selected = selected._project_json(key.to_native_strict())
         if self._replacer:
             selected = self._replacer.value().call(
-                (key.to_native_strict(), value)
+                (key.to_native_strict(), selected)
             )
-        return self._write_value(selected, depth)
+        var written = self._write_value(selected, depth)
+        if projected:
+            _ = self._active.pop()
+        return written
 
     def _write_value(mut self, value: JsValue, depth: Int) raises -> Bool:
         if depth > _MAX_JSON_DEPTH:
@@ -377,6 +384,10 @@ struct _JsonWriter:
         if value.is_string():
             self._write_string(value._string_value())
             return True
+        if value.is_json_projection():
+            raise Error(
+                "A selected toJSON projection returned another unresolved JSON projection"
+            )
         if not value.is_array() and not value.is_object():
             return False
         self._enter(value)
@@ -401,11 +412,18 @@ struct _JsonWriter:
             for index in _object_key_order(value):
                 var child = value.object_value(index)
                 var key = value.object_key(index)
+                var selected = child
+                var projected = selected.is_json_projection()
+                if projected:
+                    self._enter(selected)
+                    selected = selected._project_json(key.to_native_strict())
                 if self._replacer:
-                    child = self._replacer.value().call(
-                        (key.to_native_strict(), child)
+                    selected = self._replacer.value().call(
+                        (key.to_native_strict(), selected)
                     )
-                if child.is_undefined() or child.is_symbol():
+                if selected.is_undefined() or selected.is_symbol():
+                    if projected:
+                        _ = self._active.pop()
                     continue
                 if not first:
                     self._append_unit(44)
@@ -415,7 +433,9 @@ struct _JsonWriter:
                 self._append_unit(58)
                 if len(self._indent) != 0:
                     self._append_unit(32)
-                _ = self._write_value(child, depth + 1)
+                _ = self._write_value(selected, depth + 1)
+                if projected:
+                    _ = self._active.pop()
             if not first:
                 self._write_line_indent(depth)
             self._append_unit(125)

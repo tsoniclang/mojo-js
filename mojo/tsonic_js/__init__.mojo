@@ -70,6 +70,7 @@ from .value import (
     js_value_from_bool,
     js_value_from_null,
     js_value_from_number,
+    js_value_from_json_projection,
     js_value_from_string,
     js_value_from_symbol,
     js_value_from_undefined,

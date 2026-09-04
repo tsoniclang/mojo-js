@@ -7,6 +7,7 @@ from tsonic_js import (
     js_truthy,
     js_value_from_array_values,
     js_value_from_object_entries,
+    js_value_from_json_projection,
     js_value_structured_clone,
     js_value_to_string,
     json_parse,
@@ -46,6 +47,8 @@ struct JsonReplacerEnvironment:
         environment[].calls.write(environment[].calls.read() + 1)
         if arguments[0] == "drop":
             return JsValue.undefined()
+        if arguments[0] == "projected":
+            return arguments[1].object_get(JsString("key")).value()
         return arguments[1]
 
     @staticmethod
@@ -53,11 +56,44 @@ struct JsonReplacerEnvironment:
         destroy_callable_environment[JsonReplacerEnvironment](context)
 
 
+@fieldwise_init
+struct JsonProjectionEnvironment:
+    var calls: Location[Int]
+
+    @staticmethod
+    def project(
+        context: ErasedCallableContext,
+        var arguments: Tuple[String],
+    ) raises -> JsValue:
+        var environment = context.unsafe_bitcast[JsonProjectionEnvironment]()
+        environment[].calls.write(environment[].calls.read() + 1)
+        var keys = List[JsString]()
+        keys.append(JsString("key"))
+        var values = List[JsValue]()
+        values.append(JsValue(JsString(arguments[0])))
+        return js_value_from_object_entries(keys^, values^)
+
+    @staticmethod
+    def destroy(context: ErasedCallableContext):
+        destroy_callable_environment[JsonProjectionEnvironment](context)
+
+
 def json_replacer_environment(
     calls: Location[Int],
 ) -> ArcPointer[ErasedCallableEnvironment]:
     return allocate_callable_environment(
         JsonReplacerEnvironment(calls), JsonReplacerEnvironment.destroy
+    )
+
+
+def json_projection(calls: Location[Int]) -> JsValue:
+    var environment = allocate_callable_environment(
+        JsonProjectionEnvironment(calls), JsonProjectionEnvironment.destroy
+    )
+    return js_value_from_json_projection(
+        RaisingCallable[Tuple[String], JsValue](
+            environment, JsonProjectionEnvironment.project
+        )
     )
 
 
@@ -137,6 +173,57 @@ def main() raises:
     )
     assert_equal(pretty.value().to_native_strict(), '{\n  "keep": 1\n}')
     assert_equal(replacer_calls.read(), 3)
+
+    var projection_calls = Location[Int](0)
+    var projection = json_projection(projection_calls)
+    assert_true(object_is(projection, projection))
+    assert_false(object_is(projection, json_projection(Location[Int](0))))
+    assert_equal(
+        json_stringify(projection).value().to_native_strict(), '{"key":""}'
+    )
+    assert_equal(projection_calls.read(), 1)
+
+    var projection_keys = List[JsString]()
+    projection_keys.append(JsString("nested"))
+    var projection_values = List[JsValue]()
+    projection_values.append(projection)
+    assert_equal(
+        json_stringify(
+            js_value_from_object_entries(projection_keys^, projection_values^)
+        ).value().to_native_strict(),
+        '{"nested":{"key":"nested"}}',
+    )
+    assert_equal(projection_calls.read(), 2)
+
+    var projected_keys = List[JsString]()
+    projected_keys.append(JsString("projected"))
+    var projected_values = List[JsValue]()
+    projected_values.append(projection)
+    var projected_replacer_calls = Location[Int](0)
+    assert_equal(
+        json_stringify_with_replacer_and_space_number(
+            js_value_from_object_entries(
+                projected_keys^, projected_values^
+            ),
+            RaisingCallable[Tuple[String, JsValue], JsValue](
+                json_replacer_environment(projected_replacer_calls),
+                JsonReplacerEnvironment.replace,
+            ),
+            0,
+        ).value().to_native_strict(),
+        '{"projected":"projected"}',
+    )
+    assert_equal(projected_replacer_calls.read(), 2)
+    assert_equal(projection_calls.read(), 3)
+
+    try:
+        _ = js_value_structured_clone(projection)
+        raise Error("JSON projection unexpectedly structured-cloned")
+    except error:
+        assert_equal(
+            String(error),
+            "JavaScript JSON projections cannot be structured-cloned",
+        )
 
     var shared_object = json_parse(JsString('{"shared":true}'))
     var shared_keys = List[JsString]()

@@ -1,5 +1,6 @@
 from std.collections import List
 from std.memory import ArcPointer
+from tsonic_runtime import RaisingCallable
 
 from .boolean import boolean_to_string
 from .number import number_to_string
@@ -15,6 +16,12 @@ comptime _STRING = 4
 comptime _ARRAY = 5
 comptime _OBJECT = 6
 comptime _SYMBOL = 7
+comptime _JSON_PROJECTION = 8
+
+
+@fieldwise_init
+struct _JsonProjectionState:
+    var project: RaisingCallable[Tuple[String], JsValue, Error]
 
 
 struct _JsValueNode(Movable):
@@ -24,6 +31,7 @@ struct _JsValueNode(Movable):
     var string_value: JsString
     var symbol_value: Optional[JsSymbol]
     var identity: Optional[ArcPointer[Bool]]
+    var json_projection: Optional[ArcPointer[_JsonProjectionState]]
     var keys: List[JsString]
     var children: List[Int]
 
@@ -34,6 +42,7 @@ struct _JsValueNode(Movable):
         self.string_value = JsString()
         self.symbol_value = None
         self.identity = None
+        self.json_projection = None
         self.keys = List[JsString]()
         self.children = List[Int]()
 
@@ -44,6 +53,7 @@ struct _JsValueNode(Movable):
         self.string_value = JsString()
         self.symbol_value = None
         self.identity = None
+        self.json_projection = None
         self.keys = List[JsString]()
         self.children = List[Int]()
 
@@ -54,6 +64,7 @@ struct _JsValueNode(Movable):
         self.string_value = JsString()
         self.symbol_value = None
         self.identity = None
+        self.json_projection = None
         self.keys = List[JsString]()
         self.children = List[Int]()
 
@@ -64,6 +75,7 @@ struct _JsValueNode(Movable):
         self.string_value = value
         self.symbol_value = None
         self.identity = None
+        self.json_projection = None
         self.keys = List[JsString]()
         self.children = List[Int]()
 
@@ -74,6 +86,7 @@ struct _JsValueNode(Movable):
         self.string_value = JsString()
         self.symbol_value = Optional[JsSymbol](value)
         self.identity = None
+        self.json_projection = None
         self.keys = List[JsString]()
         self.children = List[Int]()
 
@@ -89,6 +102,7 @@ struct _JsValueNode(Movable):
         self.string_value = JsString()
         self.symbol_value = None
         self.identity = Optional[ArcPointer[Bool]](ArcPointer(False))
+        self.json_projection = None
         self.keys = keys^
         self.children = children^
 
@@ -105,8 +119,25 @@ struct _JsValueNode(Movable):
         self.string_value = JsString()
         self.symbol_value = None
         self.identity = Optional[ArcPointer[Bool]](identity)
+        self.json_projection = None
         self.keys = keys^
         self.children = children^
+
+    def __init__(
+        out self,
+        projection: ArcPointer[_JsonProjectionState],
+    ):
+        self.kind = _JSON_PROJECTION
+        self.bool_value = False
+        self.number_value = 0
+        self.string_value = JsString()
+        self.symbol_value = None
+        self.identity = None
+        self.json_projection = Optional[ArcPointer[_JsonProjectionState]](
+            projection
+        )
+        self.keys = List[JsString]()
+        self.children = List[Int]()
 
 
 struct JsValue(ImplicitlyCopyable, Writable):
@@ -140,6 +171,15 @@ struct JsValue(ImplicitlyCopyable, Writable):
     def __init__(out self, value: JsSymbol):
         var nodes = List[_JsValueNode]()
         nodes.append(_JsValueNode(value))
+        self._nodes = ArcPointer(nodes^)
+        self._index = 0
+
+    def __init__(
+        out self,
+        projection: ArcPointer[_JsonProjectionState],
+    ):
+        var nodes = List[_JsValueNode]()
+        nodes.append(_JsValueNode(projection))
         self._nodes = ArcPointer(nodes^)
         self._index = 0
 
@@ -187,6 +227,9 @@ struct JsValue(ImplicitlyCopyable, Writable):
 
     def is_object(self) -> Bool:
         return self._kind() == _OBJECT
+
+    def is_json_projection(self) -> Bool:
+        return self._kind() == _JSON_PROJECTION
 
     def bool_value(self) raises -> Bool:
         if not self.is_bool():
@@ -268,6 +311,15 @@ struct JsValue(ImplicitlyCopyable, Writable):
             var left = self._nodes[][self._index].identity
             var right = other._nodes[][other._index].identity
             return Bool(left) and Bool(right) and left.value() is right.value()
+        if self.is_json_projection():
+            var left = self._nodes[][self._index].json_projection
+            var right = other._nodes[][other._index].json_projection
+            return (
+                other.is_json_projection()
+                and Bool(left)
+                and Bool(right)
+                and left.value() is right.value()
+            )
         return self._nodes is other._nodes and self._index == other._index
 
     def _aggregate_identity(self) raises -> ArcPointer[Bool]:
@@ -275,6 +327,15 @@ struct JsValue(ImplicitlyCopyable, Writable):
         if not identity:
             raise Error("JavaScript value is not an aggregate")
         return identity.value()
+
+    def _json_projection(self) raises -> ArcPointer[_JsonProjectionState]:
+        var projection = self._nodes[][self._index].json_projection
+        if not projection:
+            raise Error("JavaScript value is not a JSON projection")
+        return projection.value()
+
+    def _project_json(self, key: String) raises -> Self:
+        return self._json_projection()[].project.call((key,))
 
     def _kind(self) -> Int:
         return self._nodes[][self._index].kind
@@ -318,6 +379,11 @@ struct _JsValueBuilder(ImplicitlyCopyable):
 
     def append_symbol(mut self, value: JsSymbol) raises -> Int:
         return self._append(_JsValueNode(value))
+
+    def append_json_projection(
+        mut self, projection: ArcPointer[_JsonProjectionState]
+    ) raises -> Int:
+        return self._append(_JsValueNode(projection))
 
     def append_array(mut self, var children: List[Int]) raises -> Int:
         return self._append(_JsValueNode(_ARRAY, List[JsString](), children^))
@@ -432,6 +498,12 @@ def js_value_from_undefined() -> JsValue:
     return JsValue.undefined()
 
 
+def js_value_from_json_projection(
+    project: RaisingCallable[Tuple[String], JsValue, Error]
+) -> JsValue:
+    return JsValue(ArcPointer(_JsonProjectionState(project)))
+
+
 def js_value_from_array_values(var values: List[JsValue]) raises -> JsValue:
     var builder = _JsValueBuilder()
     var children = List[Int](capacity=len(values))
@@ -495,6 +567,8 @@ def _append_js_value_graph(
         return builder.append_string(value._string_value())
     if value.is_symbol():
         return builder.append_symbol(value.symbol_value())
+    if value.is_json_projection():
+        return builder.append_json_projection(value._json_projection())
     for ancestor in active:
         if ancestor.same_identity(value):
             raise Error("cyclic JavaScript value cannot be materialized")
@@ -586,6 +660,8 @@ def js_value_structured_clone(value: JsValue) raises -> JsValue:
         var kind = value._nodes[][index].kind
         if kind == _SYMBOL:
             raise Error("JavaScript symbols cannot be structured-cloned")
+        if kind == _JSON_PROJECTION:
+            raise Error("JavaScript JSON projections cannot be structured-cloned")
         remapped[index] = len(nodes)
         if kind == _BOOL:
             nodes.append(_JsValueNode(value._nodes[][index].bool_value))
@@ -632,6 +708,8 @@ def js_value_to_string(value: JsValue) -> JsString:
             + description.value()
             + JsString(")") if description else JsString("Symbol()")
         )
+    if value.is_json_projection():
+        return JsString("[JSON projection]")
     if value.is_object():
         return JsString("[object Object]")
     var result = JsString()
