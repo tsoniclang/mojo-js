@@ -20,6 +20,19 @@ def array_from(values: JsString) -> JsArray[JsString]:
     return JsArray[JsString](values.iter_values())
 
 
+def array_from(values: String) -> JsArray[String]:
+    var result = List[String]()
+    for codepoint in values.codepoints():
+        result.append(String(codepoint))
+    return JsArray[String](result^)
+
+
+def array_join_native[
+    T: Copyable & Deinitable & Writable
+](values: JsArray[T], separator: String = ",") -> String:
+    return values.join(JsString(separator)).to_native_lossy()
+
+
 def array_from_map_value[
     T: Copyable & Deinitable,
     U: Copyable & Deinitable,

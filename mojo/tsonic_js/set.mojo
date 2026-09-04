@@ -26,14 +26,14 @@ struct JsSet[T: AnyType](ImplicitlyCopyable, Sized):
         return self._find(value) >= 0
 
     def add(
-        mut self, var value: Self.T
+        self, var value: Self.T
     ) -> Self where conforms_to(Self.T, Copyable & Deinitable & Equatable):
         if not self.has(value):
             self._values[].append(value^)
         return self
 
     def delete(
-        mut self, value: Self.T
+        self, value: Self.T
     ) -> Bool where conforms_to(Self.T, Copyable & Deinitable & Equatable):
         var index = self._find(value)
         if index < 0:
@@ -45,7 +45,7 @@ struct JsSet[T: AnyType](ImplicitlyCopyable, Sized):
         self._values[] = rebind_var[Self.Storage](next^)
         return True
 
-    def clear(mut self) where conforms_to(Self.T, Copyable & Deinitable):
+    def clear(self) where conforms_to(Self.T, Copyable & Deinitable):
         self._values[].clear()
 
     def keys(

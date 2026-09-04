@@ -7,7 +7,7 @@ def array_sort_zero[
     CallbackError: AnyType,
     Callback: def() raises CallbackError -> Float64,
 ](
-    mut array: JsArray[T],
+    array: JsArray[T],
     callback: Callback,
 ) raises CallbackError -> JsArray[
     T
@@ -29,7 +29,7 @@ def array_sort_value[
     CallbackError: AnyType,
     Callback: def(T) raises CallbackError -> Float64,
 ](
-    mut array: JsArray[T],
+    array: JsArray[T],
     callback: Callback,
 ) raises CallbackError -> JsArray[
     T
@@ -51,7 +51,7 @@ def array_sort_compare[
     CallbackError: AnyType,
     Callback: def(T, T) raises CallbackError -> Float64,
 ](
-    mut array: JsArray[T],
+    array: JsArray[T],
     callback: Callback,
 ) raises CallbackError -> JsArray[
     T
@@ -81,7 +81,7 @@ def _defined_values[T: Copyable & Deinitable](array: JsArray[T]) -> List[T]:
 
 def _replace_defined[
     T: Copyable & Deinitable
-](mut array: JsArray[T], var values: List[T]):
+](array: JsArray[T], var values: List[T]):
     var sorted = List[Optional[T]](capacity=len(array))
     for value in values^:
         sorted.append(Optional[T](value.copy()))

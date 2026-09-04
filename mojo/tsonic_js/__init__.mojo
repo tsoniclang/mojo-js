@@ -16,12 +16,24 @@ from .constructors import (
     array_from,
     array_from_map_value,
     array_from_map_with_index,
+    array_join_native,
     array_new,
     map_new,
     set_new,
 )
 from .uri import decode_uri_component, encode_uri_component
-from .date import JsDate, date_new, date_now, date_parse, date_utc
+from .date import (
+    JsDate,
+    date_new,
+    date_now,
+    date_parse,
+    date_parse_native,
+    date_to_iso_string_native,
+    date_to_json_native,
+    date_to_string_native,
+    date_to_utc_string_native,
+    date_utc,
+)
 from .json import (
     json_parse,
     json_stringify,
@@ -32,6 +44,7 @@ from .json import (
     json_stringify_with_space_string,
 )
 from .map import JsMap
+from .native_string import *
 from .math import *
 from .number import *
 from .object import (

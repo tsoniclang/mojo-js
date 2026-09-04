@@ -30,7 +30,7 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         return Float64(len(self))
 
     def push(
-        mut self, *values: Self.T
+        self, *values: Self.T
     ) -> Float64 where conforms_to(Self.T, Copyable & Deinitable):
         for value in values:
             self._elements[].append(Optional[Self.T](value.copy()))
@@ -57,7 +57,7 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         return value.value().copy()
 
     def set(
-        mut self, index: Int, var value: Self.T
+        self, index: Int, var value: Self.T
     ) where conforms_to(Self.T, Copyable & Deinitable):
         if index < 0:
             return
@@ -66,19 +66,19 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         self._elements[][index] = Optional[Self.T](value^)
 
     def __setitem__(
-        mut self, index: Float64, var value: Self.T
+        self, index: Float64, var value: Self.T
     ) where conforms_to(Self.T, Copyable & Deinitable):
         self.set(_array_index(index), value^)
 
     def pop(
-        mut self,
+        self,
     ) -> Optional[Self.T] where conforms_to(Self.T, Copyable & Deinitable):
         if len(self) == 0:
             return None
         return self._elements[].pop()
 
     def shift(
-        mut self,
+        self,
     ) -> Optional[Self.T] where conforms_to(Self.T, Copyable & Deinitable):
         if len(self) == 0:
             return None
@@ -90,7 +90,7 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         return first^
 
     def unshift(
-        mut self, *values: Self.T
+        self, *values: Self.T
     ) -> Float64 where conforms_to(Self.T, Copyable & Deinitable):
         var next = List[Optional[Self.T]](capacity=len(self) + len(values))
         for value in values:
@@ -101,13 +101,13 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         return self.js_length()
 
     def reverse(
-        mut self,
+        self,
     ) -> Self where conforms_to(Self.T, Copyable & Deinitable):
         self._elements[].reverse()
         return self
 
     def copy_within(
-        mut self,
+        self,
         target: Float64,
         start: Float64,
         end: Float64 = Float64(FloatLiteral.infinity),
@@ -126,7 +126,7 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         return self
 
     def fill(
-        mut self,
+        self,
         value: Self.T,
         start: Float64 = 0,
         end: Float64 = Float64(FloatLiteral.infinity),
@@ -140,7 +140,7 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         return self
 
     def splice(
-        mut self,
+        self,
         start: Float64,
         delete_count: Float64 = Float64(FloatLiteral.infinity),
         *items: Self.T,
@@ -232,7 +232,7 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         return result
 
     def sort(
-        mut self,
+        self,
     ) -> Self where conforms_to(Self.T, Copyable & Deinitable & Writable):
         var defined = List[Self.T]()
         var holes = 0
@@ -258,7 +258,7 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         return self
 
     def delete(
-        mut self, index: Float64
+        self, index: Float64
     ) -> Bool where conforms_to(Self.T, Copyable & Deinitable):
         var position = _array_index(index)
         if position < 0 or position >= len(self):
