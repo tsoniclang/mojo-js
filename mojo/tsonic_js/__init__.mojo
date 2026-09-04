@@ -23,7 +23,15 @@ from .constructors import (
 )
 from .uri import decode_uri_component, encode_uri_component
 from .date import JsDate, date_new, date_now, date_parse, date_utc
-from .json import json_parse, json_stringify
+from .json import (
+    json_parse,
+    json_stringify,
+    json_stringify_with_replacer,
+    json_stringify_with_replacer_and_space_number,
+    json_stringify_with_replacer_and_space_string,
+    json_stringify_with_space_number,
+    json_stringify_with_space_string,
+)
 from .map import JsMap
 from .math import *
 from .number import *
@@ -65,6 +73,8 @@ from .value import (
     js_value_from_string,
     js_value_from_symbol,
     js_value_from_undefined,
+    js_value_from_array_values,
+    js_value_from_object_entries,
     js_value_error,
     js_value_structured_clone,
     js_value_to_string,

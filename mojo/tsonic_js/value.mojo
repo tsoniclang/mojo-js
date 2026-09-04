@@ -23,6 +23,7 @@ struct _JsValueNode(Movable):
     var number_value: Float64
     var string_value: JsString
     var symbol_value: Optional[JsSymbol]
+    var identity: Optional[ArcPointer[Bool]]
     var keys: List[JsString]
     var children: List[Int]
 
@@ -32,6 +33,7 @@ struct _JsValueNode(Movable):
         self.number_value = 0
         self.string_value = JsString()
         self.symbol_value = None
+        self.identity = None
         self.keys = List[JsString]()
         self.children = List[Int]()
 
@@ -41,6 +43,7 @@ struct _JsValueNode(Movable):
         self.number_value = 0
         self.string_value = JsString()
         self.symbol_value = None
+        self.identity = None
         self.keys = List[JsString]()
         self.children = List[Int]()
 
@@ -50,6 +53,7 @@ struct _JsValueNode(Movable):
         self.number_value = value
         self.string_value = JsString()
         self.symbol_value = None
+        self.identity = None
         self.keys = List[JsString]()
         self.children = List[Int]()
 
@@ -59,6 +63,7 @@ struct _JsValueNode(Movable):
         self.number_value = 0
         self.string_value = value
         self.symbol_value = None
+        self.identity = None
         self.keys = List[JsString]()
         self.children = List[Int]()
 
@@ -68,6 +73,7 @@ struct _JsValueNode(Movable):
         self.number_value = 0
         self.string_value = JsString()
         self.symbol_value = Optional[JsSymbol](value)
+        self.identity = None
         self.keys = List[JsString]()
         self.children = List[Int]()
 
@@ -82,6 +88,23 @@ struct _JsValueNode(Movable):
         self.number_value = 0
         self.string_value = JsString()
         self.symbol_value = None
+        self.identity = Optional[ArcPointer[Bool]](ArcPointer(False))
+        self.keys = keys^
+        self.children = children^
+
+    def __init__(
+        out self,
+        kind: Int,
+        var keys: List[JsString],
+        var children: List[Int],
+        identity: ArcPointer[Bool],
+    ):
+        self.kind = kind
+        self.bool_value = False
+        self.number_value = 0
+        self.string_value = JsString()
+        self.symbol_value = None
+        self.identity = Optional[ArcPointer[Bool]](identity)
         self.keys = keys^
         self.children = children^
 
@@ -239,7 +262,19 @@ struct JsValue(ImplicitlyCopyable, Writable):
         return None
 
     def same_identity(self, other: Self) -> Bool:
+        if self.is_array() or self.is_object():
+            if self._kind() != other._kind():
+                return False
+            var left = self._nodes[][self._index].identity
+            var right = other._nodes[][other._index].identity
+            return Bool(left) and Bool(right) and left.value() is right.value()
         return self._nodes is other._nodes and self._index == other._index
+
+    def _aggregate_identity(self) raises -> ArcPointer[Bool]:
+        var identity = self._nodes[][self._index].identity
+        if not identity:
+            raise Error("JavaScript value is not an aggregate")
+        return identity.value()
 
     def _kind(self) -> Int:
         return self._nodes[][self._index].kind
@@ -287,12 +322,29 @@ struct _JsValueBuilder(ImplicitlyCopyable):
     def append_array(mut self, var children: List[Int]) raises -> Int:
         return self._append(_JsValueNode(_ARRAY, List[JsString](), children^))
 
+    def append_array(
+        mut self, var children: List[Int], identity: ArcPointer[Bool]
+    ) raises -> Int:
+        return self._append(
+            _JsValueNode(_ARRAY, List[JsString](), children^, identity)
+        )
+
     def append_object(
         mut self,
         var keys: List[JsString],
         var children: List[Int],
     ) raises -> Int:
         return self._append(_JsValueNode(_OBJECT, keys^, children^))
+
+    def append_object(
+        mut self,
+        var keys: List[JsString],
+        var children: List[Int],
+        identity: ArcPointer[Bool],
+    ) raises -> Int:
+        return self._append(
+            _JsValueNode(_OBJECT, keys^, children^, identity)
+        )
 
     def value(self, index: Int) -> JsValue:
         return JsValue(self._nodes, index)
@@ -378,6 +430,122 @@ def js_value_from_null() -> JsValue:
 
 def js_value_from_undefined() -> JsValue:
     return JsValue.undefined()
+
+
+def js_value_from_array_values(var values: List[JsValue]) raises -> JsValue:
+    var builder = _JsValueBuilder()
+    var children = List[Int](capacity=len(values))
+    var active = List[JsValue]()
+    var copied = List[JsValue]()
+    var copied_indexes = List[Int]()
+    for value in values^:
+        children.append(
+            _append_js_value_graph(
+                builder, value, active, copied, copied_indexes, 0
+            )
+        )
+    return builder.value(builder.append_array(children^))
+
+
+def js_value_from_object_entries(
+    var keys: List[JsString], var values: List[JsValue]
+) raises -> JsValue:
+    if len(keys) != len(values):
+        raise Error("JavaScript object keys and values have different lengths")
+    var builder = _JsValueBuilder()
+    var copied_keys = List[JsString](capacity=len(keys))
+    var children = List[Int](capacity=len(values))
+    var active = List[JsValue]()
+    var copied = List[JsValue]()
+    var copied_indexes = List[Int]()
+    for index in range(len(keys)):
+        copied_keys.append(keys[index])
+        children.append(
+            _append_js_value_graph(
+                builder,
+                values[index],
+                active,
+                copied,
+                copied_indexes,
+                0,
+            )
+        )
+    return builder.value(builder.append_object(copied_keys^, children^))
+
+
+def _append_js_value_graph(
+    mut builder: _JsValueBuilder,
+    value: JsValue,
+    mut active: List[JsValue],
+    mut copied: List[JsValue],
+    mut copied_indexes: List[Int],
+    depth: Int,
+) raises -> Int:
+    if depth > 512:
+        raise Error("JavaScript value graph exceeds its nesting budget")
+    if value.is_undefined():
+        return builder.append_undefined()
+    if value.is_null():
+        return builder.append_null()
+    if value.is_bool():
+        return builder.append_bool(value._bool_value())
+    if value.is_number():
+        return builder.append_number(value._number_value())
+    if value.is_string():
+        return builder.append_string(value._string_value())
+    if value.is_symbol():
+        return builder.append_symbol(value.symbol_value())
+    for ancestor in active:
+        if ancestor.same_identity(value):
+            raise Error("cyclic JavaScript value cannot be materialized")
+    for index in range(len(copied)):
+        if copied[index].same_identity(value):
+            return copied_indexes[index]
+    active.append(value)
+    if value.is_array():
+        var children = List[Int](capacity=value.array_length())
+        for index in range(value.array_length()):
+            children.append(
+                _append_js_value_graph(
+                    builder,
+                    value.array_at(index),
+                    active,
+                    copied,
+                    copied_indexes,
+                    depth + 1,
+                )
+            )
+        _ = active.pop()
+        var target = builder.append_array(
+            children^, value._aggregate_identity()
+        )
+        copied.append(value)
+        copied_indexes.append(target)
+        return target
+    if value.is_object():
+        var keys = List[JsString](capacity=value.object_length())
+        var children = List[Int](capacity=value.object_length())
+        for index in range(value.object_length()):
+            keys.append(value.object_key(index))
+            children.append(
+                _append_js_value_graph(
+                    builder,
+                    value.object_value(index),
+                    active,
+                    copied,
+                    copied_indexes,
+                    depth + 1,
+                )
+            )
+        _ = active.pop()
+        var target = builder.append_object(
+            keys^, children^, value._aggregate_identity()
+        )
+        copied.append(value)
+        copied_indexes.append(target)
+        return target
+    _ = active.pop()
+    raise Error("JavaScript value graph contains an unsupported node")
 
 
 def js_value_error(message: String) raises -> JsValue:

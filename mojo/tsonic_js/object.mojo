@@ -29,6 +29,13 @@ def object_is(left: JsValue, right: JsValue) -> Bool:
         if not right.is_string():
             return False
         return left._string_value() == right._string_value()
+    if left.is_symbol():
+        return (
+            right.is_symbol()
+            and left._nodes[][left._index]
+            .symbol_value.value()
+            .same(right._nodes[][right._index].symbol_value.value())
+        )
     if left.is_array() or left.is_object():
         return right._kind() == left._kind() and left.same_identity(right)
     return False
