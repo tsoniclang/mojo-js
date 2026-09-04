@@ -258,11 +258,12 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         return self
 
     def delete(
-        mut self, index: Int
+        mut self, index: Float64
     ) -> Bool where conforms_to(Self.T, Copyable & Deinitable):
-        if index < 0 or index >= len(self):
+        var position = _array_index(index)
+        if position < 0 or position >= len(self):
             return True
-        self._elements[][index] = None
+        self._elements[][position] = None
         return True
 
     def has(self, index: Int) -> Bool:
