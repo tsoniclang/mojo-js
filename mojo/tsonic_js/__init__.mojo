@@ -4,7 +4,6 @@ from .array_callbacks_reduce import *
 from .array_callbacks_sort import *
 from .array_callbacks_transform import *
 from .boolean import boolean_to_string, boolean_value_of
-from .callback_truthiness import *
 from .console import (
     console_debug,
     console_error,
@@ -80,5 +79,7 @@ from .value import (
     js_value_structured_clone,
     js_value_to_string,
     js_truthy,
+    js_truthy_absent_result,
+    js_truthy_present_result,
     js_event_key_equal,
 )

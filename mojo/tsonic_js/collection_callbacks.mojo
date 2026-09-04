@@ -1,5 +1,3 @@
-from tsonic_runtime import RaisingCallable
-
 from .map import JsMap
 from .set import JsSet
 
@@ -9,11 +7,10 @@ def map_for_each_zero[
     K: Copyable & Deinitable & Equatable,
     V: Copyable & Deinitable,
     CallbackError: AnyType,
-](
-    map: JsMap[K, V], callback: RaisingCallable[Tuple[], R, CallbackError]
-) raises CallbackError:
+    Callback: def() raises CallbackError -> R,
+](map: JsMap[K, V], callback: Callback) raises CallbackError:
     for _ in map._entries[]:
-        _ = callback.call(())
+        _ = callback()
 
 
 def map_for_each_value[
@@ -21,11 +18,10 @@ def map_for_each_value[
     K: Copyable & Deinitable & Equatable,
     V: Copyable & Deinitable,
     CallbackError: AnyType,
-](
-    map: JsMap[K, V], callback: RaisingCallable[Tuple[V], R, CallbackError]
-) raises CallbackError:
+    Callback: def(V) raises CallbackError -> R,
+](map: JsMap[K, V], callback: Callback) raises CallbackError:
     for entry in map._entries[]:
-        _ = callback.call((entry.value.copy(),))
+        _ = callback(entry.value.copy())
 
 
 def map_for_each_value_key[
@@ -33,11 +29,10 @@ def map_for_each_value_key[
     K: Copyable & Deinitable & Equatable,
     V: Copyable & Deinitable,
     CallbackError: AnyType,
-](
-    map: JsMap[K, V], callback: RaisingCallable[Tuple[V, K], R, CallbackError]
-) raises CallbackError:
+    Callback: def(V, K) raises CallbackError -> R,
+](map: JsMap[K, V], callback: Callback) raises CallbackError:
     for entry in map._entries[]:
-        _ = callback.call((entry.value.copy(), entry.key.copy()))
+        _ = callback(entry.value.copy(), entry.key.copy())
 
 
 def map_for_each_with_map[
@@ -45,54 +40,47 @@ def map_for_each_with_map[
     K: Copyable & Deinitable & Equatable,
     V: Copyable & Deinitable,
     CallbackError: AnyType,
-](
-    map: JsMap[K, V],
-    callback: RaisingCallable[Tuple[V, K, JsMap[K, V]], R, CallbackError],
-) raises CallbackError:
+    Callback: def(V, K, JsMap[K, V]) raises CallbackError -> R,
+](map: JsMap[K, V], callback: Callback,) raises CallbackError:
     for entry in map._entries[]:
-        _ = callback.call((entry.value.copy(), entry.key.copy(), map))
+        _ = callback(entry.value.copy(), entry.key.copy(), map)
 
 
 def set_for_each_zero[
     R: Movable & Deinitable,
     T: Copyable & Deinitable & Equatable,
     CallbackError: AnyType,
-](
-    set: JsSet[T], callback: RaisingCallable[Tuple[], R, CallbackError]
-) raises CallbackError:
+    Callback: def() raises CallbackError -> R,
+](set: JsSet[T], callback: Callback) raises CallbackError:
     for _ in set._values[]:
-        _ = callback.call(())
+        _ = callback()
 
 
 def set_for_each_value[
     R: Movable & Deinitable,
     T: Copyable & Deinitable & Equatable,
     CallbackError: AnyType,
-](
-    set: JsSet[T], callback: RaisingCallable[Tuple[T], R, CallbackError]
-) raises CallbackError:
+    Callback: def(T) raises CallbackError -> R,
+](set: JsSet[T], callback: Callback) raises CallbackError:
     for value in set._values[]:
-        _ = callback.call((value.copy(),))
+        _ = callback(value.copy())
 
 
 def set_for_each_value_key[
     R: Movable & Deinitable,
     T: Copyable & Deinitable & Equatable,
     CallbackError: AnyType,
-](
-    set: JsSet[T], callback: RaisingCallable[Tuple[T, T], R, CallbackError]
-) raises CallbackError:
+    Callback: def(T, T) raises CallbackError -> R,
+](set: JsSet[T], callback: Callback) raises CallbackError:
     for value in set._values[]:
-        _ = callback.call((value.copy(), value.copy()))
+        _ = callback(value.copy(), value.copy())
 
 
 def set_for_each_with_set[
     R: Movable & Deinitable,
     T: Copyable & Deinitable & Equatable,
     CallbackError: AnyType,
-](
-    set: JsSet[T],
-    callback: RaisingCallable[Tuple[T, T, JsSet[T]], R, CallbackError],
-) raises CallbackError:
+    Callback: def(T, T, JsSet[T]) raises CallbackError -> R,
+](set: JsSet[T], callback: Callback,) raises CallbackError:
     for value in set._values[]:
-        _ = callback.call((value.copy(), value.copy(), set))
+        _ = callback(value.copy(), value.copy(), set)

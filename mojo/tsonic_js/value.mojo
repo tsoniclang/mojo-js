@@ -408,9 +408,7 @@ struct _JsValueBuilder(ImplicitlyCopyable):
         var children: List[Int],
         identity: ArcPointer[Bool],
     ) raises -> Int:
-        return self._append(
-            _JsValueNode(_OBJECT, keys^, children^, identity)
-        )
+        return self._append(_JsValueNode(_OBJECT, keys^, children^, identity))
 
     def value(self, index: Int) -> JsValue:
         return JsValue(self._nodes, index)
@@ -661,7 +659,9 @@ def js_value_structured_clone(value: JsValue) raises -> JsValue:
         if kind == _SYMBOL:
             raise Error("JavaScript symbols cannot be structured-cloned")
         if kind == _JSON_PROJECTION:
-            raise Error("JavaScript JSON projections cannot be structured-cloned")
+            raise Error(
+                "JavaScript JSON projections cannot be structured-cloned"
+            )
         remapped[index] = len(nodes)
         if kind == _BOOL:
             nodes.append(_JsValueNode(value._nodes[][index].bool_value))
@@ -736,6 +736,18 @@ def js_truthy(value: JsValue) -> Bool:
     if value.is_string():
         return len(value._string_value()) != 0
     return True
+
+
+def js_truthy_present_result[
+    T: Movable & Deinitable,
+](var _value: T) -> Bool:
+    return True
+
+
+def js_truthy_absent_result[
+    T: Movable & Deinitable,
+](var _value: T) -> Bool:
+    return False
 
 
 def js_event_key_equal(left: JsValue, right: JsValue) -> Bool:

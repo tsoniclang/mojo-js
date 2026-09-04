@@ -1,6 +1,4 @@
 from std.collections import List
-from tsonic_runtime import RaisingCallable
-
 from .array import JsArray
 from .map import JsMap
 from .set import JsSet
@@ -26,12 +24,11 @@ def array_from_map_value[
     T: Copyable & Deinitable,
     U: Copyable & Deinitable,
     CallbackError: AnyType,
-](
-    values: JsArray[T], callback: RaisingCallable[Tuple[T], U, CallbackError]
-) raises CallbackError -> JsArray[U]:
+    Callback: def(T) raises CallbackError -> U,
+](values: JsArray[T], callback: Callback) raises CallbackError -> JsArray[U]:
     var result = List[U]()
     for value in values.iter_values():
-        result.append(callback.call((value.copy(),)))
+        result.append(callback(value.copy()))
     return JsArray[U](result^)
 
 
@@ -39,14 +36,12 @@ def array_from_map_with_index[
     T: Copyable & Deinitable,
     U: Copyable & Deinitable,
     CallbackError: AnyType,
-](
-    values: JsArray[T],
-    callback: RaisingCallable[Tuple[T, Float64], U, CallbackError],
-) raises CallbackError -> JsArray[U]:
+    Callback: def(T, Float64) raises CallbackError -> U,
+](values: JsArray[T], callback: Callback,) raises CallbackError -> JsArray[U]:
     var result = List[U]()
     var index = 0
     for value in values.iter_values():
-        result.append(callback.call((value.copy(), Float64(index))))
+        result.append(callback(value.copy(), Float64(index)))
         index += 1
     return JsArray[U](result^)
 

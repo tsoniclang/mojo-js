@@ -1,21 +1,22 @@
 from std.collections import List
-from tsonic_runtime import RaisingCallable
-
 from .array import JsArray
 
 
 def array_sort_zero[
     T: Copyable & Deinitable,
     CallbackError: AnyType,
+    Callback: def() raises CallbackError -> Float64,
 ](
     mut array: JsArray[T],
-    callback: RaisingCallable[Tuple[], Float64, CallbackError],
-) raises CallbackError -> JsArray[T]:
+    callback: Callback,
+) raises CallbackError -> JsArray[
+    T
+]:
     var defined = _defined_values(array)
     for index in range(1, len(defined)):
         var value = defined[index].copy()
         var position = index
-        while position > 0 and callback.call(()) > 0:
+        while position > 0 and callback() > 0:
             defined[position] = defined[position - 1].copy()
             position -= 1
         defined[position] = value^
@@ -26,17 +27,18 @@ def array_sort_zero[
 def array_sort_value[
     T: Copyable & Deinitable,
     CallbackError: AnyType,
+    Callback: def(T) raises CallbackError -> Float64,
 ](
     mut array: JsArray[T],
-    callback: RaisingCallable[Tuple[T], Float64, CallbackError],
-) raises CallbackError -> JsArray[T]:
+    callback: Callback,
+) raises CallbackError -> JsArray[
+    T
+]:
     var defined = _defined_values(array)
     for index in range(1, len(defined)):
         var value = defined[index].copy()
         var position = index
-        while (
-            position > 0 and callback.call((defined[position - 1].copy(),)) > 0
-        ):
+        while position > 0 and callback(defined[position - 1].copy()) > 0:
             defined[position] = defined[position - 1].copy()
             position -= 1
         defined[position] = value^
@@ -47,17 +49,20 @@ def array_sort_value[
 def array_sort_compare[
     T: Copyable & Deinitable,
     CallbackError: AnyType,
+    Callback: def(T, T) raises CallbackError -> Float64,
 ](
     mut array: JsArray[T],
-    callback: RaisingCallable[Tuple[T, T], Float64, CallbackError],
-) raises CallbackError -> JsArray[T]:
+    callback: Callback,
+) raises CallbackError -> JsArray[
+    T
+]:
     var defined = _defined_values(array)
     for index in range(1, len(defined)):
         var value = defined[index].copy()
         var position = index
         while (
             position > 0
-            and callback.call((defined[position - 1].copy(), value.copy())) > 0
+            and callback(defined[position - 1].copy(), value.copy()) > 0
         ):
             defined[position] = defined[position - 1].copy()
             position -= 1
