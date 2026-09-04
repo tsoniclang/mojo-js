@@ -121,9 +121,7 @@ def main() raises:
     )
     assert_false(object_is(JsValue(-0.0), JsValue(0.0)))
     var identity_symbol = symbol_new(JsString("identity"))
-    assert_true(
-        object_is(JsValue(identity_symbol), JsValue(identity_symbol))
-    )
+    assert_true(object_is(JsValue(identity_symbol), JsValue(identity_symbol)))
     assert_false(
         object_is(
             JsValue(identity_symbol),
@@ -159,9 +157,7 @@ def main() raises:
     var json_values = List[JsValue]()
     json_values.append(JsValue(1.0))
     json_values.append(JsValue(2.0))
-    var json_object = js_value_from_object_entries(
-        json_keys^, json_values^
-    )
+    var json_object = js_value_from_object_entries(json_keys^, json_values^)
     var replacer_calls = Location[Int](0)
     var pretty = json_stringify_with_replacer_and_space_number(
         json_object,
@@ -190,7 +186,9 @@ def main() raises:
     assert_equal(
         json_stringify(
             js_value_from_object_entries(projection_keys^, projection_values^)
-        ).value().to_native_strict(),
+        )
+        .value()
+        .to_native_strict(),
         '{"nested":{"key":"nested"}}',
     )
     assert_equal(projection_calls.read(), 2)
@@ -202,15 +200,15 @@ def main() raises:
     var projected_replacer_calls = Location[Int](0)
     assert_equal(
         json_stringify_with_replacer_and_space_number(
-            js_value_from_object_entries(
-                projected_keys^, projected_values^
-            ),
+            js_value_from_object_entries(projected_keys^, projected_values^),
             RaisingCallable[Tuple[String, JsValue], JsValue](
                 json_replacer_environment(projected_replacer_calls),
                 JsonReplacerEnvironment.replace,
             ),
             0,
-        ).value().to_native_strict(),
+        )
+        .value()
+        .to_native_strict(),
         '{"projected":"projected"}',
     )
     assert_equal(projected_replacer_calls.read(), 2)
@@ -243,13 +241,9 @@ def main() raises:
     )
     var shared_clone = js_value_structured_clone(shared_container)
     assert_true(
-        shared_clone.object_value(0).same_identity(
-            shared_clone.object_value(1)
-        )
+        shared_clone.object_value(0).same_identity(shared_clone.object_value(1))
     )
-    assert_false(
-        shared_clone.object_value(0).same_identity(shared_object)
-    )
+    assert_false(shared_clone.object_value(0).same_identity(shared_object))
 
     var array_values = List[JsValue]()
     array_values.append(JsValue(1.0))
@@ -260,7 +254,7 @@ def main() raises:
     )
     assert_equal(
         pretty_array.value().to_native_strict(),
-        '[\nabcdefghij1,\nabcdefghijnull\n]',
+        "[\nabcdefghij1,\nabcdefghijnull\n]",
     )
     assert_equal(
         js_value_to_string(JsValue.undefined()).to_native_strict(), "undefined"

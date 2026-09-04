@@ -386,7 +386,8 @@ struct _JsonWriter:
             return True
         if value.is_json_projection():
             raise Error(
-                "A selected toJSON projection returned another unresolved JSON projection"
+                "A selected toJSON projection returned another unresolved JSON"
+                " projection"
             )
         if not value.is_array() and not value.is_object():
             return False
