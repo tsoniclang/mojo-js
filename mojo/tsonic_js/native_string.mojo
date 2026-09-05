@@ -16,7 +16,9 @@ def native_string_char_code_at(value: String, index: Float64) -> Float64:
     return JsString(value).char_code_at(index)
 
 
-def native_string_code_point_at(value: String, index: Float64) -> Optional[Float64]:
+def native_string_code_point_at(
+    value: String, index: Float64
+) -> Optional[Float64]:
     return JsString(value).code_point_at(index)
 
 
@@ -58,13 +60,19 @@ def native_string_last_index_of(
 def native_string_pad_end(
     value: String, target_length: Float64, fill: String = " "
 ) -> String:
-    return JsString(value).pad_end(target_length, JsString(fill)).to_native_lossy()
+    return (
+        JsString(value).pad_end(target_length, JsString(fill)).to_native_lossy()
+    )
 
 
 def native_string_pad_start(
     value: String, target_length: Float64, fill: String = " "
 ) -> String:
-    return JsString(value).pad_start(target_length, JsString(fill)).to_native_lossy()
+    return (
+        JsString(value)
+        .pad_start(target_length, JsString(fill))
+        .to_native_lossy()
+    )
 
 
 def native_string_repeat(value: String, count: Float64) raises -> String:

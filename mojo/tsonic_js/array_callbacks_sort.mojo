@@ -6,12 +6,7 @@ def array_sort_zero[
     T: Copyable & Deinitable,
     CallbackError: AnyType,
     Callback: def() raises CallbackError -> Float64,
-](
-    array: JsArray[T],
-    callback: Callback,
-) raises CallbackError -> JsArray[
-    T
-]:
+](array: JsArray[T], callback: Callback,) raises CallbackError -> JsArray[T]:
     var defined = _defined_values(array)
     for index in range(1, len(defined)):
         var value = defined[index].copy()
@@ -28,12 +23,7 @@ def array_sort_value[
     T: Copyable & Deinitable,
     CallbackError: AnyType,
     Callback: def(T) raises CallbackError -> Float64,
-](
-    array: JsArray[T],
-    callback: Callback,
-) raises CallbackError -> JsArray[
-    T
-]:
+](array: JsArray[T], callback: Callback,) raises CallbackError -> JsArray[T]:
     var defined = _defined_values(array)
     for index in range(1, len(defined)):
         var value = defined[index].copy()
@@ -50,12 +40,7 @@ def array_sort_compare[
     T: Copyable & Deinitable,
     CallbackError: AnyType,
     Callback: def(T, T) raises CallbackError -> Float64,
-](
-    array: JsArray[T],
-    callback: Callback,
-) raises CallbackError -> JsArray[
-    T
-]:
+](array: JsArray[T], callback: Callback,) raises CallbackError -> JsArray[T]:
     var defined = _defined_values(array)
     for index in range(1, len(defined)):
         var value = defined[index].copy()
