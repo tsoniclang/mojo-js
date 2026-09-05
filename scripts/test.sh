@@ -7,8 +7,6 @@ NATIVE_BUILD=".temp/native-tests"
 "${PIXI_BIN}" run mojo format --quiet mojo tests
 git diff --exit-code -- mojo tests
 
-node scripts/verify-regexp-oracle.mjs
-
 mkdir -p "${NATIVE_BUILD}"
 CONDA_PREFIX="$(${PIXI_BIN} run printenv CONDA_PREFIX)"
 for source in regexp_bridge unicode_normalization_bridge; do
@@ -30,6 +28,10 @@ link_arguments=(
   -Xlinker -lm
   -Xlinker -lpthread
 )
+
+"${PIXI_BIN}" run mojo build -j 2 -I mojo -I ../mojo-runtime/mojo \
+  "${link_arguments[@]}" test/oracle/regexp_driver.mojo -o "${NATIVE_BUILD}/regexp_oracle"
+node scripts/verify-regexp-oracle.mjs "${NATIVE_BUILD}/regexp_oracle"
 
 for test_file in tests/*.mojo; do
   test_name="$(basename "${test_file}" .mojo)"

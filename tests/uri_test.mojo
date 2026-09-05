@@ -1,7 +1,13 @@
 from std.collections import List
 from std.testing import assert_equal
 
-from tsonic_js import decode_uri_component_native, encode_uri_component_native
+from tsonic_js import (
+    JsString,
+    decode_uri_component,
+    decode_uri_component_native,
+    encode_uri_component,
+    encode_uri_component_native,
+)
 
 
 def main() raises:
@@ -13,6 +19,15 @@ def main() raises:
     assert_equal(decode_uri_component_native("%00"), "\x00")
     assert_equal(decode_uri_component_native("%E2%82%AC"), "€")
     assert_equal(decode_uri_component_native("a+b"), "a+b")
+    var raw = JsString("😀").char_at(0)
+    var decoded = decode_uri_component(raw + JsString("%20%F0%9F%98%80"))
+    assert_equal(decoded, raw + JsString(" 😀"))
+    var encode_rejected = False
+    try:
+        _ = encode_uri_component(raw)
+    except:
+        encode_rejected = True
+    assert_equal(encode_rejected, True)
 
     var malformed_inputs: List[String] = [
         "%",
@@ -28,3 +43,9 @@ def main() raises:
         except:
             rejected = True
         assert_equal(rejected, True)
+        var exact_rejected = False
+        try:
+            _ = decode_uri_component(JsString(malformed))
+        except:
+            exact_rejected = True
+        assert_equal(exact_rejected, True)
