@@ -1,0 +1,34 @@
+{
+  "contractVersion": 1,
+  "dependencies": {
+    "c-compiler": "==2.0.0",
+    "icu": "==78.3",
+    "quickjs": "==2025.09.13",
+    "sysroot_linux-64": "==2.34"
+  },
+  "translationUnits": [
+    {
+      "language": "c",
+      "standard": "c11",
+      "path": "tsonic_js.native/regexp_bridge.c"
+    },
+    {
+      "language": "c",
+      "standard": "c11",
+      "path": "tsonic_js.native/unicode_normalization_bridge.c"
+    }
+  ],
+  "includeDirectories": [
+    "include/quickjs"
+  ],
+  "staticLibraries": [
+    "lib/quickjs/libquickjs.a"
+  ],
+  "dynamicLibraries": [
+    "dl",
+    "icudata",
+    "icuuc",
+    "m",
+    "pthread"
+  ]
+}

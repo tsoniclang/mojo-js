@@ -77,6 +77,9 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
             return None
         return self._code_units[][index]
 
+    def _copy_code_units(self) -> List[UInt16]:
+        return self._code_units[].copy()
+
     def char_at(self, index: Float64) -> Self:
         var unit = self.code_unit_at(_string_integer(index))
         if not unit:

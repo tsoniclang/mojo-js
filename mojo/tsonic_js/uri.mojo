@@ -4,8 +4,37 @@ from .string import JsString
 
 
 def encode_uri_component(value: JsString) raises -> JsString:
+    return JsString(encode_uri_component_native(value.to_native_strict()))
+
+
+def decode_uri_component(value: JsString) raises -> JsString:
+    var units = List[UInt16](capacity=len(value))
+    var index = 0
+    while index < len(value):
+        var unit = value.code_unit_at(index).value()
+        if unit != 37:
+            units.append(unit)
+            index += 1
+            continue
+        var bytes = List[Byte]()
+        while index < len(value) and value.code_unit_at(index).value() == 37:
+            if index + 2 >= len(value):
+                raise Error("Malformed URI component escape")
+            bytes.append(
+                _percent_byte(
+                    value.code_unit_at(index + 1).value(),
+                    value.code_unit_at(index + 2).value(),
+                )
+            )
+            index += 3
+        var decoded = JsString(String(from_utf8=bytes))
+        for offset in range(len(decoded)):
+            units.append(decoded.code_unit_at(offset).value())
+    return JsString(code_units=units^)
+
+
+def encode_uri_component_native(source: String) raises -> String:
     comptime digits = "0123456789ABCDEF"
-    var source = value.to_native_strict()
     var result = String(capacity_bytes=source.byte_length() * 3)
     for index in range(source.byte_length()):
         var byte = UInt8(source.as_bytes()[index])
@@ -15,11 +44,10 @@ def encode_uri_component(value: JsString) raises -> JsString:
             result += "%"
             result += String(digits[byte=Int(byte >> 4)])
             result += String(digits[byte=Int(byte & 15)])
-    return JsString(result^)
+    return result^
 
 
-def decode_uri_component(value: JsString) raises -> JsString:
-    var source = value.to_native_strict()
+def decode_uri_component_native(source: String) raises -> String:
     var bytes = List[Byte](capacity=source.byte_length())
     var index = 0
     while index < source.byte_length():
@@ -30,13 +58,24 @@ def decode_uri_component(value: JsString) raises -> JsString:
             continue
         if index + 2 >= source.byte_length():
             raise Error("Malformed URI component escape")
-        var high = _hex_value(UInt8(source.as_bytes()[index + 1]))
-        var low = _hex_value(UInt8(source.as_bytes()[index + 2]))
-        if high < 0 or low < 0:
-            raise Error("Malformed URI component escape")
-        bytes.append(Byte(UInt8(high * 16 + low)))
+        bytes.append(
+            _percent_byte(
+                UInt16(source.as_bytes()[index + 1]),
+                UInt16(source.as_bytes()[index + 2]),
+            )
+        )
         index += 3
-    return JsString(String(from_utf8=bytes))
+    return String(from_utf8=bytes)
+
+
+def _percent_byte(high_unit: UInt16, low_unit: UInt16) raises -> Byte:
+    if high_unit > 127 or low_unit > 127:
+        raise Error("Malformed URI component escape")
+    var high = _hex_value(UInt8(high_unit))
+    var low = _hex_value(UInt8(low_unit))
+    if high < 0 or low < 0:
+        raise Error("Malformed URI component escape")
+    return Byte(UInt8(high * 16 + low))
 
 
 def _is_component_byte(value: UInt8) -> Bool:

@@ -66,7 +66,7 @@ struct JsMap[
         return self._find(key) >= 0
 
     def set(
-        mut self, var key: Self.K, var value: Self.V
+        self, var key: Self.K, var value: Self.V
     ) -> Self where conforms_to(
         Self.K, Copyable & Deinitable & Equatable
     ) and conforms_to(Self.V, Copyable & Deinitable):
@@ -78,7 +78,7 @@ struct JsMap[
         return self
 
     def delete(
-        mut self, key: Self.K
+        self, key: Self.K
     ) -> Bool where conforms_to(
         Self.K, Copyable & Deinitable & Equatable
     ) and conforms_to(Self.V, Copyable & Deinitable):
@@ -93,7 +93,7 @@ struct JsMap[
         return True
 
     def clear(
-        mut self,
+        self,
     ) where conforms_to(Self.K, Copyable & Deinitable) and conforms_to(
         Self.V, Copyable & Deinitable
     ):

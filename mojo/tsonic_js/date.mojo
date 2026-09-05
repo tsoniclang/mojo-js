@@ -262,6 +262,10 @@ def date_new(value: JsString) -> JsDate:
     return JsDate(date_parse(value))
 
 
+def date_new(value: String) -> JsDate:
+    return JsDate(date_parse_native(value))
+
+
 def date_now() -> Float64:
     var value = _RealtimeSpec(0, 0)
     if external_call["clock_gettime", c_int](c_int(0), Pointer(to=value)) != 0:
@@ -276,6 +280,31 @@ def date_parse(value: JsString) -> Float64:
         return _parse_iso(value.to_native_strict())
     except:
         return Float64(FloatLiteral.nan)
+
+
+def date_parse_native(value: String) -> Float64:
+    return _parse_iso(value)
+
+
+def date_to_iso_string_native(value: JsDate) raises -> String:
+    return value.to_iso_string().to_native_lossy()
+
+
+def date_to_json_native(value: JsDate) -> Variant[String, Null]:
+    if not math.isfinite(value.get_time()):
+        return Variant[String, Null](Null())
+    try:
+        return Variant[String, Null](value.to_iso_string().to_native_lossy())
+    except:
+        return Variant[String, Null](Null())
+
+
+def date_to_utc_string_native(value: JsDate) -> String:
+    return value.to_utc_string().to_native_lossy()
+
+
+def date_to_string_native(value: JsDate) -> String:
+    return value.to_string().to_native_lossy()
 
 
 def date_utc(

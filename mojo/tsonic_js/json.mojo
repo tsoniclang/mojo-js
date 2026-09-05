@@ -1,6 +1,7 @@
 from std.collections import List
 from std.collections.string import Codepoint
 from std.memory import ArcPointer
+from tsonic_runtime import RaisingCallable
 
 from .number import number_to_string
 from .object import _object_key_order
@@ -19,10 +20,58 @@ def json_parse(source: JsString) raises -> JsValue:
 
 
 def json_stringify(value: JsValue) raises -> Optional[JsString]:
-    if value.is_undefined():
-        return None
     var writer = _JsonWriter()
-    if not writer.write(value, 0):
+    if not writer.write_property(JsString(), value, 0):
+        return None
+    return Optional[JsString](writer.finish())
+
+
+def json_stringify_with_space_number(
+    value: JsValue, space: Float64
+) raises -> Optional[JsString]:
+    var writer = _JsonWriter(_number_indent(space))
+    if not writer.write_property(JsString(), value, 0):
+        return None
+    return Optional[JsString](writer.finish())
+
+
+def json_stringify_with_space_string(
+    value: JsValue, space: JsString
+) raises -> Optional[JsString]:
+    var writer = _JsonWriter(_string_indent(space))
+    if not writer.write_property(JsString(), value, 0):
+        return None
+    return Optional[JsString](writer.finish())
+
+
+def json_stringify_with_replacer(
+    value: JsValue,
+    replacer: RaisingCallable[Tuple[String, JsValue], JsValue, Error],
+) raises -> Optional[JsString]:
+    var writer = _JsonWriter(replacer)
+    if not writer.write_property(JsString(), value, 0):
+        return None
+    return Optional[JsString](writer.finish())
+
+
+def json_stringify_with_replacer_and_space_number(
+    value: JsValue,
+    replacer: RaisingCallable[Tuple[String, JsValue], JsValue, Error],
+    space: Float64,
+) raises -> Optional[JsString]:
+    var writer = _JsonWriter(replacer, _number_indent(space))
+    if not writer.write_property(JsString(), value, 0):
+        return None
+    return Optional[JsString](writer.finish())
+
+
+def json_stringify_with_replacer_and_space_string(
+    value: JsValue,
+    replacer: RaisingCallable[Tuple[String, JsValue], JsValue, Error],
+    space: JsString,
+) raises -> Optional[JsString]:
+    var writer = _JsonWriter(replacer, _string_indent(space))
+    if not writer.write_property(JsString(), value, 0):
         return None
     return Optional[JsString](writer.finish())
 
@@ -246,19 +295,71 @@ struct _JsonParser:
 
 struct _JsonWriter:
     var _units: ArcPointer[List[UInt16]]
-    var _active: List[Int]
+    var _active: List[JsValue]
+    var _indent: JsString
+    var _replacer: Optional[
+        RaisingCallable[Tuple[String, JsValue], JsValue, Error]
+    ]
 
     def __init__(out self):
         self._units = ArcPointer(List[UInt16]())
-        self._active = List[Int]()
+        self._active = List[JsValue]()
+        self._indent = JsString()
+        self._replacer = None
+
+    def __init__(out self, indent: JsString):
+        self._units = ArcPointer(List[UInt16]())
+        self._active = List[JsValue]()
+        self._indent = indent
+        self._replacer = None
+
+    def __init__(
+        out self,
+        replacer: RaisingCallable[Tuple[String, JsValue], JsValue, Error],
+    ):
+        self._units = ArcPointer(List[UInt16]())
+        self._active = List[JsValue]()
+        self._indent = JsString()
+        self._replacer = Optional[
+            RaisingCallable[Tuple[String, JsValue], JsValue, Error]
+        ](replacer)
+
+    def __init__(
+        out self,
+        replacer: RaisingCallable[Tuple[String, JsValue], JsValue, Error],
+        indent: JsString,
+    ):
+        self._units = ArcPointer(List[UInt16]())
+        self._active = List[JsValue]()
+        self._indent = indent
+        self._replacer = Optional[
+            RaisingCallable[Tuple[String, JsValue], JsValue, Error]
+        ](replacer)
 
     def finish(self) -> JsString:
         return JsString(code_unit_storage=self._units)
 
-    def write(mut self, value: JsValue, depth: Int) raises -> Bool:
+    def write_property(
+        mut self, key: JsString, value: JsValue, depth: Int
+    ) raises -> Bool:
+        var selected = value
+        var projected = selected.is_json_projection()
+        if projected:
+            self._enter(selected)
+            selected = selected._project_json(key.to_native_strict())
+        if self._replacer:
+            selected = self._replacer.value().call(
+                (key.to_native_strict(), selected)
+            )
+        var written = self._write_value(selected, depth)
+        if projected:
+            _ = self._active.pop()
+        return written
+
+    def _write_value(mut self, value: JsValue, depth: Int) raises -> Bool:
         if depth > _MAX_JSON_DEPTH:
             raise Error("JSON output exceeds its nesting budget")
-        if value.is_undefined():
+        if value.is_undefined() or value.is_symbol():
             return False
         if value.is_null():
             self._append_ascii("null")
@@ -283,38 +384,78 @@ struct _JsonWriter:
         if value.is_string():
             self._write_string(value._string_value())
             return True
+        if value.is_json_projection():
+            raise Error(
+                "A selected toJSON projection returned another unresolved JSON"
+                " projection"
+            )
+        if not value.is_array() and not value.is_object():
+            return False
         self._enter(value)
         if value.is_array():
             self._append_unit(91)
             for index in range(value.array_length()):
                 if index != 0:
                     self._append_unit(44)
-                if not self.write(value.array_at(index), depth + 1):
+                self._write_line_indent(depth + 1)
+                if not self.write_property(
+                    number_to_string(Float64(index)),
+                    value.array_at(index),
+                    depth + 1,
+                ):
                     self._append_ascii("null")
+            if value.array_length() != 0:
+                self._write_line_indent(depth)
             self._append_unit(93)
         else:
             self._append_unit(123)
             var first = True
             for index in _object_key_order(value):
                 var child = value.object_value(index)
-                if child.is_undefined():
+                var key = value.object_key(index)
+                var selected = child
+                var projected = selected.is_json_projection()
+                if projected:
+                    self._enter(selected)
+                    selected = selected._project_json(key.to_native_strict())
+                if self._replacer:
+                    selected = self._replacer.value().call(
+                        (key.to_native_strict(), selected)
+                    )
+                if selected.is_undefined() or selected.is_symbol():
+                    if projected:
+                        _ = self._active.pop()
                     continue
                 if not first:
                     self._append_unit(44)
+                self._write_line_indent(depth + 1)
                 first = False
-                self._write_string(value.object_key(index))
+                self._write_string(key)
                 self._append_unit(58)
-                _ = self.write(child, depth + 1)
+                if len(self._indent) != 0:
+                    self._append_unit(32)
+                _ = self._write_value(selected, depth + 1)
+                if projected:
+                    _ = self._active.pop()
+            if not first:
+                self._write_line_indent(depth)
             self._append_unit(125)
         _ = self._active.pop()
         return True
 
     def _enter(mut self, value: JsValue) raises:
-        var identity = value._node_index()
         for active in self._active:
-            if active == identity:
+            if active.same_identity(value):
                 raise Error("cyclic JavaScript value cannot be serialized")
-        self._active.append(identity)
+        self._active.append(value)
+
+    def _write_line_indent(mut self, depth: Int) raises:
+        if len(self._indent) == 0:
+            return
+        self._append_unit(10)
+        var indent = self._indent
+        for _ in range(depth):
+            self._append_string(indent)
 
     def _write_string(mut self, value: JsString) raises:
         self._append_unit(34)
@@ -373,6 +514,24 @@ struct _JsonWriter:
         if len(self._units[]) >= _MAX_JSON_OUTPUT_UNITS:
             raise Error("JSON output exceeds its source budget")
         self._units[].append(unit)
+
+
+def _number_indent(space: Float64) -> JsString:
+    var count = 0
+    if space == space and space > 0:
+        count = 10 if space >= 10 else Int(space)
+    var units = List[UInt16](capacity=count)
+    for _ in range(count):
+        units.append(32)
+    return JsString(code_units=units^)
+
+
+def _string_indent(space: JsString) -> JsString:
+    var count = min(len(space), 10)
+    var units = List[UInt16](capacity=count)
+    for index in range(count):
+        units.append(space.code_unit_at(index).value())
+    return JsString(code_units=units^)
 
 
 def _is_digit(unit: UInt16) -> Bool:
