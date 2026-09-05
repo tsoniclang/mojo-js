@@ -21,7 +21,12 @@ from .constructors import (
     map_new,
     set_new,
 )
-from .uri import decode_uri_component, encode_uri_component
+from .uri import (
+    decode_uri_component,
+    decode_uri_component_native,
+    encode_uri_component,
+    encode_uri_component_native,
+)
 from .date import (
     JsDate,
     date_new,
