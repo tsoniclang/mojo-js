@@ -1,7 +1,7 @@
 from std import math
 from std.collections import List
 from std.memory import bitcast
-from tsonic_runtime.number_string import source_number_to_string
+from tsonic_runtime.number_string import source_number_code_units
 
 from .string import JsString
 
@@ -25,7 +25,7 @@ def js_truthy_number(value: Float32) -> Bool:
 
 
 def number_to_string(value: Float64) -> JsString:
-    return JsString(source_number_to_string(value))
+    return JsString(code_units=source_number_code_units[DType.uint16](value))
 
 
 def number_value_of(value: Float64) -> Float64:
