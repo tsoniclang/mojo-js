@@ -39,6 +39,9 @@ def _append_js_value_graph(
         copied_indexes.append(target)
         var children = List[Int](capacity=value.array_length())
         for index in range(value.array_length()):
+            if not value.array_has(index):
+                children.append(-1)
+                continue
             children.append(
                 _append_js_value_graph(
                     builder,

@@ -35,6 +35,10 @@ struct SourceAdapter:
         return JsString("count" if arguments[0] == 0 else "self")
 
     @staticmethod
+    def has(context: ErasedCallableContext, var arguments: Tuple[Int]) -> Bool:
+        return arguments[0] >= 0 and arguments[0] < Self.length(context, ())
+
+    @staticmethod
     def value(context: ErasedCallableContext, var arguments: Tuple[Int]) -> JsValue:
         var owner = context.unsafe_bitcast[Self]()[].owner
         owner[].reads += 1
@@ -56,7 +60,8 @@ def source_view(owner: ArcPointer[SourceState], selected_json: Bool = False, arr
     var length = Callable[Tuple[], Int](environment, SourceAdapter.length)
     var value = Callable[Tuple[Int], JsValue](environment, SourceAdapter.value)
     if array:
-        return js_value_from_source_array(WeakReferenceIdentity(owner), length, value)
+        var has = Callable[Tuple[Int], Bool](environment, SourceAdapter.has)
+        return js_value_from_source_array(WeakReferenceIdentity(owner), length, has, value)
     var key = Callable[Tuple[Int], JsString](environment, SourceAdapter.key)
     var projection = Optional[RaisingCallable[Tuple[String], JsValue, Error]]()
     if selected_json:

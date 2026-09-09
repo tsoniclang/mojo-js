@@ -44,6 +44,7 @@ struct _SourceValueView:
     var identity: WeakReferenceIdentity
     var length: Callable[Tuple[], Int]
     var key: Optional[Callable[Tuple[Int], JsString]]
+    var has: Optional[Callable[Tuple[Int], Bool]]
     var value: Callable[Tuple[Int], JsValue]
     var to_json: Optional[RaisingCallable[Tuple[String], JsValue, Error]]
 
@@ -251,6 +252,10 @@ struct JsValue(ImplicitlyCopyable, Writable):
             raise Error("JavaScript array index is out of range")
         return self._aggregate_value(index)
 
+    def array_has(self, index: Int) raises -> Bool:
+        var length = self.array_length()
+        return index >= 0 and index < length and self._aggregate_has(index)
+
     def object_length(self) raises -> Int:
         if not self.is_object():
             raise Error("JavaScript value is not an object")
@@ -328,8 +333,14 @@ struct JsValue(ImplicitlyCopyable, Writable):
         return view.value()[].key.value().call((index,)) if view else self._nodes[][self._index].keys[index]
 
     def _aggregate_value(self, index: Int) -> Self:
+        if self.is_array() and not self._aggregate_has(index):
+            return Self()
         var view = self._nodes[][self._index].source_view
         return view.value()[].value.call((index,)) if view else Self(self._nodes, self._nodes[][self._index].children[index])
+
+    def _aggregate_has(self, index: Int) -> Bool:
+        var view = self._nodes[][self._index].source_view
+        return view.value()[].has.value().call((index,)) if view else self._nodes[][self._index].children[index] != -1
 
     def _identity_address(self) -> UInt:
         var view = self._nodes[][self._index].source_view

@@ -3,7 +3,7 @@ from std.memory import bitcast
 
 from .array import JsArray
 from .string import JsString
-from .value import JsValue
+from .value import JsValue, js_value_from_string
 
 
 def object_is(left: JsValue, right: JsValue) -> Bool:
@@ -43,29 +43,49 @@ def object_is(left: JsValue, right: JsValue) -> Bool:
 def object_keys(value: JsValue) raises -> JsArray[JsString]:
     var keys = List[JsString]()
     for index in _object_key_order(value):
-        keys.append(value.object_key(index))
+        keys.append(_own_key(value, index))
     return JsArray[JsString](keys^)
 
 
 def object_values(value: JsValue) raises -> JsArray[JsValue]:
     var values = List[JsValue]()
     for index in _object_key_order(value):
-        values.append(value.object_value(index))
+        values.append(_own_value(value, index))
     return JsArray[JsValue](values^)
 
 
 def object_entries(value: JsValue) raises -> JsArray[Tuple[JsString, JsValue]]:
     var entries = List[Tuple[JsString, JsValue]]()
     for index in _object_key_order(value):
-        entries.append((value.object_key(index), value.object_value(index)))
+        entries.append((_own_key(value, index), _own_value(value, index)))
     return JsArray[Tuple[JsString, JsValue]](entries^)
 
 
 def object_has_own(value: JsValue, key: JsString) raises -> Bool:
-    return value.object_has_own(key)
+    if value.is_object():
+        return value.object_has_own(key)
+    _require_object_coercible(value)
+    if value.is_array() or value.is_string():
+        if key == JsString("length"):
+            return True
+        var index = _array_index(key)
+        if not index:
+            return False
+        return value.array_has(Int(index.value())) if value.is_array() else Int(index.value()) < len(value._string_value())
+    return False
 
 
 def _object_key_order(value: JsValue) raises -> List[Int]:
+    _require_object_coercible(value)
+    if value.is_array() or value.is_string():
+        var entries = List[Int]()
+        var length = value.array_length() if value.is_array() else len(value._string_value())
+        for index in range(length):
+            if value.is_string() or value.array_has(index):
+                entries.append(index)
+        return entries^
+    if not value.is_object():
+        return List[Int]()
     var integer_indexes = List[UInt32]()
     var integer_entries = List[Int]()
     var other_entries = List[Int]()
@@ -85,6 +105,25 @@ def _object_key_order(value: JsValue) raises -> List[Int]:
     for index in other_entries:
         integer_entries.append(index)
     return integer_entries^
+
+
+def _own_key(value: JsValue, index: Int) raises -> JsString:
+    return value.object_key(index) if value.is_object() else JsString(String(index))
+
+
+def _own_value(value: JsValue, index: Int) raises -> JsValue:
+    if value.is_array():
+        return value.array_at(index)
+    if value.is_string():
+        return js_value_from_string(value._string_value().char_at(Float64(index)))
+    return value.object_value(index)
+
+
+def _require_object_coercible(value: JsValue) raises:
+    if value.is_null() or value.is_undefined():
+        raise Error("Cannot convert null or undefined to an object")
+    if value.is_json_projection():
+        raise Error("A method-only projection has no own-property data contract")
 
 
 def _array_index(key: JsString) -> Optional[UInt32]:

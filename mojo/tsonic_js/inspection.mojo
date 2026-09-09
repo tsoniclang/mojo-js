@@ -97,14 +97,23 @@ def _inspect(value: JsValue, depth: Int, array_limit: Int, mut active: List[JsVa
     active.append(value)
     var result = String("[ " if array else "{ ")
     var limit = min(count, array_limit) if array else count
-    for index in range(limit):
+    var index = 0
+    while index < limit:
         if index != 0:
             result += ", "
+        if array and not value._aggregate_has(index):
+            var start = index
+            while index < limit and not value._aggregate_has(index):
+                index += 1
+            var missing = index - start
+            result += "<" + String(missing) + (" empty item>" if missing == 1 else " empty items>")
+            continue
         if not array:
             var key = value._aggregate_key(index)
             result += key.to_native_lossy() if _plain_key(key) else quote_inspected_string(key)
             result += ": "
         result += _inspect(value._aggregate_value(index), depth - 1, array_limit, active)
+        index += 1
     if limit != count:
         if limit != 0:
             result += ", "

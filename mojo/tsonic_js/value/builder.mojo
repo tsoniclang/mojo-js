@@ -76,6 +76,8 @@ struct _JsValueBuilder(ImplicitlyCopyable):
         if kind == _OBJECT and len(self._nodes[][index].keys) != len(children):
             raise Error("JavaScript object keys and values have different lengths")
         for child in children:
+            if kind == _ARRAY and child == -1:
+                continue
             if child < 0 or child >= len(self._nodes[]):
                 raise Error("JavaScript value graph contains an invalid reference")
         self._nodes[][index].children = children^

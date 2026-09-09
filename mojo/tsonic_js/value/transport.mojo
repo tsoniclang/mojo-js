@@ -8,7 +8,7 @@ from .clone import js_value_structured_clone
 
 comptime _BYTE_LIMIT = 16 * 1024 * 1024
 comptime _NODE_LIMIT = 1048576
-comptime _MAGIC = UInt32(0x3156474A)
+comptime _MAGIC = UInt32(0x3256474A)
 
 
 struct _Writer:
@@ -78,7 +78,7 @@ def encode_structured_clone(value: JsValue) raises -> List[UInt8]:
             for index in range(len(node.children)):
                 if node.kind == _OBJECT:
                     writer.string(node.keys[index])
-                writer.integer(UInt64(node.children[index]), 4)
+                writer.integer(UInt64(0xFFFFFFFF) if node.children[index] == -1 else UInt64(node.children[index]), 4)
         elif node.kind != _UNDEFINED and node.kind != _NULL:
             raise Error("Value has no structured clone transport representation")
     return writer.bytes^
@@ -110,7 +110,7 @@ def decode_structured_clone(var bytes: List[UInt8]) raises -> JsValue:
             _ = builder.append_string(reader.string())
         elif kind == _ARRAY or kind == _OBJECT:
             var size = Int(reader.integer(4))
-            if size > _NODE_LIMIT or size > (len(reader.bytes) - reader.offset) // 4:
+            if size > 4194304 or size > (len(reader.bytes) - reader.offset) // 4:
                 raise Error("Structured clone transport has an invalid aggregate size")
             var children = List[Int](capacity=size)
             var keys = List[JsString](capacity=size if kind == _OBJECT else 0)
@@ -118,6 +118,9 @@ def decode_structured_clone(var bytes: List[UInt8]) raises -> JsValue:
                 if kind == _OBJECT:
                     keys.append(reader.string())
                 var child = Int(reader.integer(4))
+                if kind == _ARRAY and child == 0xFFFFFFFF:
+                    children.append(-1)
+                    continue
                 if child >= count:
                     raise Error("Structured clone transport has an invalid reference")
                 children.append(child)

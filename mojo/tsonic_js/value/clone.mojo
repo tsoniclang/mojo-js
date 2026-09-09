@@ -45,6 +45,8 @@ struct _Clone:
         elif value.is_symbol() or value.is_json_projection():
             raise Error("JavaScript symbols and executable projections cannot be structured-cloned")
         elif value.is_array() or value.is_object():
+            if not value._nodes[][value._index].source_view and not value._nodes[][value._index].identity:
+                raise Error("JavaScript aggregate has no allocation identity")
             var identity = value._identity_address()
             if identity in self.identities:
                 target = self.identities[identity]
@@ -85,6 +87,9 @@ struct _Clone:
             edges += record.length
             var children = List[Int](capacity=record.length)
             for index in range(record.length):
+                if record.source.is_array() and not record.source.array_has(index):
+                    children.append(-1)
+                    continue
                 var child = record.source.array_at(index) if record.source.is_array() else record.source.object_value(index)
                 children.append(self.reserve(child))
             self.builder.set_aggregate_children(record.target, children^)

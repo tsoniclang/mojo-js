@@ -41,9 +41,10 @@ def js_value_from_json_projection(
 def js_value_from_source_array(
     identity: WeakReferenceIdentity,
     length: Callable[Tuple[], Int],
+    has: Callable[Tuple[Int], Bool],
     value: Callable[Tuple[Int], JsValue],
 ) -> JsValue:
-    var view = ArcPointer(_SourceValueView(identity, length, None, value, None))
+    var view = ArcPointer(_SourceValueView(identity, length, None, Optional[Callable[Tuple[Int], Bool]](has), value, None))
     var nodes = List[_JsValueNode]()
     nodes.append(_JsValueNode(_ARRAY, view))
     return JsValue(ArcPointer(nodes^), 0)
@@ -56,7 +57,7 @@ def js_value_from_source_object(
     value: Callable[Tuple[Int], JsValue],
     to_json: Optional[RaisingCallable[Tuple[String], JsValue, Error]] = None,
 ) -> JsValue:
-    var view = ArcPointer(_SourceValueView(identity, length, Optional[Callable[Tuple[Int], JsString]](key), value, to_json))
+    var view = ArcPointer(_SourceValueView(identity, length, Optional[Callable[Tuple[Int], JsString]](key), None, value, to_json))
     var nodes = List[_JsValueNode]()
     nodes.append(_JsValueNode(_OBJECT, view))
     return JsValue(ArcPointer(nodes^), 0)
