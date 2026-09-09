@@ -16,6 +16,11 @@ strings and explicitly requested `JsString` values retain separate contracts.
 The existing native and JavaScript differential proofs exercise both through
 that public entrypoint; architecture tests enforce the internal import boundary.
 
+`value/` separates the closed value/node model, graph builder, graph copying,
+constructors, structured cloning and tagged callback decoding. Representation
+does not depend on those consumers. The `value` entrypoint preserves imports
+used by the JSON, collection, RegExp and Node runtimes.
+
 ## Development
 
 ```bash
