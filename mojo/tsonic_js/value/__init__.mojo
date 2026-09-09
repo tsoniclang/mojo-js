@@ -43,3 +43,4 @@ from .graph import (
 from .clone import (
     js_value_structured_clone,
 )
+from .weak_identity import JsValueWeakIdentity

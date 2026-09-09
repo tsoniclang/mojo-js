@@ -8,7 +8,7 @@ struct IntlResult(Movable):
     def __init__(out self, pointer: OptionalPointer[NoneType, MutUntrackedOrigin]):
         self.pointer = pointer
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         if self.pointer:
             external_call["tsonic_js_intl_free", NoneType](self.pointer.value())
 
