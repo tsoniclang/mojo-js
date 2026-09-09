@@ -12,7 +12,7 @@ from .array_values import (
 )
 
 
-struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
+struct JsArray[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
     comptime Storage = downcast[List[Optional[Self.T]], Movable & Deinitable]
     var _elements: ArcPointer[Self.Storage]
 
@@ -31,6 +31,9 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
 
     def __len__(self) -> Int:
         return len(self._elements[])
+
+    def __eq__(self, other: Self) -> Bool:
+        return self._elements is other._elements
 
     def js_length(self) -> Float64:
         return Float64(len(self))

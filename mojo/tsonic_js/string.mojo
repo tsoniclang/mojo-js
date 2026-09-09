@@ -1,6 +1,18 @@
 from std.collections import List
 from std.collections.string import Codepoint
 from std.memory import ArcPointer
+from tsonic_runtime.numeric import (
+    source_number_to_integer_or_infinity,
+    source_number_to_length,
+    source_number_to_uint32,
+)
+from .string_indexes import (
+    string_absolute_index,
+    string_capacity,
+    string_clamped_index,
+    string_relative_index,
+    string_repeat_shape,
+)
 
 
 struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
@@ -81,37 +93,39 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
         return self._code_units[].copy()
 
     def char_at(self, index: Float64) -> Self:
-        var unit = self.code_unit_at(_string_integer(index))
-        if not unit:
+        var selected = string_absolute_index(index, len(self))
+        if not selected:
             return Self()
         var units = List[UInt16]()
-        units.append(unit.value())
+        units.append(self._code_units[][selected.value()])
         return Self(code_units=units^)
 
     def get_index(self, index: Float64) -> Optional[Self]:
-        var normalized = _string_integer(index)
-        if normalized < 0 or normalized >= len(self):
+        var normalized = string_absolute_index(index, len(self))
+        if not normalized or index != Float64(normalized.value()):
             return None
-        return Optional[Self](self.char_at(Float64(normalized)))
+        return Optional[Self](self.char_at(index))
 
     def at(self, index: Float64) -> Optional[Self]:
-        var normalized = _string_integer(index)
+        var normalized = source_number_to_integer_or_infinity(index)
         if normalized < 0:
-            normalized += len(self)
-        if normalized < 0 or normalized >= len(self):
+            normalized += Float64(len(self))
+        if normalized < 0 or normalized >= Float64(len(self)):
             return None
-        return Optional[Self](self.char_at(Float64(normalized)))
+        return Optional[Self](self.char_at(normalized))
 
     def char_code_at(self, index: Float64) -> Float64:
-        var unit = self.code_unit_at(_string_integer(index))
-        return Float64(unit.value()) if unit else Float64(FloatLiteral.nan)
+        var selected = string_absolute_index(index, len(self))
+        return Float64(
+            self._code_units[][selected.value()]
+        ) if selected else Float64(FloatLiteral.nan)
 
     def code_point_at(self, index: Float64) -> Optional[Float64]:
-        var position = _string_integer(index)
-        var first = self.code_unit_at(position)
-        if not first:
+        var selected = string_absolute_index(index, len(self))
+        if not selected:
             return None
-        var first_value = UInt32(first.value())
+        var position = selected.value()
+        var first_value = UInt32(self._code_units[][position])
         if first_value < 0xD800 or first_value > 0xDBFF:
             return Optional[Float64](Float64(first_value))
         var second = self.code_unit_at(position + 1)
@@ -139,7 +153,7 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
         return self.index_of(value, position) >= 0
 
     def starts_with(self, value: Self, position: Float64 = 0) -> Bool:
-        var start = _clamp_index(_string_integer(position), len(self))
+        var start = string_clamped_index(position, len(self))
         return self._matches_at(value, start)
 
     def ends_with(
@@ -149,11 +163,11 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
     ) -> Bool:
         var end = len(self) if end_position == Float64(
             FloatLiteral.infinity
-        ) else _clamp_index(_string_integer(end_position), len(self))
+        ) else string_clamped_index(end_position, len(self))
         return self._matches_at(value, end - len(value))
 
     def index_of(self, value: Self, position: Float64 = 0) -> Float64:
-        var start = _clamp_index(_string_integer(position), len(self))
+        var start = string_clamped_index(position, len(self))
         if len(value) == 0:
             return Float64(start)
         for index in range(start, len(self) - len(value) + 1):
@@ -164,9 +178,9 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
     def last_index_of(
         self, value: Self, position: Float64 = Float64(FloatLiteral.infinity)
     ) -> Float64:
-        var start = len(self) if position == Float64(
+        var start = len(self) if position != position or position == Float64(
             FloatLiteral.infinity
-        ) else _clamp_index(_string_integer(position), len(self))
+        ) else string_clamped_index(position, len(self))
         if len(value) == 0:
             return Float64(start)
         var index = min(start, len(self) - len(value))
@@ -179,10 +193,10 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
     def slice(
         self, start: Float64 = 0, end: Float64 = Float64(FloatLiteral.infinity)
     ) -> Self:
-        var first = _relative_string_index(start, len(self))
+        var first = string_relative_index(start, len(self))
         var last = len(self) if end == Float64(
             FloatLiteral.infinity
-        ) else _relative_string_index(end, len(self))
+        ) else string_relative_index(end, len(self))
         if last < first:
             last = first
         return self._range(first, last)
@@ -190,10 +204,10 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
     def substring(
         self, start: Float64, end: Float64 = Float64(FloatLiteral.infinity)
     ) -> Self:
-        var first = _clamp_index(_string_integer(start), len(self))
+        var first = string_clamped_index(start, len(self))
         var last = len(self) if end == Float64(
             FloatLiteral.infinity
-        ) else _clamp_index(_string_integer(end), len(self))
+        ) else string_clamped_index(end, len(self))
         if first > last:
             var swap = first
             first = last
@@ -203,11 +217,9 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
     def substr(
         self, start: Float64, length: Float64 = Float64(FloatLiteral.infinity)
     ) -> Self:
-        var first = _relative_string_index(start, len(self))
-        var count = len(self) - first if length == Float64(
-            FloatLiteral.infinity
-        ) else max(_string_integer(length), 0)
-        return self._range(first, min(first + count, len(self)))
+        var first = string_relative_index(start, len(self))
+        var count = string_clamped_index(length, len(self) - first)
+        return self._range(first, first + count)
 
     def trim(self) -> Self:
         var first = 0
@@ -239,10 +251,10 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
         return self.trim_end()
 
     def repeat(self, count: Float64) raises -> Self:
-        var repetitions = _string_integer(count)
-        if repetitions < 0 or count == Float64(FloatLiteral.infinity):
-            raise Error("invalid JavaScript string repeat count")
-        var units = List[UInt16](capacity=len(self) * repetitions)
+        var repetitions, length = string_repeat_shape(len(self), count)
+        if length == 0:
+            return Self()
+        var units = List[UInt16](capacity=length)
         for _ in range(repetitions):
             for unit in self._code_units[]:
                 units.append(unit)
@@ -302,10 +314,14 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
             start = found + len(search)
         return result
 
-    def pad_start(self, target_length: Float64, fill: Self = Self(" ")) -> Self:
+    def pad_start(
+        self, target_length: Float64, fill: Self = Self(" ")
+    ) raises -> Self:
         return self._pad(target_length, fill, True)
 
-    def pad_end(self, target_length: Float64, fill: Self = Self(" ")) -> Self:
+    def pad_end(
+        self, target_length: Float64, fill: Self = Self(" ")
+    ) raises -> Self:
         return self._pad(target_length, fill, False)
 
     def to_lower_case(self) raises -> Self:
@@ -389,10 +405,13 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
             units.append(self._code_units[][index])
         return Self(code_units=units^)
 
-    def _pad(self, target_length: Float64, fill: Self, at_start: Bool) -> Self:
-        var target = max(_string_integer(target_length), 0)
-        if target <= len(self) or len(fill) == 0:
+    def _pad(
+        self, target_length: Float64, fill: Self, at_start: Bool
+    ) raises -> Self:
+        var source_length = source_number_to_length(target_length)
+        if source_length <= Float64(len(self)) or len(fill) == 0:
             return self
+        var target = string_capacity(source_length)
         var needed = target - len(self)
         var padding = List[UInt16](capacity=needed)
         for index in range(needed):
@@ -461,23 +480,6 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
         return result^
 
 
-def _string_integer(value: Float64) -> Int:
-    if value != value or value == 0:
-        return 0
-    return Int(value)
-
-
-def _clamp_index(value: Int, length: Int) -> Int:
-    return min(max(value, 0), length)
-
-
-def _relative_string_index(value: Float64, length: Int) -> Int:
-    var integer = _string_integer(value)
-    if integer < 0:
-        return max(length + integer, 0)
-    return min(integer, length)
-
-
 def _is_js_whitespace(unit: UInt16) -> Bool:
     return (
         unit == 0x0009
@@ -511,15 +513,17 @@ def _is_js_whitespace(unit: UInt16) -> Bool:
 def string_from_char_code(codes: List[Float64]) -> JsString:
     var units = List[UInt16](capacity=len(codes))
     for code in codes:
-        units.append(UInt16(UInt32(Int64(code)) & 0xFFFF))
+        units.append(UInt16(source_number_to_uint32(code) & 0xFFFF))
     return JsString(code_units=units^)
 
 
 def string_from_code_point(codes: List[Float64]) raises -> JsString:
     var units = List[UInt16]()
     for code in codes:
+        if code != code or code < 0 or code > 0x10FFFF:
+            raise Error("invalid JavaScript Unicode code point")
         var scalar = Int64(code)
-        if code != Float64(scalar) or scalar < 0 or scalar > 0x10FFFF:
+        if code != Float64(scalar):
             raise Error("invalid JavaScript Unicode code point")
         if scalar <= 0xFFFF:
             units.append(UInt16(scalar))

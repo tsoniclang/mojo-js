@@ -40,6 +40,10 @@ node scripts/verify-regexp-oracle.mjs "${NATIVE_BUILD}/regexp_oracle"
   "${link_arguments[@]}" test/oracle/array_driver.mojo -o "${NATIVE_BUILD}/array_oracle"
 node scripts/verify-array-oracle.mjs "${NATIVE_BUILD}/array_oracle"
 
+"${PIXI_BIN}" run mojo build -j 2 -I mojo -I ../mojo-runtime/mojo \
+  "${link_arguments[@]}" test/oracle/console_driver.mojo -o "${NATIVE_BUILD}/console_oracle"
+node scripts/verify-console-oracle.mjs "${NATIVE_BUILD}/console_oracle"
+
 failed=0
 for test_file in tests/*.mojo; do
   test_name="$(basename "${test_file}" .mojo)"

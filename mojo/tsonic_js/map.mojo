@@ -26,7 +26,7 @@ struct _JsMapEntry[K: AnyType, V: AnyType](
 struct JsMap[
     K: AnyType,
     V: AnyType,
-](ImplicitlyCopyable, Sized):
+](Equatable, ImplicitlyCopyable, Sized):
     comptime Storage = downcast[
         List[_JsMapEntry[Self.K, Self.V]], Movable & Deinitable
     ]
@@ -44,6 +44,9 @@ struct JsMap[
 
     def __len__(self) -> Int:
         return len(self._entries[])
+
+    def __eq__(self, other: Self) -> Bool:
+        return self._entries is other._entries
 
     def js_size(self) -> Float64:
         return Float64(len(self))

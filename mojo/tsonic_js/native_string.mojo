@@ -2,15 +2,24 @@ from .string import JsString, string_from_char_code, string_from_code_point
 from std.collections import List
 
 
-def native_string_at(value: String, index: Float64) -> Optional[String]:
+def native_string_at(value: String, index: Float64) raises -> Optional[String]:
     var selected = JsString(value).at(index)
     if not selected:
         return None
-    return Optional[String](selected.value().to_native_lossy())
+    return Optional[String](selected.value().to_native_strict())
 
 
-def native_string_char_at(value: String, index: Float64) -> String:
-    return JsString(value).char_at(index).to_native_lossy()
+def native_string_char_at(value: String, index: Float64) raises -> String:
+    return JsString(value).char_at(index).to_native_strict()
+
+
+def native_string_get_index(
+    value: String, index: Float64
+) raises -> Optional[String]:
+    var selected = JsString(value).get_index(index)
+    if not selected:
+        return None
+    return Optional[String](selected.value().to_native_strict())
 
 
 def native_string_char_code_at(value: String, index: Float64) -> Float64:
@@ -60,32 +69,34 @@ def native_string_last_index_of(
 
 def native_string_pad_end(
     value: String, target_length: Float64, fill: String = " "
-) -> String:
+) raises -> String:
     return (
-        JsString(value).pad_end(target_length, JsString(fill)).to_native_lossy()
+        JsString(value)
+        .pad_end(target_length, JsString(fill))
+        .to_native_strict()
     )
 
 
 def native_string_pad_start(
     value: String, target_length: Float64, fill: String = " "
-) -> String:
+) raises -> String:
     return (
         JsString(value)
         .pad_start(target_length, JsString(fill))
-        .to_native_lossy()
+        .to_native_strict()
     )
 
 
 def native_string_repeat(value: String, count: Float64) raises -> String:
-    return JsString(value).repeat(count).to_native_lossy()
+    return JsString(value).repeat(count).to_native_strict()
 
 
 def native_string_slice(
     value: String,
     start: Float64 = 0,
     end: Float64 = Float64(FloatLiteral.infinity),
-) -> String:
-    return JsString(value).slice(start, end).to_native_lossy()
+) raises -> String:
+    return JsString(value).slice(start, end).to_native_strict()
 
 
 def native_string_starts_with(
@@ -98,16 +109,16 @@ def native_string_substr(
     value: String,
     start: Float64,
     length: Float64 = Float64(FloatLiteral.infinity),
-) -> String:
-    return JsString(value).substr(start, length).to_native_lossy()
+) raises -> String:
+    return JsString(value).substr(start, length).to_native_strict()
 
 
 def native_string_substring(
     value: String,
     start: Float64,
     end: Float64 = Float64(FloatLiteral.infinity),
-) -> String:
-    return JsString(value).substring(start, end).to_native_lossy()
+) raises -> String:
+    return JsString(value).substring(start, end).to_native_strict()
 
 
 def native_string_to_lower_case(value: String) raises -> String:
@@ -155,9 +166,9 @@ def native_string_is_well_formed(value: String) -> Bool:
     return True
 
 
-def native_string_from_char_code(codes: List[Float64]) -> String:
-    return string_from_char_code(codes).to_native_lossy()
+def native_string_from_char_code(codes: List[Float64]) raises -> String:
+    return string_from_char_code(codes).to_native_strict()
 
 
 def native_string_from_code_point(codes: List[Float64]) raises -> String:
-    return string_from_code_point(codes).to_native_lossy()
+    return string_from_code_point(codes).to_native_strict()

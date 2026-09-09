@@ -6,7 +6,7 @@ from .array import JsArray
 from .equality import same_value_zero
 
 
-struct JsSet[T: AnyType](ImplicitlyCopyable, Sized):
+struct JsSet[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
     comptime Storage = downcast[List[Self.T], Movable & Deinitable]
     var _values: ArcPointer[Self.Storage]
 
@@ -16,6 +16,9 @@ struct JsSet[T: AnyType](ImplicitlyCopyable, Sized):
 
     def __len__(self) -> Int:
         return len(self._values[])
+
+    def __eq__(self, other: Self) -> Bool:
+        return self._values is other._values
 
     def js_size(self) -> Float64:
         return Float64(len(self))
