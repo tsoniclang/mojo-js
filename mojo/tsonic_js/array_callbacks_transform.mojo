@@ -10,7 +10,7 @@ def array_map_zero[
 ](array: JsArray[T], callback: Callback) raises CallbackError -> JsArray[U]:
     var result = List[Optional[U]](capacity=len(array))
     for index in range(len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         result.append(Optional[U](callback()) if current else None)
     return JsArray[U](elements=result^)
 
@@ -23,7 +23,7 @@ def array_map_value[
 ](array: JsArray[T], callback: Callback) raises CallbackError -> JsArray[U]:
     var result = List[Optional[U]](capacity=len(array))
     for index in range(len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         result.append(
             Optional[U](callback(current.value().copy())) if current else None
         )
@@ -38,7 +38,7 @@ def array_map_with_index[
 ](array: JsArray[T], callback: Callback,) raises CallbackError -> JsArray[U]:
     var result = List[Optional[U]](capacity=len(array))
     for index in range(len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         result.append(
             Optional[U](
                 callback(current.value().copy(), Float64(index))
@@ -55,7 +55,7 @@ def array_map_with_array[
 ](array: JsArray[T], callback: Callback,) raises CallbackError -> JsArray[U]:
     var result = List[Optional[U]](capacity=len(array))
     for index in range(len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         result.append(
             Optional[U](
                 callback(current.value().copy(), Float64(index), array)
@@ -71,7 +71,7 @@ def array_for_each_zero[
     Callback: def() raises CallbackError -> R,
 ](array: JsArray[T], callback: Callback) raises CallbackError:
     for index in range(len(array)):
-        if array._elements[][index]:
+        if array.has(index):
             _ = callback()
 
 
@@ -82,7 +82,7 @@ def array_for_each_value[
     Callback: def(T) raises CallbackError -> R,
 ](array: JsArray[T], callback: Callback) raises CallbackError:
     for index in range(len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         if current:
             _ = callback(current.value().copy())
 
@@ -94,7 +94,7 @@ def array_for_each_value_index[
     Callback: def(T, Float64) raises CallbackError -> R,
 ](array: JsArray[T], callback: Callback,) raises CallbackError:
     for index in range(len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         if current:
             _ = callback(current.value().copy(), Float64(index))
 
@@ -106,7 +106,7 @@ def array_for_each_with_array[
     Callback: def(T, Float64, JsArray[T]) raises CallbackError -> R,
 ](array: JsArray[T], callback: Callback,) raises CallbackError:
     for index in range(len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         if current:
             _ = callback(current.value().copy(), Float64(index), array)
 
@@ -118,7 +118,7 @@ def array_filter_zero[
 ](array: JsArray[T], callback: Callback) raises CallbackError -> JsArray[T]:
     var result = List[Optional[T]]()
     for index in range(len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         if current and callback():
             result.append(current.copy())
     return JsArray[T](elements=result^)
@@ -131,7 +131,7 @@ def array_filter_value[
 ](array: JsArray[T], callback: Callback) raises CallbackError -> JsArray[T]:
     var result = List[Optional[T]]()
     for index in range(len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         if current and callback(current.value().copy()):
             result.append(current.copy())
     return JsArray[T](elements=result^)
@@ -144,7 +144,7 @@ def array_filter_with_index[
 ](array: JsArray[T], callback: Callback,) raises CallbackError -> JsArray[T]:
     var result = List[Optional[T]]()
     for index in range(len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         if current and callback(current.value().copy(), Float64(index)):
             result.append(current.copy())
     return JsArray[T](elements=result^)
@@ -157,7 +157,7 @@ def array_filter_with_array[
 ](array: JsArray[T], callback: Callback,) raises CallbackError -> JsArray[T]:
     var result = List[Optional[T]]()
     for index in range(len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         if current and callback(current.value().copy(), Float64(index), array):
             result.append(current.copy())
     return JsArray[T](elements=result^)

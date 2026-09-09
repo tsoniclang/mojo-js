@@ -233,7 +233,10 @@ struct JsRegExpIndicesArray(ImplicitlyCopyable, Sized):
         return self._groups
 
     def iter_values(self) -> List[Optional[RegExpIndexPair]]:
-        return self._values.iter_values()
+        var result = List[Optional[RegExpIndexPair]]()
+        for index in range(len(self)):
+            result.append(self.get_index(Float64(index)))
+        return result^
 
     def _native(self) raises -> RegExpIndicesArray:
         return RegExpIndicesArray(
@@ -273,7 +276,10 @@ struct RegExpIndicesArray(ImplicitlyCopyable, Sized):
         return self._groups
 
     def iter_values(self) -> List[Optional[RegExpIndexPair]]:
-        return self._values.iter_values()
+        var result = List[Optional[RegExpIndexPair]]()
+        for index in range(len(self)):
+            result.append(self.get_index(Float64(index)))
+        return result^
 
 
 struct JsRegExpMatchArray(ImplicitlyCopyable, Sized):
@@ -326,11 +332,14 @@ struct JsRegExpMatchArray(ImplicitlyCopyable, Sized):
         return self._indices
 
     def iter_values(self) -> List[Optional[JsString]]:
-        return self._values.iter_values()
+        var result = List[Optional[JsString]]()
+        for index in range(len(self)):
+            result.append(self.get_index(Float64(index)))
+        return result^
 
     def _native(self) raises -> RegExpMatchArray:
         var values = List[Optional[String]]()
-        for value in self._values.iter_values():
+        for value in self.iter_values():
             values.append(
                 Optional[String](
                     value.value().to_native_strict()
@@ -441,7 +450,10 @@ struct RegExpMatchArray(ImplicitlyCopyable, Sized):
         return self._indices
 
     def iter_values(self) -> List[Optional[String]]:
-        return self._values.iter_values()
+        var result = List[Optional[String]]()
+        for index in range(len(self)):
+            result.append(self.get_index(Float64(index)))
+        return result^
 
 
 struct RegExpExecArray(ImplicitlyCopyable, Sized):
@@ -488,7 +500,10 @@ struct JsRegExpStringIterator(ImplicitlyCopyable):
         self._values = values
 
     def iter_values(self) -> List[JsRegExpExecArray]:
-        return self._values.iter_values()
+        var result = List[JsRegExpExecArray]()
+        for value in self._values._elements[]:
+            result.append(value.value())
+        return result^
 
 
 struct RegExpStringIterator(ImplicitlyCopyable):
@@ -498,7 +513,10 @@ struct RegExpStringIterator(ImplicitlyCopyable):
         self._values = values
 
     def iter_values(self) -> List[RegExpExecArray]:
-        return self._values.iter_values()
+        var result = List[RegExpExecArray]()
+        for value in self._values._elements[]:
+            result.append(value.value())
+        return result^
 
 
 def _parse_exact_match(value: JsValue) raises -> Optional[JsRegExpMatchArray]:

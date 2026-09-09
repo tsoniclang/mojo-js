@@ -9,8 +9,9 @@ git diff --exit-code -- mojo tests
 
 mkdir -p "${NATIVE_BUILD}"
 CONDA_PREFIX="$(${PIXI_BIN} run printenv CONDA_PREFIX)"
+native_object="$("${PIXI_BIN}" run bash ../mojo-runtime/scripts/build-native.sh)"
 for source in regexp_bridge unicode_normalization_bridge; do
-  "${PIXI_BIN}" run cc -O3 -fPIC -std=c11 \
+  "${PIXI_BIN}" run bash -c 'exec "${CONDA_PREFIX:?}/bin/gcc" "$@"' -- -O3 -fPIC -std=c11 \
     -I"${CONDA_PREFIX}/include/quickjs" \
     -I"${CONDA_PREFIX}/include" \
     -c "mojo/tsonic_js.native/${source}.c" \
@@ -18,6 +19,8 @@ for source in regexp_bridge unicode_normalization_bridge; do
 done
 
 link_arguments=(
+  -Xlinker "$native_object"
+  -Xlinker -lstdc++
   -Xlinker "${NATIVE_BUILD}/regexp_bridge.o"
   -Xlinker "${NATIVE_BUILD}/unicode_normalization_bridge.o"
   -Xlinker "${CONDA_PREFIX}/lib/quickjs/libquickjs.a"
@@ -33,16 +36,26 @@ link_arguments=(
   "${link_arguments[@]}" test/oracle/regexp_driver.mojo -o "${NATIVE_BUILD}/regexp_oracle"
 node scripts/verify-regexp-oracle.mjs "${NATIVE_BUILD}/regexp_oracle"
 
+"${PIXI_BIN}" run mojo build -j 2 -I mojo -I ../mojo-runtime/mojo \
+  "${link_arguments[@]}" test/oracle/array_driver.mojo -o "${NATIVE_BUILD}/array_oracle"
+node scripts/verify-array-oracle.mjs "${NATIVE_BUILD}/array_oracle"
+
+failed=0
 for test_file in tests/*.mojo; do
   test_name="$(basename "${test_file}" .mojo)"
-  "${PIXI_BIN}" run mojo build \
+  if "${PIXI_BIN}" run mojo build \
     -j 2 \
     -I mojo \
     -I ../mojo-runtime/mojo \
     "${link_arguments[@]}" \
     "${test_file}" \
-    -o "${NATIVE_BUILD}/${test_name}"
-  "${NATIVE_BUILD}/${test_name}"
+    -o "${NATIVE_BUILD}/${test_name}" && "${NATIVE_BUILD}/${test_name}"; then
+    printf 'PASS %s\n' "$test_file"
+  else
+    printf 'FAIL %s\n' "$test_file"
+    failed=1
+  fi
 done
 
-bash scripts/test-native-limits.sh
+if ! bash scripts/test-native-limits.sh; then failed=1; fi
+exit "$failed"

@@ -9,7 +9,7 @@ def array_reduce_initial_zero[
 ](array: JsArray[T], callback: Callback, initial: U,) raises CallbackError -> U:
     var accumulator = initial.copy()
     for index in range(len(array)):
-        if array._elements[][index]:
+        if array.has(index):
             accumulator = callback()
     return accumulator^
 
@@ -22,7 +22,7 @@ def array_reduce_initial_accumulator[
 ](array: JsArray[T], callback: Callback, initial: U,) raises CallbackError -> U:
     var accumulator = initial.copy()
     for index in range(len(array)):
-        if array._elements[][index]:
+        if array.has(index):
             accumulator = callback(accumulator^)
     return accumulator^
 
@@ -35,7 +35,7 @@ def array_reduce_initial_value[
 ](array: JsArray[T], callback: Callback, initial: U,) raises CallbackError -> U:
     var accumulator = initial.copy()
     for index in range(len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         if current:
             accumulator = callback(accumulator^, current.value().copy())
     return accumulator^
@@ -49,7 +49,7 @@ def array_reduce_initial_with_index[
 ](array: JsArray[T], callback: Callback, initial: U,) raises CallbackError -> U:
     var accumulator = initial.copy()
     for index in range(len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         if current:
             accumulator = callback(
                 accumulator^, current.value().copy(), Float64(index)
@@ -65,7 +65,7 @@ def array_reduce_initial_with_array[
 ](array: JsArray[T], callback: Callback, initial: U,) raises CallbackError -> U:
     var accumulator = initial.copy()
     for index in range(len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         if current:
             accumulator = callback(
                 accumulator^, current.value().copy(), Float64(index), array
@@ -80,7 +80,7 @@ def array_reduce_from_first_zero[
     var first = _first_present(array)
     var accumulator = array._elements[][first].copy().value().copy()
     for index in range(first + 1, len(array)):
-        if array._elements[][index]:
+        if array.has(index):
             accumulator = callback()
     return accumulator^
 
@@ -92,7 +92,7 @@ def array_reduce_from_first_accumulator[
     var first = _first_present(array)
     var accumulator = array._elements[][first].copy().value().copy()
     for index in range(first + 1, len(array)):
-        if array._elements[][index]:
+        if array.has(index):
             accumulator = callback(accumulator^)
     return accumulator^
 
@@ -104,7 +104,7 @@ def array_reduce_from_first_value[
     var first = _first_present(array)
     var accumulator = array._elements[][first].copy().value().copy()
     for index in range(first + 1, len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         if current:
             accumulator = callback(accumulator^, current.value().copy())
     return accumulator^
@@ -117,7 +117,7 @@ def array_reduce_from_first_with_index[
     var first = _first_present(array)
     var accumulator = array._elements[][first].copy().value().copy()
     for index in range(first + 1, len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         if current:
             accumulator = callback(
                 accumulator^, current.value().copy(), Float64(index)
@@ -132,7 +132,7 @@ def array_reduce_from_first_with_array[
     var first = _first_present(array)
     var accumulator = array._elements[][first].copy().value().copy()
     for index in range(first + 1, len(array)):
-        var current = array._elements[][index].copy()
+        var current = array.get(index)
         if current:
             accumulator = callback(
                 accumulator^, current.value().copy(), Float64(index), array
@@ -142,6 +142,6 @@ def array_reduce_from_first_with_array[
 
 def _first_present[T: Copyable & Deinitable](array: JsArray[T]) raises -> Int:
     for index in range(len(array)):
-        if array._elements[][index]:
+        if array.has(index):
             return index
     raise Error("Reduce of empty JavaScript array with no initial value")
