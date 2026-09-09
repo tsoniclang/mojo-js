@@ -12,34 +12,13 @@ git diff --exit-code -- mojo tests
 mkdir -p "${NATIVE_BUILD}"
 CONDA_PREFIX="$(${PIXI_BIN} run printenv CONDA_PREFIX)"
 native_object="$("${PIXI_BIN}" run bash ../mojo-runtime/scripts/build-native.sh)"
-for source in regexp_bridge unicode_normalization_bridge date_timezone intl/result intl/language_tag intl/locales intl/casing intl/collation; do
-  mkdir -p "${NATIVE_BUILD}/$(dirname "${source}")"
-  "${PIXI_BIN}" run bash -c 'exec "${CONDA_PREFIX:?}/bin/gcc" "$@"' -- -O3 -fPIC -std=c11 \
-    -I"${CONDA_PREFIX}/include/quickjs" \
-    -I"${CONDA_PREFIX}/include" \
-    -c "mojo/tsonic_js.native/${source}.c" \
-    -o "${NATIVE_BUILD}/${source}.o"
-done
+js_native_output="$("${PIXI_BIN}" run bash scripts/build-native.sh)"
+mapfile -t js_native_arguments <<<"${js_native_output}"
 
 link_arguments=(
   -Xlinker "$native_object"
   -Xlinker -lstdc++
-  -Xlinker "${NATIVE_BUILD}/regexp_bridge.o"
-  -Xlinker "${NATIVE_BUILD}/unicode_normalization_bridge.o"
-  -Xlinker "${NATIVE_BUILD}/date_timezone.o"
-  -Xlinker "${NATIVE_BUILD}/intl/result.o"
-  -Xlinker "${NATIVE_BUILD}/intl/language_tag.o"
-  -Xlinker "${NATIVE_BUILD}/intl/locales.o"
-  -Xlinker "${NATIVE_BUILD}/intl/casing.o"
-  -Xlinker "${NATIVE_BUILD}/intl/collation.o"
-  -Xlinker "${CONDA_PREFIX}/lib/quickjs/libquickjs.a"
-  -Xlinker "-L${CONDA_PREFIX}/lib"
-  -Xlinker -ldl
-  -Xlinker -licudata
-  -Xlinker -licuuc
-  -Xlinker -licui18n
-  -Xlinker -lm
-  -Xlinker -lpthread
+  "${js_native_arguments[@]}"
 )
 
 "${PIXI_BIN}" run mojo build -j 2 -I mojo -I ../mojo-runtime/mojo \
