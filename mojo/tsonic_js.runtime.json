@@ -7,6 +7,11 @@
     "sysroot_linux-64": "==2.34"
   },
   "translationUnits": [
+    { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/result.c" },
+    { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/language_tag.c" },
+    { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/locales.c" },
+    { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/casing.c" },
+    { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/collation.c" },
     {
       "language": "c",
       "standard": "c11",
@@ -22,6 +27,10 @@
       "standard": "c11",
       "path": "tsonic_js.native/date_timezone.c"
     }
+  ],
+  "assets": [
+    "tsonic_js.native/intl/api.h",
+    "tsonic_js.native/intl/model.h"
   ],
   "includeDirectories": [
     "include/quickjs"

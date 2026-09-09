@@ -1,0 +1,27 @@
+#ifndef TSONIC_JS_INTL_API_H
+#define TSONIC_JS_INTL_API_H
+
+#include <stddef.h>
+#include <stdint.h>
+
+typedef struct TsonicIntlResult TsonicIntlResult;
+
+TsonicIntlResult *tsonic_js_intl_locale(const char *tag, size_t length);
+TsonicIntlResult *tsonic_js_intl_default_locale(void);
+int tsonic_js_intl_collation_available(const char *locale);
+TsonicIntlResult *tsonic_js_intl_case(
+    const uint16_t *source, size_t length, const char *locale, int upper);
+TsonicIntlResult *tsonic_js_intl_compare(
+    const uint16_t *left, size_t left_length,
+    const uint16_t *right, size_t right_length,
+    const char *locale, const char *collation, int search,
+    int numeric, int case_first, int sensitivity, int punctuation);
+int tsonic_js_intl_failed(const TsonicIntlResult *result);
+const char *tsonic_js_intl_error(const TsonicIntlResult *result);
+const char *tsonic_js_intl_text(const TsonicIntlResult *result);
+const uint16_t *tsonic_js_intl_units(const TsonicIntlResult *result);
+size_t tsonic_js_intl_length(const TsonicIntlResult *result);
+int tsonic_js_intl_order(const TsonicIntlResult *result);
+void tsonic_js_intl_free(TsonicIntlResult *result);
+
+#endif

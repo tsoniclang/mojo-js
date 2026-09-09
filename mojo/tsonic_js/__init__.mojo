@@ -86,6 +86,14 @@ from .string import JsString, string_from_char_code, string_from_code_point
 from .symbol import JsSymbol, symbol_new
 from .string_array import string_split
 from .unicode_normalization import js_string_normalize, string_normalize
+from .intl.strings import (
+    js_string_locale_compare,
+    js_string_to_locale_lower_case,
+    js_string_to_locale_upper_case,
+    string_locale_compare,
+    string_to_locale_lower_case,
+    string_to_locale_upper_case,
+)
 from .value import (
     JsValue,
     js_value_from_bool,

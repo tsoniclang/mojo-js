@@ -1,6 +1,7 @@
 from std.collections import List
 from std.collections.string import Codepoint
 from std.memory import ArcPointer
+from .intl.casing_units import convert_case_units
 from tsonic_runtime.numeric import (
     source_number_to_integer_or_infinity,
     source_number_to_length,
@@ -325,10 +326,10 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
         return self._pad(target_length, fill, False)
 
     def to_lower_case(self) raises -> Self:
-        return Self(self.to_native_strict().lower())
+        return Self(code_units=convert_case_units(self._code_units[], "", False))
 
     def to_upper_case(self) raises -> Self:
-        return Self(self.to_native_strict().upper())
+        return Self(code_units=convert_case_units(self._code_units[], "", True))
 
     def to_string(self) -> Self:
         return self
