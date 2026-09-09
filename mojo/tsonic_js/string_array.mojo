@@ -1,4 +1,5 @@
 from std.collections import List
+from tsonic_runtime.numeric import source_number_to_uint32
 
 from .array import JsArray
 from .string import JsString
@@ -10,7 +11,7 @@ def string_split(
     limit: Float64 = 4294967295.0,
 ) -> JsArray[JsString]:
     var output = List[JsString]()
-    var maximum = max(min(Int(limit), 4294967295), 0)
+    var maximum = Int(source_number_to_uint32(limit))
     if maximum == 0:
         return JsArray[JsString](output^)
     if len(separator) == 0:

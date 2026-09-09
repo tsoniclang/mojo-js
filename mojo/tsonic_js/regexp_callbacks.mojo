@@ -122,7 +122,8 @@ def _prepare_native_callback(
     try:
         var exact = prepared.take_value()
         var matches = List[String]()
-        for record in exact.records.iter_values():
+        for stored_record in exact.records._elements[]:
+            var record = stored_record.value()
             matches.append(record.matched().to_native_strict())
         return RegExpNativeResult[_NativeRegExpCallbackBatch](
             _NativeRegExpCallbackBatch(exact, JsArray[String](matches^))
@@ -240,7 +241,7 @@ def _apply_exact_callback_0[
         return RegExpNativeResult[JsString](prepared.take_error())
     var batch = prepared.take_value()
     var replacements = List[JsString]()
-    for _ in batch.records.iter_values():
+    for _ in batch.records._elements[]:
         replacements.append(callback.call(()))
     return _complete_exact_callback(batch, replacements^)
 
@@ -255,7 +256,7 @@ def _apply_native_callback_0[
         return RegExpNativeResult[String](prepared.take_error())
     var batch = prepared.take_value()
     var replacements = List[String]()
-    for _ in batch.exact.records.iter_values():
+    for _ in batch.exact.records._elements[]:
         replacements.append(callback.call(()))
     return _complete_native_callback(batch, replacements^)
 
@@ -270,7 +271,8 @@ def _apply_exact_callback_1[
         return RegExpNativeResult[JsString](prepared.take_error())
     var batch = prepared.take_value()
     var replacements = List[JsString]()
-    for record in batch.records.iter_values():
+    for stored_record in batch.records._elements[]:
+        var record = stored_record.value()
         replacements.append(callback.call((record.matched(),)))
     return _complete_exact_callback(batch, replacements^)
 
@@ -304,7 +306,8 @@ def _apply_exact_callback_2[
         return RegExpNativeResult[JsString](prepared.take_error())
     var batch = prepared.take_value()
     var replacements = List[JsString]()
-    for record in batch.records.iter_values():
+    for stored_record in batch.records._elements[]:
+        var record = stored_record.value()
         replacements.append(
             callback.call((record.matched(), record.argument(1)))
         )
@@ -346,7 +349,8 @@ def _apply_exact_callback_3[
         return RegExpNativeResult[JsString](prepared.take_error())
     var batch = prepared.take_value()
     var replacements = List[JsString]()
-    for record in batch.records.iter_values():
+    for stored_record in batch.records._elements[]:
+        var record = stored_record.value()
         replacements.append(
             callback.call(
                 (record.matched(), record.argument(1), record.argument(2))
@@ -393,7 +397,8 @@ def _apply_exact_callback_4[
         return RegExpNativeResult[JsString](prepared.take_error())
     var batch = prepared.take_value()
     var replacements = List[JsString]()
-    for record in batch.records.iter_values():
+    for stored_record in batch.records._elements[]:
+        var record = stored_record.value()
         replacements.append(
             callback.call(
                 (
@@ -448,7 +453,8 @@ def _apply_exact_callback_5[
         return RegExpNativeResult[JsString](prepared.take_error())
     var batch = prepared.take_value()
     var replacements = List[JsString]()
-    for record in batch.records.iter_values():
+    for stored_record in batch.records._elements[]:
+        var record = stored_record.value()
         replacements.append(
             callback.call(
                 (
@@ -507,7 +513,8 @@ def _apply_exact_callback_6[
         return RegExpNativeResult[JsString](prepared.take_error())
     var batch = prepared.take_value()
     var replacements = List[JsString]()
-    for record in batch.records.iter_values():
+    for stored_record in batch.records._elements[]:
+        var record = stored_record.value()
         replacements.append(
             callback.call(
                 (
@@ -568,7 +575,8 @@ def _apply_exact_callback_7[
         return RegExpNativeResult[JsString](prepared.take_error())
     var batch = prepared.take_value()
     var replacements = List[JsString]()
-    for record in batch.records.iter_values():
+    for stored_record in batch.records._elements[]:
+        var record = stored_record.value()
         replacements.append(
             callback.call(
                 (
@@ -640,7 +648,8 @@ def _apply_exact_callback_8[
         return RegExpNativeResult[JsString](prepared.take_error())
     var batch = prepared.take_value()
     var replacements = List[JsString]()
-    for record in batch.records.iter_values():
+    for stored_record in batch.records._elements[]:
+        var record = stored_record.value()
         replacements.append(
             callback.call(
                 (

@@ -709,7 +709,7 @@ def js_value_to_string(value: JsValue) -> JsString:
             + JsString(")") if description else JsString("Symbol()")
         )
     if value.is_json_projection():
-        return JsString("[JSON projection]")
+        return JsString("[object Object]")
     if value.is_object():
         return JsString("[object Object]")
     var result = JsString()
