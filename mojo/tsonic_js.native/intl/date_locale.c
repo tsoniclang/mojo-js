@@ -4,7 +4,6 @@
 #include <unicode/ucal.h>
 #include <unicode/uenum.h>
 #include <unicode/uloc.h>
-#include <unicode/unumsys.h>
 #include <unicode/ures.h>
 #include <unicode/ustring.h>
 
@@ -25,34 +24,12 @@ int tsonic_intl_date_locale(const char *locale, const char *calendar,
         }
         uenum_close(values);
     }
-    if (numbering[0] != '\0' && U_SUCCESS(*status)) {
-        UErrorCode supported = U_ZERO_ERROR;
-        UNumberingSystem *system = unumsys_openByName(numbering, &supported);
-        if (U_SUCCESS(supported) && system != NULL && !unumsys_isAlgorithmic(system)) {
-            uloc_setKeywordValue("numbers", numbering, result, capacity, status);
-        } else if (supported != U_UNSUPPORTED_ERROR && U_FAILURE(supported)) {
-            *status = supported;
-        }
-        unumsys_close(system);
-    }
+    tsonic_intl_numbering(result, capacity, numbering, status);
     return U_SUCCESS(*status);
 }
 
 int tsonic_js_intl_date_available(const char *locale) {
-    if (locale == NULL || strlen(locale) > TSONIC_INTL_MAX_LOCALE) return 0;
-    char base[TSONIC_INTL_MAX_LOCALE + 1];
-    UErrorCode status = U_ZERO_ERROR;
-    uloc_getBaseName(locale, base, sizeof(base), &status);
-    if (U_FAILURE(status)) return 0;
-    while (base[0] != '\0') {
-        for (int32_t index = 0; index < udat_countAvailable(); ++index) {
-            if (strcmp(base, udat_getAvailable(index)) == 0) return 1;
-        }
-        char *separator = strrchr(base, '_');
-        if (separator == NULL) break;
-        *separator = '\0';
-    }
-    return 0;
+    return tsonic_intl_locale_available(locale, udat_countAvailable(), udat_getAvailable);
 }
 
 static int32_t offset_zone(const char *zone, UChar *result, UErrorCode *status) {

@@ -15,6 +15,7 @@
     { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/date_locale.c" },
     { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/date_format.c" },
     { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/date_matching.c" },
+    { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/number_format.c" },
     {
       "language": "c",
       "standard": "c11",

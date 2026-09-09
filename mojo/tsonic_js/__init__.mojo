@@ -42,6 +42,7 @@ from .date import (
     date_utc,
 )
 from .intl.dates import date_to_locale_string, date_to_locale_date_string, date_to_locale_time_string
+from .intl.numbers import number_to_locale_string
 from .json import (
     json_parse,
     json_stringify,

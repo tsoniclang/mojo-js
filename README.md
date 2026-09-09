@@ -35,6 +35,13 @@ pattern generator. Regional hour preferences come from ICU's CLDR data rather
 than country-name branches. Invalid Date returns before locale/options access.
 These Date methods do not imply support for every Intl constructor API.
 
+Numeric locale presentation uses ICU NumberFormatter with explicit digit,
+currency, grouping, sign, notation and rounding controls. Integral native
+carriers enter through ICU's exact decimal input rather than Float64, preserving
+64-bit values. Floating carriers retain signed zero and non-finite values.
+No formatter operation changes the source arithmetic carrier or requires the
+caller to adopt a JS string representation.
+
 ## Development
 
 ```bash

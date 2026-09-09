@@ -86,6 +86,51 @@ for (const operation of ["date", "time", "datetime"]) {
     cases.push({ operation, value: "invalid date", locales: locale, options: null });
   }
 }
+const numberOptions = [
+  undefined, {}, { style: "percent" }, { style: "currency", currency: "USD" },
+  { style: "currency", currency: "jpy" }, { style: "currency", currency: "KWD" },
+  { style: "currency", currency: "XXX", currencyDisplay: "code" },
+  { style: "currency", currency: "CAD", currencyDisplay: "narrowSymbol" },
+  { style: "currency", currency: "EUR", currencyDisplay: "name", currencySign: "accounting" },
+  { style: "currency", currency: "USD", currencySign: "accounting", signDisplay: "always" },
+  { useGrouping: false }, { useGrouping: true }, { minimumIntegerDigits: 5 },
+  { minimumFractionDigits: 4 }, { maximumFractionDigits: 1 }, { minimumFractionDigits: 2, maximumFractionDigits: 4 },
+  { minimumSignificantDigits: 3 }, { maximumSignificantDigits: 2 },
+  { minimumFractionDigits: 2, minimumSignificantDigits: 3, roundingPriority: "morePrecision" },
+  { maximumFractionDigits: 2, maximumSignificantDigits: 3, roundingPriority: "lessPrecision" },
+  { minimumFractionDigits: 101, maximumSignificantDigits: 3 },
+  { minimumFractionDigits: 2, maximumFractionDigits: 2, roundingIncrement: 5 },
+  { minimumFractionDigits: 2, trailingZeroDisplay: "stripIfInteger" },
+  { notation: "scientific" }, { notation: "engineering" },
+  { notation: "compact" }, { notation: "compact", compactDisplay: "long" },
+  { numberingSystem: "arab" }, { numberingSystem: "bogus" },
+];
+for (const signDisplay of ["auto", "always", "never", "exceptZero", "negative"]) numberOptions.push({ signDisplay });
+for (const roundingMode of ["ceil", "floor", "expand", "trunc", "halfCeil", "halfFloor", "halfExpand", "halfTrunc", "halfEven"]) {
+  numberOptions.push({ roundingMode, maximumFractionDigits: 1 });
+}
+for (const locale of ["en-US", "de-DE", "fr-FR", "hi-IN", "ar-EG", "ja-JP", "en-US-u-nu-arab", ["zz", "en-US"]]) {
+  for (const selected of numberOptions) {
+    for (const value of [0, "-0", "NaN", "Infinity", "-Infinity", 1, -1, 1.25, -1.25, 0.125, 1234.56, 1e21, 1e-8]) {
+      cases.push({ operation: "number", value, locales: locale, options: selected });
+    }
+    for (const value of ["9007199254740993", "-9223372036854775808", "18446744073709551615"]) {
+      cases.push({ operation: "number", value, numericKind: "integer", locales: locale, options: selected });
+    }
+  }
+}
+for (const selected of [null, { style: "currency" }, { currency: "US" }, { currency: "US€" }, { currency: "USD\0" },
+  { currencyDisplay: "" }, { currencySign: "" }, { minimumIntegerDigits: 0 }, { maximumFractionDigits: 101 },
+  { minimumFractionDigits: 3, maximumFractionDigits: 2 }, { maximumSignificantDigits: 22 },
+  { roundingIncrement: 3 }, { roundingIncrement: 5, maximumSignificantDigits: 2 },
+  { roundingIncrement: 5, minimumFractionDigits: 1, maximumFractionDigits: 2 },
+  { roundingMode: "" }, { roundingPriority: "" }, { trailingZeroDisplay: "" }, { signDisplay: "" },
+  { useGrouping: "bogus" }, { numberingSystem: "a" }, { localeMatcher: "" }]) {
+  cases.push({ operation: "number", value: 1.25, locales: "en-US", options: selected });
+}
+for (const locale of [null, "invalid_tag", ["en-US", "invalid_tag"]]) {
+  cases.push({ operation: "number", value: 42, locales: locale });
+}
 mkdirSync(directory, { recursive: true });
 const input = path.join(directory, "cases.jsonl");
 writeFileSync(input, cases.map((entry) => JSON.stringify(entry)).join("\n") + "\n");
@@ -99,7 +144,9 @@ const failures = [];
 for (const [index, entry] of cases.entries()) {
   let expected;
   try {
-    const value = entry.operation === "date" ? new Date(entry.value).toLocaleDateString(entry.locales, entry.options)
+    const number = entry.numericKind === "integer" ? BigInt(entry.value) : Number(entry.value);
+    const value = entry.operation === "number" ? number.toLocaleString(entry.locales, entry.options)
+      : entry.operation === "date" ? new Date(entry.value).toLocaleDateString(entry.locales, entry.options)
       : entry.operation === "time" ? new Date(entry.value).toLocaleTimeString(entry.locales, entry.options)
         : entry.operation === "datetime" ? new Date(entry.value).toLocaleString(entry.locales, entry.options)
           : entry.operation === "lower" ? entry.value.toLocaleLowerCase(entry.locales)
@@ -114,4 +161,4 @@ for (const [index, entry] of cases.entries()) {
   if (lines[index] !== expected) failures.push({ entry, expected, actual: lines[index] });
 }
 assert.deepEqual(failures, []);
-console.log(`Locale string/date oracle: ${cases.length}/${cases.length}`);
+console.log(`Locale string/date/number oracle: ${cases.length}/${cases.length}`);

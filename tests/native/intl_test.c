@@ -75,8 +75,52 @@ static void date_contracts(void) {
     assert(tsonic_js_intl_date_available("en_US"));
 }
 
+static void expect_number(double value, const char *decimal, const char *skeleton, const char *expected) {
+    TsonicIntlResult *result = tsonic_js_intl_number(value, decimal, "en_US", "", skeleton);
+    assert(!tsonic_js_intl_failed(result));
+    assert(tsonic_js_intl_length(result) == strlen(expected));
+    for (size_t index = 0; index < strlen(expected); ++index) {
+        assert(tsonic_js_intl_units(result)[index] == (unsigned char)expected[index]);
+    }
+    tsonic_js_intl_free(result);
+}
+
+static void number_contracts(void) {
+    assert(tsonic_js_intl_number_available("en_US"));
+    assert(!tsonic_js_intl_number_available("zz"));
+    assert(tsonic_js_intl_currency_digits("USD") == 2);
+    assert(tsonic_js_intl_currency_digits("JPY") == 0);
+    assert(tsonic_js_intl_currency_digits("KWD") == 3);
+    assert(tsonic_js_intl_currency_digits("ZZZ") == 2);
+    assert(tsonic_js_intl_currency_digits("US") == -1);
+    expect_number(1234.5, NULL, ".### rounding-mode-half-up", "1,234.5");
+    expect_number(-0.0, NULL, ".###", "-0");
+    expect_number(-0.0, NULL, ".### sign-negative", "0");
+    expect_number(NAN, NULL, ".###", "NaN");
+    expect_number(0.125, NULL, "percent scale/100 . rounding-mode-half-up", "13%");
+    expect_number(0, "18446744073709551615", ".###", "18,446,744,073,709,551,615");
+    expect_number(0, "-9223372036854775808", ".###", "-9,223,372,036,854,775,808");
+    expect_number(0, "9007199254740993", "group-off .00", "9007199254740993.00");
+    const char *invalid[] = { "", "-", "12.5", "1e2", "1x", "+1" };
+    for (size_t index = 0; index < sizeof(invalid) / sizeof(*invalid); ++index) {
+        TsonicIntlResult *result = tsonic_js_intl_number(0, invalid[index], "en_US", "", ".###");
+        assert(tsonic_js_intl_failed(result));
+        tsonic_js_intl_free(result);
+    }
+    TsonicIntlResult *invalid_pattern = tsonic_js_intl_number(1, NULL, "en_US", "", "invalid-skeleton");
+    assert(tsonic_js_intl_failed(invalid_pattern));
+    tsonic_js_intl_free(invalid_pattern);
+    char oversized[1026];
+    memset(oversized, '0', sizeof(oversized) - 1);
+    oversized[sizeof(oversized) - 1] = '\0';
+    invalid_pattern = tsonic_js_intl_number(1, NULL, "en_US", "", oversized);
+    assert(tsonic_js_intl_failed(invalid_pattern));
+    tsonic_js_intl_free(invalid_pattern);
+}
+
 int main(void) {
     date_contracts();
+    number_contracts();
     const char *valid[] = { "en", "tr-TR", "de-DE-u-co-phonebk", "en-u-kn-true-kf-upper",
         "en-x-private", "sr-Latn-RS", "sl-rozaj-biske", "en-t-en-US-h0-hybrid", "und" };
     const char *invalid[] = { "", "en_US", "i-klingon", "x-private", "abcd", "en-",

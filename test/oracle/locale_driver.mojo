@@ -2,6 +2,7 @@ from std.pathlib import Path
 from std.sys import argv
 from tsonic_js import JsString, JsValue, json_parse, json_stringify, js_value_from_string, js_value_from_number, js_string_to_locale_lower_case, js_string_to_locale_upper_case, js_string_locale_compare
 from tsonic_js import date_new, date_to_locale_string, date_to_locale_date_string, date_to_locale_time_string
+from tsonic_js import number_to_locale_string
 
 
 def field(record: JsValue, name: String) raises -> JsValue:
@@ -11,6 +12,33 @@ def field(record: JsValue, name: String) raises -> JsValue:
 
 def evaluate(record: JsValue) raises -> JsValue:
     var operation = field(record, "operation").string_value().to_native_strict()
+    if operation == "number":
+        var input = field(record, "value")
+        var kind = field(record, "numericKind")
+        var locales = field(record, "locales")
+        var options = field(record, "options")
+        var output = String()
+        if not kind.is_undefined() and kind.string_value().to_native_strict() == "integer":
+            var decimal = input.string_value().to_native_strict()
+            output = number_to_locale_string(Int(decimal), locales, options) if decimal.startswith("-") else number_to_locale_string(UInt(decimal), locales, options)
+        else:
+            var number = Float64(0)
+            if input.is_number():
+                number = input.number_value()
+            else:
+                var special = input.string_value().to_native_strict()
+                if special == "-0":
+                    number = Float64(-0.0)
+                elif special == "NaN":
+                    number = Float64(FloatLiteral.nan)
+                elif special == "Infinity":
+                    number = Float64(FloatLiteral.infinity)
+                elif special == "-Infinity":
+                    number = Float64(FloatLiteral.negative_infinity)
+                else:
+                    raise Error("Unknown numeric oracle input")
+            output = number_to_locale_string(number, locales, options)
+        return js_value_from_string(JsString(output))
     if operation == "date" or operation == "time" or operation == "datetime":
         var input = field(record, "value")
         var date = date_new(input.string_value()) if input.is_string() else date_new(input.number_value())
