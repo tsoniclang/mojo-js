@@ -4,24 +4,16 @@ from ..date.model import JsDate
 from ..string import JsString
 from ..value import JsValue
 from .date_options import DateOptions
-from .locales import default_locale, requested_locales
+from .locales import date_locale, requested_locales
 from .native import IntlResult
-
-
-def _date_locale(locales: JsValue) raises -> String:
-    var requested = requested_locales(locales)
-    for locale in requested:
-        var candidate = String(locale)
-        if external_call["tsonic_js_intl_date_available", c_int](candidate.as_c_string_slice().ptr()):
-            return candidate^
-    return default_locale()
 
 
 def _present(value: JsDate, locales: JsValue, options: JsValue, required: String) raises -> String:
     if not math.isfinite(value.get_time()):
         return String("Invalid Date")
-    var locale = _date_locale(locales)
-    var settings = DateOptions(options, required)
+    var requested = requested_locales(locales)
+    var settings = DateOptions(options, required, required)
+    var locale = date_locale(requested)
     var result = IntlResult(external_call[
         "tsonic_js_intl_date", OptionalPointer[NoneType, MutUntrackedOrigin],
     ](value.get_time(), locale.as_c_string_slice().ptr(), settings.zone.as_c_string_slice().ptr(),

@@ -33,7 +33,9 @@ struct DateOptions(Movable):
     var hour_cycle: String
     var basic: Bool
 
-    def __init__(out self, options: JsValue, required: String) raises:
+    def __init__(out self, options: JsValue, required: String, defaults: String) raises:
+        if (required != "all" and required != "date" and required != "time") or (defaults != "all" and defaults != "date" and defaults != "time"):
+            raise Error("Invalid required/default date component contract")
         var matcher = string_option(options, "localeMatcher", "best fit")
         if matcher != "lookup" and matcher != "best fit":
             raise Error("Locale matcher must be lookup or best fit")
@@ -84,11 +86,11 @@ struct DateOptions(Movable):
             if required != "date" and (period != "" or hour != "" or minute != "" or second != "" or fraction != ""):
                 need_defaults = False
             if need_defaults:
-                if required != "time":
+                if defaults != "time":
                     year = "y"
                     month = "M"
                     day = "d"
-                if required != "date":
+                if defaults != "date":
                     hour = "j"
                     minute = "m"
                     second = "s"

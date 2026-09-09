@@ -51,5 +51,6 @@ void tsonic_js_intl_free(TsonicIntlResult *result) {
     }
     free(result->text);
     free(result->units);
+    free(result->parts);
     free(result);
 }

@@ -49,22 +49,43 @@ TsonicIntlResult *tsonic_js_intl_default_locale(void) {
     return result;
 }
 
-int tsonic_intl_locale_available(const char *locale, int32_t count,
-    const char *(*available)(int32_t)) {
-    if (locale == NULL || strlen(locale) > TSONIC_INTL_MAX_LOCALE) return 0;
-    char base[TSONIC_INTL_MAX_LOCALE + 1];
-    UErrorCode status = U_ZERO_ERROR;
-    uloc_getBaseName(locale, base, sizeof(base), &status);
-    if (U_FAILURE(status)) return 0;
-    while (base[0] != '\0') {
+int tsonic_intl_match_locale(const char *locale, int32_t count,
+    const char *(*available)(int32_t), char *result, int32_t capacity, UErrorCode *status) {
+    if (U_FAILURE(*status)) return 0;
+    if (locale == NULL || strlen(locale) > TSONIC_INTL_MAX_LOCALE ||
+        count < 0 || available == NULL || result == NULL || capacity <= 0) {
+        *status = U_ILLEGAL_ARGUMENT_ERROR;
+        return 0;
+    }
+    uloc_getBaseName(locale, result, capacity, status);
+    if (U_FAILURE(*status)) return 0;
+    while (result[0] != '\0') {
         for (int32_t index = 0; index < count; ++index) {
-            if (strcmp(base, available(index)) == 0) return 1;
+            if (strcmp(result, available(index)) == 0) return 1;
         }
-        char *separator = strrchr(base, '_');
+        char *separator = strrchr(result, '_');
         if (separator == NULL) break;
         *separator = '\0';
     }
+    *status = U_MISSING_RESOURCE_ERROR;
     return 0;
+}
+
+int tsonic_intl_locale_available(const char *locale, int32_t count,
+    const char *(*available)(int32_t)) {
+    char selected[TSONIC_INTL_MAX_LOCALE + 1];
+    UErrorCode status = U_ZERO_ERROR;
+    return tsonic_intl_match_locale(locale, count, available, selected, sizeof(selected), &status);
+}
+
+void tsonic_intl_resolved_keyword(char *locale, int32_t capacity,
+    const char *key, const char *value, UErrorCode *status) {
+    if (U_FAILURE(*status)) return;
+    char existing[TSONIC_INTL_MAX_LOCALE + 1];
+    int32_t length = uloc_getKeywordValue(locale, key, existing, sizeof(existing), status);
+    if (U_SUCCESS(*status) && length != 0 && (value == NULL || strcmp(existing, value) != 0)) {
+        uloc_setKeywordValue(key, NULL, locale, capacity, status);
+    }
 }
 
 int tsonic_js_intl_collation_available(const char *locale) {

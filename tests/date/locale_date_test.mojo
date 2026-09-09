@@ -28,11 +28,11 @@ def main() raises:
     assert_equal(date_to_locale_string(invalid, value('"not_a_tag"'), value("null")), "Invalid Date")
     assert_equal(date_to_locale_date_string(invalid, value("null"), value("null")), "Invalid Date")
     assert_equal(date_to_locale_time_string(invalid, value("null"), value("null")), "Invalid Date")
-    var defaults = DateOptions(value('{"timeZone":"UTC"}'), "all")
+    var defaults = DateOptions(value('{"timeZone":"UTC"}'), "all", "all")
     assert_equal(defaults.skeleton, "yMdjms")
-    var dates = DateOptions(value('{"hour":"numeric"}'), "date")
+    var dates = DateOptions(value('{"hour":"numeric"}'), "date", "date")
     assert_equal(dates.skeleton, "yMdj")
-    var times = DateOptions(value('{"year":"numeric"}'), "time")
+    var times = DateOptions(value('{"year":"numeric"}'), "time", "time")
     assert_equal(times.skeleton, "yjms")
     var invalid_options = String('''null
 {"hour12":true,"hourCycle":"invalid"}

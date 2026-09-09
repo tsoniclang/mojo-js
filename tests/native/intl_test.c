@@ -1,7 +1,9 @@
 #include "../../mojo/tsonic_js.native/intl/api.h"
 #include "../../mojo/tsonic_js.native/intl/date_model.h"
+#include "../../mojo/tsonic_js.native/intl/parts.h"
 #include <assert.h>
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
 static void expect_locale(const char *tag, int valid) {
@@ -66,6 +68,77 @@ static void collator_contracts(void) {
     assert(tsonic_js_intl_failed(invalid));
     assert(tsonic_js_intl_collator_text(invalid, 0) == NULL);
     tsonic_js_intl_free(invalid);
+}
+
+static void datetime_instance_contracts(void) {
+    TsonicIntlResult *owner = tsonic_js_intl_datetime_open("en_US", "UTC", 1,
+        "", "", "yMd", -1, -1, -1, "", 0);
+    assert(owner != NULL && !tsonic_js_intl_failed(owner));
+    assert(strcmp(tsonic_js_intl_datetime_text(owner, 0), "en-US") == 0);
+    assert(strcmp(tsonic_js_intl_datetime_text(owner, 1), "gregory") == 0);
+    assert(strcmp(tsonic_js_intl_datetime_text(owner, 2), "latn") == 0);
+    assert(strcmp(tsonic_js_intl_datetime_text(owner, 3), "UTC") == 0);
+    assert(tsonic_js_intl_datetime_text(owner, 4) == NULL);
+    assert(tsonic_js_intl_collator_text(owner, 0) == NULL);
+    TsonicIntlResult *plain = tsonic_js_intl_datetime_format(owner, 0, 0);
+    TsonicIntlResult *parts = tsonic_js_intl_datetime_format(owner, 0, 1);
+    assert(!tsonic_js_intl_failed(plain) && !tsonic_js_intl_failed(parts));
+    assert(tsonic_js_intl_part_count(plain) == 0);
+    assert(tsonic_js_intl_part_count(parts) == 5);
+    assert(tsonic_js_intl_length(parts) == tsonic_js_intl_length(plain));
+    assert(memcmp(tsonic_js_intl_units(parts), tsonic_js_intl_units(plain), tsonic_js_intl_length(plain) * 2) == 0);
+    const char *expected[] = { "month", "literal", "day", "literal", "year" };
+    size_t position = 0;
+    for (size_t index = 0; index < 5; ++index) {
+        assert(strcmp(tsonic_js_intl_part_type(parts, index), expected[index]) == 0);
+        assert(tsonic_js_intl_part_start(parts, index) == position);
+        position += tsonic_js_intl_part_length(parts, index);
+    }
+    assert(position == tsonic_js_intl_length(parts));
+    assert(tsonic_js_intl_part_type(parts, 5) == NULL);
+    assert(tsonic_js_intl_part_start(parts, 5) == SIZE_MAX);
+    tsonic_js_intl_free(plain);
+    tsonic_js_intl_free(parts);
+    TsonicIntlResult *invalid = tsonic_js_intl_datetime_format(owner, NAN, 1);
+    assert(tsonic_js_intl_failed(invalid));
+    tsonic_js_intl_free(invalid);
+    invalid = tsonic_js_intl_datetime_format(owner, 0, 2);
+    assert(tsonic_js_intl_failed(invalid));
+    tsonic_js_intl_free(invalid);
+    tsonic_js_intl_free(owner);
+}
+
+static TsonicIntlResult *partition_result(size_t length) {
+    TsonicIntlResult *result = calloc(1, sizeof(*result));
+    assert(result != NULL);
+    result->length = length;
+    result->units = calloc(length + 1, sizeof(*result->units));
+    assert(result->units != NULL);
+    return result;
+}
+
+static void field_partition_contracts(void) {
+    TsonicIntlResult *result = partition_result(9);
+    TsonicIntlField fields[] = { { "integer", 0, 5 }, { "group", 1, 2 },
+        { "decimal", 5, 6 }, { "fraction", 6, 8 } };
+    assert(tsonic_intl_partition_fields(result, fields, 4));
+    const char *expected[] = { "integer", "group", "integer", "decimal", "fraction", "literal" };
+    assert(result->part_count == 6);
+    for (size_t index = 0; index < 6; ++index) assert(strcmp(result->parts[index].type, expected[index]) == 0);
+    tsonic_js_intl_free(result);
+    result = partition_result(3);
+    TsonicIntlField conflict[] = { { "integer", 0, 3 }, { "fraction", 0, 3 } };
+    assert(!tsonic_intl_partition_fields(result, conflict, 2));
+    assert(result->failed && result->part_count == 0);
+    tsonic_js_intl_free(result);
+    result = partition_result(3);
+    TsonicIntlField invalid[] = { { "integer", -1, 3 } };
+    assert(!tsonic_intl_partition_fields(result, invalid, 1));
+    tsonic_js_intl_free(result);
+    result = partition_result(0);
+    assert(tsonic_intl_partition_fields(result, NULL, 0));
+    assert(result->part_count == 0);
+    tsonic_js_intl_free(result);
 }
 
 static void date_contracts(void) {
@@ -154,6 +227,8 @@ static void number_contracts(void) {
 
 int main(void) {
     collator_contracts();
+    datetime_instance_contracts();
+    field_partition_contracts();
     date_contracts();
     number_contracts();
     const char *valid[] = { "en", "tr-TR", "de-DE-u-co-phonebk", "en-u-kn-true-kf-upper",

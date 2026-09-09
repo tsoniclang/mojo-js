@@ -52,3 +52,11 @@ def collation_locale(requested: List[String]) raises -> String:
         if external_call["tsonic_js_intl_collation_available", c_int](candidate.as_c_string_slice().ptr()):
             return candidate^
     return default_locale()
+
+
+def date_locale(requested: List[String]) raises -> String:
+    for locale in requested:
+        var candidate = String(locale)
+        if external_call["tsonic_js_intl_date_available", c_int](candidate.as_c_string_slice().ptr()):
+            return candidate^
+    return default_locale()

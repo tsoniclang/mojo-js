@@ -7,24 +7,40 @@
 #include <unicode/ures.h>
 #include <unicode/ustring.h>
 
+static void select_calendar(char *locale, int32_t capacity, const char *calendar, UErrorCode *status) {
+    if (U_FAILURE(*status) || calendar[0] == '\0') return;
+    const char *requested = uloc_toLegacyType("calendar", calendar);
+    UEnumeration *values = ucal_getKeywordValuesForLocale("calendar", locale, 0, status);
+    const char *value;
+    while (U_SUCCESS(*status) && values != NULL &&
+        (value = uenum_next(values, NULL, status)) != NULL) {
+        if (requested != NULL && strcmp(value, requested) == 0) {
+            uloc_setKeywordValue("calendar", requested, locale, capacity, status);
+            break;
+        }
+    }
+    uenum_close(values);
+}
+
 int tsonic_intl_date_locale(const char *locale, const char *calendar,
     const char *numbering, char *result, int32_t capacity, UErrorCode *status) {
-    uloc_canonicalize(locale, result, capacity, status);
+    if (!tsonic_intl_match_locale(locale, udat_countAvailable(), udat_getAvailable,
+        result, capacity, status)) return 0;
+    char extension[TSONIC_INTL_MAX_LOCALE + 1];
+    uloc_getKeywordValue(locale, "calendar", extension, sizeof(extension), status);
     if (U_FAILURE(*status)) return 0;
-    if (calendar[0] != '\0') {
-        const char *requested = uloc_toLegacyType("calendar", calendar);
-        UEnumeration *values = ucal_getKeywordValuesForLocale("calendar", result, 0, status);
-        const char *value;
-        while (U_SUCCESS(*status) && values != NULL &&
-            (value = uenum_next(values, NULL, status)) != NULL) {
-            if (requested != NULL && strcmp(value, requested) == 0) {
-                uloc_setKeywordValue("calendar", requested, result, capacity, status);
-                break;
-            }
-        }
-        uenum_close(values);
+    select_calendar(result, capacity, extension, status);
+    select_calendar(result, capacity, calendar, status);
+    uloc_getKeywordValue(locale, "numbers", extension, sizeof(extension), status);
+    if (U_SUCCESS(*status) && extension[0] != '\0') {
+        uloc_setKeywordValue("numbers", extension, result, capacity, status);
     }
     tsonic_intl_numbering(result, capacity, numbering, status);
+    uloc_getKeywordValue(locale, "hours", extension, sizeof(extension), status);
+    if (U_SUCCESS(*status) && (strcmp(extension, "h11") == 0 || strcmp(extension, "h12") == 0 ||
+        strcmp(extension, "h23") == 0 || strcmp(extension, "h24") == 0)) {
+        uloc_setKeywordValue("hours", extension, result, capacity, status);
+    }
     return U_SUCCESS(*status);
 }
 

@@ -79,7 +79,7 @@ def main() raises:
     assert_true(first_read(number, "trailingZeroDisplay") < first_read(number, "compactDisplay"))
     assert_true(first_read(number, "compactDisplay") < first_read(number, "useGrouping"))
     var date = ArcPointer(OptionOwner(json_parse(JsString('{"calendar":"gregory","numberingSystem":"latn","timeZone":"UTC","year":"numeric"}')), List[String]()))
-    var date_settings = DateOptions(options(date), "date")
+    var date_settings = DateOptions(options(date), "date", "date")
     assert_equal(date_settings.zone, "UTC")
     assert_reads(date, "localeMatcher|calendar|numberingSystem|hour12|hourCycle|timeZone|weekday|era|year|month|day|dayPeriod|hour|minute|second|fractionalSecondDigits|timeZoneName|formatMatcher|dateStyle|timeStyle")
     var collator = ArcPointer(OptionOwner(json_parse(JsString('{"collation":"phonebk","numeric":true,"caseFirst":"upper","sensitivity":"base"}')), List[String]()))

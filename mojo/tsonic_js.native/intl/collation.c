@@ -37,24 +37,8 @@ static int supported_collation(const char *locale, const char *collation, UError
 }
 
 static void selected_locale(const char *locale, char *selected, UErrorCode *status) {
-    uloc_getBaseName(locale, selected, TSONIC_INTL_MAX_LOCALE + 1, status);
-    if (U_FAILURE(*status)) return;
-    for (;;) {
-        int found = 0;
-        for (int32_t index = 0; index < ucol_countAvailable(); ++index) {
-            if (strcmp(selected, ucol_getAvailable(index)) == 0) {
-                found = 1;
-                break;
-            }
-        }
-        if (found) break;
-        char *separator = strrchr(selected, '_');
-        if (separator == NULL) {
-            *status = U_MISSING_RESOURCE_ERROR;
-            return;
-        }
-        *separator = '\0';
-    }
+    if (!tsonic_intl_match_locale(locale, ucol_countAvailable(), ucol_getAvailable,
+        selected, TSONIC_INTL_MAX_LOCALE + 1, status)) return;
     const char *keys[] = { "collation", "colnumeric", "colcasefirst" };
     for (size_t index = 0; index < sizeof(keys) / sizeof(keys[0]); ++index) {
         char value[TSONIC_INTL_MAX_LOCALE + 1];
@@ -76,12 +60,8 @@ static void selected_locale(const char *locale, char *selected, UErrorCode *stat
 
 static void remove_overridden_keyword(char *locale, const char *key,
     const char *requested, UErrorCode *status) {
-    if (requested == NULL || U_FAILURE(*status)) return;
-    char existing[TSONIC_INTL_MAX_LOCALE + 1];
-    int32_t length = uloc_getKeywordValue(locale, key, existing, sizeof(existing), status);
-    if (U_SUCCESS(*status) && length != 0 && strcmp(existing, requested) != 0) {
-        uloc_setKeywordValue(key, NULL, locale, TSONIC_INTL_MAX_LOCALE + 1, status);
-    }
+    if (requested != NULL) tsonic_intl_resolved_keyword(locale,
+        TSONIC_INTL_MAX_LOCALE + 1, key, requested, status);
 }
 
 TsonicIntlResult *tsonic_js_intl_collator_open(
