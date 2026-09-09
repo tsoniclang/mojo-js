@@ -343,17 +343,14 @@ struct _JsonWriter:
         mut self, key: JsString, value: JsValue, depth: Int
     ) raises -> Bool:
         var selected = value
-        var projected = selected.is_json_projection()
+        var projected = selected.has_selected_to_json()
         if projected:
-            self._enter(selected)
             selected = selected._project_json(key.to_native_strict())
         if self._replacer:
             selected = self._replacer.value().call(
                 (key.to_native_strict(), selected)
             )
         var written = self._write_value(selected, depth)
-        if projected:
-            _ = self._active.pop()
         return written
 
     def _write_value(mut self, value: JsValue, depth: Int) raises -> Bool:
@@ -414,17 +411,14 @@ struct _JsonWriter:
                 var child = value.object_value(index)
                 var key = value.object_key(index)
                 var selected = child
-                var projected = selected.is_json_projection()
+                var projected = selected.has_selected_to_json()
                 if projected:
-                    self._enter(selected)
                     selected = selected._project_json(key.to_native_strict())
                 if self._replacer:
                     selected = self._replacer.value().call(
                         (key.to_native_strict(), selected)
                     )
                 if selected.is_undefined() or selected.is_symbol():
-                    if projected:
-                        _ = self._active.pop()
                     continue
                 if not first:
                     self._append_unit(44)
@@ -435,8 +429,6 @@ struct _JsonWriter:
                 if len(self._indent) != 0:
                     self._append_unit(32)
                 _ = self._write_value(selected, depth + 1)
-                if projected:
-                    _ = self._active.pop()
             if not first:
                 self._write_line_indent(depth)
             self._append_unit(125)

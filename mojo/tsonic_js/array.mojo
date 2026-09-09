@@ -1,6 +1,7 @@
 from std.collections import List
 from std.builtin.rebind import downcast, rebind_var
 from std.memory import ArcPointer
+from tsonic_runtime import WeakReferenceIdentity
 
 from .string import JsString
 from .equality import same_value_zero
@@ -34,6 +35,9 @@ struct JsArray[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
 
     def __eq__(self, other: Self) -> Bool:
         return self._elements is other._elements
+
+    def weak_identity(self) -> WeakReferenceIdentity:
+        return WeakReferenceIdentity(self._elements)
 
     def js_length(self) -> Float64:
         return Float64(len(self))

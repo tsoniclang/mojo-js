@@ -72,6 +72,6 @@ def main() raises:
     for line in source.splitlines():
         try:
             var result = evaluate(json_parse(JsString(String(line))))
-            print(json_stringify(result).to_native_strict())
+            print(json_stringify(result).value().to_native_strict())
         except:
             print("!error")

@@ -1,6 +1,6 @@
 from std.collections import List
 from std.memory import ArcPointer
-from tsonic_runtime import RaisingCallable
+from tsonic_runtime import Callable, RaisingCallable, WeakReferenceIdentity
 from ..boolean import boolean_to_string
 from ..number import number_to_string
 from ..string import JsString
@@ -39,6 +39,15 @@ struct _JsonProjectionState:
     var project: RaisingCallable[Tuple[String], JsValue, Error]
 
 
+@fieldwise_init
+struct _SourceValueView:
+    var identity: WeakReferenceIdentity
+    var length: Callable[Tuple[], Int]
+    var key: Optional[Callable[Tuple[Int], JsString]]
+    var value: Callable[Tuple[Int], JsValue]
+    var to_json: Optional[RaisingCallable[Tuple[String], JsValue, Error]]
+
+
 struct _JsValueNode(Movable):
     var kind: Int
     var bool_value: Bool
@@ -47,6 +56,7 @@ struct _JsValueNode(Movable):
     var symbol_value: Optional[JsSymbol]
     var identity: Optional[ArcPointer[Bool]]
     var json_projection: Optional[ArcPointer[_JsonProjectionState]]
+    var source_view: Optional[ArcPointer[_SourceValueView]]
     var keys: List[JsString]
     var children: List[Int]
 
@@ -58,52 +68,25 @@ struct _JsValueNode(Movable):
         self.symbol_value = None
         self.identity = None
         self.json_projection = None
+        self.source_view = None
         self.keys = List[JsString]()
         self.children = List[Int]()
 
     def __init__(out self, value: Bool):
-        self.kind = _BOOL
+        self = Self(_BOOL)
         self.bool_value = value
-        self.number_value = 0
-        self.string_value = JsString()
-        self.symbol_value = None
-        self.identity = None
-        self.json_projection = None
-        self.keys = List[JsString]()
-        self.children = List[Int]()
 
     def __init__(out self, value: Float64):
-        self.kind = _NUMBER
-        self.bool_value = False
+        self = Self(_NUMBER)
         self.number_value = value
-        self.string_value = JsString()
-        self.symbol_value = None
-        self.identity = None
-        self.json_projection = None
-        self.keys = List[JsString]()
-        self.children = List[Int]()
 
     def __init__(out self, value: JsString):
-        self.kind = _STRING
-        self.bool_value = False
-        self.number_value = 0
+        self = Self(_STRING)
         self.string_value = value
-        self.symbol_value = None
-        self.identity = None
-        self.json_projection = None
-        self.keys = List[JsString]()
-        self.children = List[Int]()
 
     def __init__(out self, value: JsSymbol):
-        self.kind = _SYMBOL
-        self.bool_value = False
-        self.number_value = 0
-        self.string_value = JsString()
+        self = Self(_SYMBOL)
         self.symbol_value = Optional[JsSymbol](value)
-        self.identity = None
-        self.json_projection = None
-        self.keys = List[JsString]()
-        self.children = List[Int]()
 
     def __init__(
         out self,
@@ -111,13 +94,8 @@ struct _JsValueNode(Movable):
         var keys: List[JsString],
         var children: List[Int],
     ):
-        self.kind = kind
-        self.bool_value = False
-        self.number_value = 0
-        self.string_value = JsString()
-        self.symbol_value = None
+        self = Self(kind)
         self.identity = Optional[ArcPointer[Bool]](ArcPointer(False))
-        self.json_projection = None
         self.keys = keys^
         self.children = children^
 
@@ -128,13 +106,8 @@ struct _JsValueNode(Movable):
         var children: List[Int],
         identity: ArcPointer[Bool],
     ):
-        self.kind = kind
-        self.bool_value = False
-        self.number_value = 0
-        self.string_value = JsString()
-        self.symbol_value = None
+        self = Self(kind)
         self.identity = Optional[ArcPointer[Bool]](identity)
-        self.json_projection = None
         self.keys = keys^
         self.children = children^
 
@@ -142,17 +115,14 @@ struct _JsValueNode(Movable):
         out self,
         projection: ArcPointer[_JsonProjectionState],
     ):
-        self.kind = _JSON_PROJECTION
-        self.bool_value = False
-        self.number_value = 0
-        self.string_value = JsString()
-        self.symbol_value = None
-        self.identity = None
+        self = Self(_JSON_PROJECTION)
         self.json_projection = Optional[ArcPointer[_JsonProjectionState]](
             projection
         )
-        self.keys = List[JsString]()
-        self.children = List[Int]()
+
+    def __init__(out self, kind: Int, view: ArcPointer[_SourceValueView]):
+        self = Self(kind)
+        self.source_view = Optional[ArcPointer[_SourceValueView]](view)
 
 
 struct JsValue(ImplicitlyCopyable, Writable):
@@ -246,6 +216,10 @@ struct JsValue(ImplicitlyCopyable, Writable):
     def is_json_projection(self) -> Bool:
         return self._kind() == _JSON_PROJECTION
 
+    def has_selected_to_json(self) -> Bool:
+        var view = self._nodes[][self._index].source_view
+        return self.is_json_projection() or (Bool(view) and Bool(view.value()[].to_json))
+
     def bool_value(self) raises -> Bool:
         if not self.is_bool():
             raise Error("JavaScript value is not a boolean")
@@ -269,63 +243,50 @@ struct JsValue(ImplicitlyCopyable, Writable):
     def array_length(self) raises -> Int:
         if not self.is_array():
             raise Error("JavaScript value is not an array")
-        return len(self._nodes[][self._index].children)
+        return self._aggregate_length()
 
     def array_at(self, index: Int) raises -> Self:
         var length = self.array_length()
         if index < 0 or index >= length:
             raise Error("JavaScript array index is out of range")
-        return Self(
-            self._nodes,
-            self._nodes[][self._index].children[index],
-        )
+        return self._aggregate_value(index)
 
     def object_length(self) raises -> Int:
         if not self.is_object():
             raise Error("JavaScript value is not an object")
-        return len(self._nodes[][self._index].keys)
+        return self._aggregate_length()
 
     def object_key(self, index: Int) raises -> JsString:
         var length = self.object_length()
         if index < 0 or index >= length:
             raise Error("JavaScript object entry is out of range")
-        return self._nodes[][self._index].keys[index]
+        return self._aggregate_key(index)
 
     def object_value(self, index: Int) raises -> Self:
         var length = self.object_length()
         if index < 0 or index >= length:
             raise Error("JavaScript object entry is out of range")
-        return Self(
-            self._nodes,
-            self._nodes[][self._index].children[index],
-        )
+        return self._aggregate_value(index)
 
     def object_has_own(self, key: JsString) raises -> Bool:
         var length = self.object_length()
         for index in range(length):
-            if self._nodes[][self._index].keys[index] == key:
+            if self._aggregate_key(index) == key:
                 return True
         return False
 
     def object_get(self, key: JsString) raises -> Optional[Self]:
         var length = self.object_length()
         for index in range(length):
-            if self._nodes[][self._index].keys[index] == key:
-                return Optional[Self](
-                    Self(
-                        self._nodes,
-                        self._nodes[][self._index].children[index],
-                    )
-                )
+            if self._aggregate_key(index) == key:
+                return Optional[Self](self._aggregate_value(index))
         return None
 
     def same_identity(self, other: Self) -> Bool:
         if self.is_array() or self.is_object():
             if self._kind() != other._kind():
                 return False
-            var left = self._nodes[][self._index].identity
-            var right = other._nodes[][other._index].identity
-            return Bool(left) and Bool(right) and left.value() is right.value()
+            return self._identity_address() == other._identity_address()
         if self.is_json_projection():
             var left = self._nodes[][self._index].json_projection
             var right = other._nodes[][other._index].json_projection
@@ -350,7 +311,44 @@ struct JsValue(ImplicitlyCopyable, Writable):
         return projection.value()
 
     def _project_json(self, key: String) raises -> Self:
+        var view = self._nodes[][self._index].source_view
+        if view:
+            var project = view.value()[].to_json
+            if not project:
+                raise Error("Source value has no selected toJSON operation")
+            return project.value().call((key,))
         return self._json_projection()[].project.call((key,))
+
+    def _aggregate_length(self) -> Int:
+        var view = self._nodes[][self._index].source_view
+        return view.value()[].length.call(()) if view else len(self._nodes[][self._index].children)
+
+    def _aggregate_key(self, index: Int) -> JsString:
+        var view = self._nodes[][self._index].source_view
+        return view.value()[].key.value().call((index,)) if view else self._nodes[][self._index].keys[index]
+
+    def _aggregate_value(self, index: Int) -> Self:
+        var view = self._nodes[][self._index].source_view
+        return view.value()[].value.call((index,)) if view else Self(self._nodes, self._nodes[][self._index].children[index])
+
+    def _identity_address(self) -> UInt:
+        var view = self._nodes[][self._index].source_view
+        if view:
+            return view.value()[].identity.address
+        var identity = self._nodes[][self._index].identity
+        if identity:
+            return UInt(Int(identity.value().ptr()))
+        var projection = self._nodes[][self._index].json_projection
+        return UInt(Int(projection.value().ptr())) if projection else UInt(Int(self._nodes.ptr()))
+
+    def weak_identity(self) -> WeakReferenceIdentity:
+        var view = self._nodes[][self._index].source_view
+        if view:
+            return view.value()[].identity
+        var identity = self._nodes[][self._index].identity
+        if identity:
+            return WeakReferenceIdentity(identity.value())
+        return WeakReferenceIdentity(self._nodes[][self._index].json_projection.value())
 
     def _kind(self) -> Int:
         return self._nodes[][self._index].kind
@@ -408,17 +406,14 @@ def _array_to_string(value: JsValue) -> JsString:
         var depth = len(arrays) - 1
         var current = arrays[depth]
         var index = indexes[depth]
-        if index == len(current._nodes[][current._index].children):
+        if index >= current._aggregate_length():
             _ = arrays.pop()
             _ = indexes.pop()
             continue
         indexes[depth] += 1
         if index != 0:
             result += JsString(",")
-        var child = JsValue(
-            current._nodes,
-            current._nodes[][current._index].children[index],
-        )
+        var child = current._aggregate_value(index)
         if child.is_array():
             var recursive = False
             for ancestor in arrays:

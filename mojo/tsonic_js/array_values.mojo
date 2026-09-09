@@ -1,4 +1,5 @@
 from tsonic_runtime.nullish import Null, Undefined
+from std.collections import List
 
 from .boolean import boolean_to_string
 from .number import number_to_string
@@ -47,14 +48,38 @@ def _implicit_value_string(value: JsValue) raises -> JsString:
     if not value.is_array():
         return js_value_to_string(value)
     var result = JsString()
-    for index in range(len(value._nodes[][value._index].children)):
+    var arrays = List[JsValue]()
+    var indexes = List[Int]()
+    var lengths = List[Int]()
+    arrays.append(value)
+    indexes.append(0)
+    lengths.append(value.array_length())
+    while len(arrays) != 0:
+        var depth = len(arrays) - 1
+        var index = indexes[depth]
+        if index == lengths[depth]:
+            _ = arrays.pop()
+            _ = indexes.pop()
+            _ = lengths.pop()
+            continue
+        indexes[depth] += 1
         if index != 0:
             result += JsString(",")
-        var child = JsValue(
-            value._nodes, value._nodes[][value._index].children[index]
-        )
-        if not child.is_null() and not child.is_undefined():
-            result += _implicit_value_string(child)
+        var child = arrays[depth].array_at(index)
+        if child.is_symbol():
+            raise Error("Cannot convert a Symbol value to a string")
+        if child.is_array():
+            var recursive = False
+            for ancestor in arrays:
+                if ancestor.same_identity(child):
+                    recursive = True
+                    break
+            if not recursive:
+                arrays.append(child)
+                indexes.append(0)
+                lengths.append(child.array_length())
+        elif not child.is_null() and not child.is_undefined():
+            result += js_value_to_string(child)
     return result
 
 

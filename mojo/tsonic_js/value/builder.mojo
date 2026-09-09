@@ -2,7 +2,7 @@ from std.collections import List
 from std.memory import ArcPointer
 from ..string import JsString
 from ..symbol import JsSymbol
-from .model import JsValue, _JsValueNode, _JsonProjectionState, _UNDEFINED, _NULL, _ARRAY, _OBJECT
+from .model import JsValue, _JsValueNode, _JsonProjectionState, _SourceValueView, _UNDEFINED, _NULL, _ARRAY, _OBJECT
 
 
 struct _JsValueBuilder(ImplicitlyCopyable):
@@ -36,6 +36,11 @@ struct _JsValueBuilder(ImplicitlyCopyable):
 
     def append_array(mut self, var children: List[Int]) raises -> Int:
         return self._append(_JsValueNode(_ARRAY, List[JsString](), children^))
+
+    def append_source_view(mut self, kind: Int, view: ArcPointer[_SourceValueView]) raises -> Int:
+        if kind != _ARRAY and kind != _OBJECT:
+            raise Error("Closed source view must be an array or object")
+        return self._append(_JsValueNode(kind, view))
 
     def append_array(
         mut self, var children: List[Int], identity: ArcPointer[Bool]

@@ -1,9 +1,9 @@
 from std.collections import List
 from std.memory import ArcPointer
-from tsonic_runtime import RaisingCallable
+from tsonic_runtime import Callable, RaisingCallable, WeakReferenceIdentity
 from ..string import JsString
 from ..symbol import JsSymbol
-from .model import JsValue, _JsonProjectionState
+from .model import JsValue, _JsonProjectionState, _SourceValueView, _JsValueNode, _ARRAY, _OBJECT
 from .builder import _JsValueBuilder
 from .graph import _append_js_value_graph
 
@@ -36,6 +36,30 @@ def js_value_from_json_projection(
     project: RaisingCallable[Tuple[String], JsValue, Error]
 ) -> JsValue:
     return JsValue(ArcPointer(_JsonProjectionState(project)))
+
+
+def js_value_from_source_array(
+    identity: WeakReferenceIdentity,
+    length: Callable[Tuple[], Int],
+    value: Callable[Tuple[Int], JsValue],
+) -> JsValue:
+    var view = ArcPointer(_SourceValueView(identity, length, None, value, None))
+    var nodes = List[_JsValueNode]()
+    nodes.append(_JsValueNode(_ARRAY, view))
+    return JsValue(ArcPointer(nodes^), 0)
+
+
+def js_value_from_source_object(
+    identity: WeakReferenceIdentity,
+    length: Callable[Tuple[], Int],
+    key: Callable[Tuple[Int], JsString],
+    value: Callable[Tuple[Int], JsValue],
+    to_json: Optional[RaisingCallable[Tuple[String], JsValue, Error]] = None,
+) -> JsValue:
+    var view = ArcPointer(_SourceValueView(identity, length, Optional[Callable[Tuple[Int], JsString]](key), value, to_json))
+    var nodes = List[_JsValueNode]()
+    nodes.append(_JsValueNode(_OBJECT, view))
+    return JsValue(ArcPointer(nodes^), 0)
 
 
 def js_value_from_array_values(var values: List[JsValue]) raises -> JsValue:

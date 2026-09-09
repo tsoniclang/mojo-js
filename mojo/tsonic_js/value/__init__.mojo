@@ -28,6 +28,8 @@ from .factories import (
     js_value_from_null,
     js_value_from_undefined,
     js_value_from_json_projection,
+    js_value_from_source_array,
+    js_value_from_source_object,
     js_value_from_array_values,
     js_value_from_object_entries,
     js_value_error,

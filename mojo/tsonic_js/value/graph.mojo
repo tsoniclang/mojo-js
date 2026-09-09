@@ -25,6 +25,9 @@ def _append_js_value_graph(
         return builder.append_symbol(value.symbol_value())
     if value.is_json_projection():
         return builder.append_json_projection(value._json_projection())
+    var view = value._nodes[][value._index].source_view
+    if view:
+        return builder.append_source_view(value._kind(), view.value())
     for index in range(len(copied)):
         if copied[index].same_identity(value):
             return copied_indexes[index]

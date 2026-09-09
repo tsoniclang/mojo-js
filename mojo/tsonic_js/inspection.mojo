@@ -91,7 +91,7 @@ def _inspect(value: JsValue, depth: Int, array_limit: Int, mut active: List[JsVa
     var array = value.is_array()
     if depth < 0:
         return "[Array]" if array else "[Object]"
-    var count = len(storage[][node].children)
+    var count = value._aggregate_length()
     if count == 0:
         return "[]" if array else "{}"
     active.append(value)
@@ -101,10 +101,10 @@ def _inspect(value: JsValue, depth: Int, array_limit: Int, mut active: List[JsVa
         if index != 0:
             result += ", "
         if not array:
-            var key = storage[][node].keys[index]
+            var key = value._aggregate_key(index)
             result += key.to_native_lossy() if _plain_key(key) else quote_inspected_string(key)
             result += ": "
-        result += _inspect(JsValue(storage, storage[][node].children[index]), depth - 1, array_limit, active)
+        result += _inspect(value._aggregate_value(index), depth - 1, array_limit, active)
     if limit != count:
         if limit != 0:
             result += ", "
