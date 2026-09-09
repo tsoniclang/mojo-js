@@ -47,8 +47,16 @@ node scripts/verify-locale-oracle.mjs "${NATIVE_BUILD}/locale_oracle"
 "${NATIVE_BUILD}/intl_native"
 
 failed=0
-for test_file in tests/*.mojo; do
-  test_name="$(basename "${test_file}" .mojo)"
+test_inventory="$(find tests -type f -name '*.mojo' -print)"
+if [[ -z "$test_inventory" ]]; then
+  printf 'No native JavaScript proofs found\n' >&2
+  exit 1
+fi
+mapfile -t test_files < <(printf '%s\n' "$test_inventory" | LC_ALL=C sort)
+for test_file in "${test_files[@]}"; do
+  test_name="${test_file#tests/}"
+  test_name="${test_name%.mojo}"
+  mkdir -p "$(dirname "${NATIVE_BUILD}/${test_name}")"
   if "${PIXI_BIN}" run mojo build \
     -j 2 \
     -I mojo \
