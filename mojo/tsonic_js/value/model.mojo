@@ -395,15 +395,40 @@ def js_value_to_string(value: JsValue) -> JsString:
         return JsString("[object Object]")
     if value.is_object():
         return JsString("[object Object]")
+    return _array_to_string(value)
+
+
+def _array_to_string(value: JsValue) -> JsString:
     var result = JsString()
-    for index in range(len(value._nodes[][value._index].children)):
+    var arrays = List[JsValue]()
+    var indexes = List[Int]()
+    arrays.append(value)
+    indexes.append(0)
+    while len(arrays) != 0:
+        var depth = len(arrays) - 1
+        var current = arrays[depth]
+        var index = indexes[depth]
+        if index == len(current._nodes[][current._index].children):
+            _ = arrays.pop()
+            _ = indexes.pop()
+            continue
+        indexes[depth] += 1
         if index != 0:
             result += JsString(",")
         var child = JsValue(
-            value._nodes,
-            value._nodes[][value._index].children[index],
+            current._nodes,
+            current._nodes[][current._index].children[index],
         )
-        if not child.is_null() and not child.is_undefined():
+        if child.is_array():
+            var recursive = False
+            for ancestor in arrays:
+                if ancestor.same_identity(child):
+                    recursive = True
+                    break
+            if not recursive:
+                arrays.append(child)
+                indexes.append(0)
+        elif not child.is_null() and not child.is_undefined():
             result += js_value_to_string(child)
     return result
 
@@ -443,4 +468,3 @@ def js_event_key_equal(left: JsValue, right: JsValue) -> Bool:
             .same(right._nodes[][right._index].symbol_value.value())
         )
     return False
-

@@ -41,13 +41,12 @@ def js_value_from_json_projection(
 def js_value_from_array_values(var values: List[JsValue]) raises -> JsValue:
     var builder = _JsValueBuilder()
     var children = List[Int](capacity=len(values))
-    var active = List[JsValue]()
     var copied = List[JsValue]()
     var copied_indexes = List[Int]()
     for value in values^:
         children.append(
             _append_js_value_graph(
-                builder, value, active, copied, copied_indexes, 0
+                builder, value, copied, copied_indexes, 0
             )
         )
     return builder.value(builder.append_array(children^))
@@ -61,7 +60,6 @@ def js_value_from_object_entries(
     var builder = _JsValueBuilder()
     var copied_keys = List[JsString](capacity=len(keys))
     var children = List[Int](capacity=len(values))
-    var active = List[JsValue]()
     var copied = List[JsValue]()
     var copied_indexes = List[Int]()
     for index in range(len(keys)):
@@ -70,7 +68,6 @@ def js_value_from_object_entries(
             _append_js_value_graph(
                 builder,
                 values[index],
-                active,
                 copied,
                 copied_indexes,
                 0,
@@ -88,4 +85,3 @@ def js_value_error(message: String) raises -> JsValue:
     keys.append(JsString("message"))
     children.append(builder.append_string(JsString(message)))
     return builder.value(builder.append_object(keys^, children^))
-

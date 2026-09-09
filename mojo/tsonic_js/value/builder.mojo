@@ -62,10 +62,22 @@ struct _JsValueBuilder(ImplicitlyCopyable):
     def value(self, index: Int) -> JsValue:
         return JsValue(self._nodes, index)
 
+    def set_aggregate_children(mut self, index: Int, var children: List[Int]) raises:
+        if index < 0 or index >= len(self._nodes[]):
+            raise Error("JavaScript value graph contains an invalid aggregate")
+        var kind = self._nodes[][index].kind
+        if kind != _ARRAY and kind != _OBJECT:
+            raise Error("JavaScript value graph node is not an aggregate")
+        if kind == _OBJECT and len(self._nodes[][index].keys) != len(children):
+            raise Error("JavaScript object keys and values have different lengths")
+        for child in children:
+            if child < 0 or child >= len(self._nodes[]):
+                raise Error("JavaScript value graph contains an invalid reference")
+        self._nodes[][index].children = children^
+
     def _append(mut self, var node: _JsValueNode) raises -> Int:
         if len(self._nodes[]) >= 1048576:
             raise Error("JavaScript value graph exceeds its node budget")
         var index = len(self._nodes[])
         self._nodes[].append(node^)
         return index
-
