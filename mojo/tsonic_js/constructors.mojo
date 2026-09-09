@@ -1,5 +1,6 @@
 from std.collections import List
 from .array import JsArray
+from .iterator import JsIterator
 from .array_values import array_constructor_length
 from .map import JsMap
 from .set import JsSet
@@ -35,6 +36,39 @@ def array_from[
 
 def array_from(values: JsString) -> JsArray[JsString]:
     return JsArray[JsString](values.iter_values())
+
+
+def array_from[
+    T: Copyable & Deinitable
+](values: JsIterator[T]) -> JsArray[T]:
+    var result = List[T]()
+    for value in values:
+        result.append(value.copy())
+    return JsArray[T](result^)
+
+
+def array_from_map_value[
+    T: Copyable & Deinitable,
+    U: Copyable & Deinitable,
+    Callback: def(T) raises -> U,
+](values: JsIterator[T], callback: Callback) raises -> JsArray[U]:
+    var result = List[U]()
+    for value in values:
+        result.append(callback(value.copy()))
+    return JsArray[U](result^)
+
+
+def array_from_map_with_index[
+    T: Copyable & Deinitable,
+    U: Copyable & Deinitable,
+    Callback: def(T, Float64) raises -> U,
+](values: JsIterator[T], callback: Callback) raises -> JsArray[U]:
+    var result = List[U]()
+    var index = 0
+    for value in values:
+        result.append(callback(value.copy(), Float64(index)))
+        index += 1
+    return JsArray[U](result^)
 
 
 def array_from(values: String) -> JsArray[String]:
@@ -96,6 +130,25 @@ def map_new[
 
 def set_new[T: Copyable & Deinitable & Equatable]() -> JsSet[T]:
     return JsSet[T]()
+
+
+def map_new[
+    K: Copyable & Deinitable & Equatable,
+    V: Copyable & Deinitable,
+](entries: JsIterator[Tuple[K, V]]) -> JsMap[K, V]:
+    var result = JsMap[K, V]()
+    for entry in entries:
+        _ = result.set(entry[0].copy(), entry[1].copy())
+    return result
+
+
+def set_new[
+    T: Copyable & Deinitable & Equatable
+](values: JsIterator[T]) -> JsSet[T]:
+    var result = JsSet[T]()
+    for value in values:
+        _ = result.add(value.copy())
+    return result
 
 
 def set_new[

@@ -1,24 +1,19 @@
-from std.collections import List
-from std.builtin.rebind import downcast, rebind_var
-from std.memory import ArcPointer
-
-from .array import JsArray
-from .equality import same_value_zero
+from .collection_storage import CollectionStorage
+from .equality import canonical_collection_key, same_value_zero
+from .iterator import JsIterator
 
 
 struct JsSet[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
-    comptime Storage = downcast[List[Self.T], Movable & Deinitable]
-    var _values: ArcPointer[Self.Storage]
+    var _values: CollectionStorage[Self.T]
 
     def __init__(out self) where conforms_to(Self.T, Copyable & Deinitable):
-        var values = rebind_var[Self.Storage](List[Self.T]())
-        self._values = ArcPointer(values^)
+        self._values = CollectionStorage[Self.T]()
 
     def __len__(self) -> Int:
-        return len(self._values[])
+        return len(self._values)
 
     def __eq__(self, other: Self) -> Bool:
-        return self._values is other._values
+        return self._values == other._values
 
     def js_size(self) -> Float64:
         return Float64(len(self))
@@ -32,7 +27,7 @@ struct JsSet[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
         self, var value: Self.T
     ) -> Self where conforms_to(Self.T, Copyable & Deinitable & Equatable):
         if not self.has(value):
-            self._values[].append(value^)
+            self._values.append(canonical_collection_key(value))
         return self
 
     def delete(
@@ -41,48 +36,41 @@ struct JsSet[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
         var index = self._find(value)
         if index < 0:
             return False
-        var next = List[Self.T](capacity=len(self) - 1)
-        for current in range(len(self)):
-            if current != index:
-                next.append(self._values[][current].copy())
-        self._values[] = rebind_var[Self.Storage](next^)
+        self._values.delete_at(index)
         return True
 
     def clear(self) where conforms_to(Self.T, Copyable & Deinitable):
-        self._values[].clear()
+        self._values.clear()
 
     def keys(
         self,
-    ) -> JsArray[Self.T] where conforms_to(Self.T, Copyable & Deinitable):
-        return JsArray[Self.T](self._values[].copy())
+    ) -> JsIterator[Self.T] where conforms_to(Self.T, Copyable & Deinitable):
+        return self.values()
 
     def values(
         self,
-    ) -> JsArray[Self.T] where conforms_to(Self.T, Copyable & Deinitable):
-        return self.keys()
+    ) -> JsIterator[Self.T] where conforms_to(Self.T, Copyable & Deinitable):
+        return self._values.iterator[Self.T, _set_value[Self.T]]()
 
     def iter_values(
         self,
-    ) -> List[Self.T] where conforms_to(Self.T, Copyable & Deinitable):
-        return self._values[].copy()
+    ) -> JsIterator[Self.T] where conforms_to(Self.T, Copyable & Deinitable):
+        return self.values()
 
     def entries(
         self,
-    ) -> JsArray[Tuple[Self.T, Self.T]] where conforms_to(
+    ) -> JsIterator[Tuple[Self.T, Self.T]] where conforms_to(
         Self.T, Copyable & Deinitable
     ):
-        var result = List[Tuple[Self.T, Self.T]](capacity=len(self))
-        for value in self._values[]:
-            result.append((value.copy(), value.copy()))
-        return JsArray[Tuple[Self.T, Self.T]](result^)
+        return self._values.iterator[Tuple[Self.T, Self.T], _set_entry[Self.T]]()
 
     def union(
         self, other: Self
     ) -> Self where conforms_to(Self.T, Copyable & Deinitable & Equatable):
         var result = Self()
-        for value in self._values[]:
+        for value in self.values():
             _ = result.add(value.copy())
-        for value in other._values[]:
+        for value in other.values():
             _ = result.add(value.copy())
         return result
 
@@ -90,16 +78,21 @@ struct JsSet[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
         self, other: Self
     ) -> Self where conforms_to(Self.T, Copyable & Deinitable & Equatable):
         var result = Self()
-        for value in self._values[]:
-            if other.has(value):
-                _ = result.add(value.copy())
+        if len(self) <= len(other):
+            for value in self.values():
+                if other.has(value):
+                    _ = result.add(value.copy())
+        else:
+            for value in other.values():
+                if self.has(value):
+                    _ = result.add(value.copy())
         return result
 
     def difference(
         self, other: Self
     ) -> Self where conforms_to(Self.T, Copyable & Deinitable & Equatable):
         var result = Self()
-        for value in self._values[]:
+        for value in self.values():
             if not other.has(value):
                 _ = result.add(value.copy())
         return result
@@ -112,7 +105,9 @@ struct JsSet[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
     def is_subset_of(
         self, other: Self
     ) -> Bool where conforms_to(Self.T, Copyable & Deinitable & Equatable):
-        for value in self._values[]:
+        if len(self) > len(other):
+            return False
+        for value in self.values():
             if not other.has(value):
                 return False
         return True
@@ -125,15 +120,25 @@ struct JsSet[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
     def is_disjoint_from(
         self, other: Self
     ) -> Bool where conforms_to(Self.T, Copyable & Deinitable & Equatable):
-        for value in self._values[]:
-            if other.has(value):
-                return False
+        if len(self) <= len(other):
+            for value in self.values():
+                if other.has(value):
+                    return False
+        else:
+            for value in other.values():
+                if self.has(value):
+                    return False
         return True
 
     def _find(
         self, value: Self.T
     ) -> Int where conforms_to(Self.T, Copyable & Deinitable & Equatable):
-        for index in range(len(self)):
-            if same_value_zero(self._values[][index], value):
-                return index
-        return -1
+        return self._values.find[Self.T, same_value_zero[Self.T]](value)
+
+
+def _set_value[T: Copyable & Deinitable](value: T) -> T:
+    return value.copy()
+
+
+def _set_entry[T: Copyable & Deinitable](value: T) -> Tuple[T, T]:
+    return (value.copy(), value.copy())

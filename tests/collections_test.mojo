@@ -1,5 +1,5 @@
 from std.testing import assert_equal, assert_false, assert_true
-from tsonic_js import JsMap, JsSet
+from tsonic_js import JsMap, JsSet, array_from
 
 
 def main() raises:
@@ -10,9 +10,9 @@ def main() raises:
     assert_equal(values.js_size(), 2)
     assert_true(values.has(1))
     assert_equal(values.get(1).value(), 11)
-    assert_equal(len(values.keys()), 2)
-    assert_equal(len(values.values()), 2)
-    assert_equal(len(values.entries()), 2)
+    assert_equal(len(array_from(values.keys())), 2)
+    assert_equal(len(array_from(values.values())), 2)
+    assert_equal(len(array_from(values.entries())), 2)
     assert_true(values.delete(2))
     assert_false(values.delete(2))
     values.clear()
@@ -34,9 +34,9 @@ def main() raises:
     assert_true(left.is_subset_of(left.union(right)))
     assert_true(left.union(right).is_superset_of(left))
     assert_false(left.is_disjoint_from(right))
-    assert_equal(len(left.keys()), 2)
-    assert_equal(len(left.values()), 2)
-    assert_equal(len(left.entries()), 2)
+    assert_equal(len(array_from(left.keys())), 2)
+    assert_equal(len(array_from(left.values())), 2)
+    assert_equal(len(array_from(left.entries())), 2)
     assert_true(left.delete(1))
     left.clear()
     assert_equal(left.js_size(), 0)

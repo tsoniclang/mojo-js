@@ -1,9 +1,6 @@
-from std.collections import List
-from std.builtin.rebind import downcast, rebind_var
-from std.memory import ArcPointer
-
-from .array import JsArray
-from .equality import same_value_zero
+from .collection_storage import CollectionStorage
+from .equality import canonical_collection_key, same_value_zero
+from .iterator import JsIterator
 
 
 struct _JsMapEntry[K: AnyType, V: AnyType](
@@ -23,30 +20,21 @@ struct _JsMapEntry[K: AnyType, V: AnyType](
         self.value = value^
 
 
-struct JsMap[
-    K: AnyType,
-    V: AnyType,
-](Equatable, ImplicitlyCopyable, Sized):
-    comptime Storage = downcast[
-        List[_JsMapEntry[Self.K, Self.V]], Movable & Deinitable
-    ]
-    var _entries: ArcPointer[Self.Storage]
+struct JsMap[K: AnyType, V: AnyType](Equatable, ImplicitlyCopyable, Sized):
+    var _entries: CollectionStorage[_JsMapEntry[Self.K, Self.V]]
 
     def __init__(
         out self,
     ) where conforms_to(Self.K, Copyable & Deinitable) and conforms_to(
         Self.V, Copyable & Deinitable
     ):
-        var entries = rebind_var[Self.Storage](
-            List[_JsMapEntry[Self.K, Self.V]]()
-        )
-        self._entries = ArcPointer(entries^)
+        self._entries = CollectionStorage[_JsMapEntry[Self.K, Self.V]]()
 
     def __len__(self) -> Int:
-        return len(self._entries[])
+        return len(self._entries)
 
     def __eq__(self, other: Self) -> Bool:
-        return self._entries is other._entries
+        return self._entries == other._entries
 
     def js_size(self) -> Float64:
         return Float64(len(self))
@@ -57,8 +45,10 @@ struct JsMap[
         Self.K, Copyable & Deinitable & Equatable
     ) and conforms_to(Self.V, Copyable & Deinitable):
         var index = self._find(key)
-        return None if index < 0 else Optional[Self.V](
-            self._entries[][index].value.copy()
+        if index < 0:
+            return None
+        return Optional[Self.V](
+            self._entries.project_at[Self.V, _map_value[Self.K, Self.V]](index)
         )
 
     def has(
@@ -75,9 +65,16 @@ struct JsMap[
     ) and conforms_to(Self.V, Copyable & Deinitable):
         var index = self._find(key)
         if index >= 0:
-            self._entries[][index].value = value^
+            var original_key = self._entries.project_at[
+                Self.K, _map_key[Self.K, Self.V]
+            ](index)
+            self._entries.replace(
+                index, _JsMapEntry[Self.K, Self.V](original_key^, value^)
+            )
         else:
-            self._entries[].append(_JsMapEntry[Self.K, Self.V](key^, value^))
+            self._entries.append(
+                _JsMapEntry[Self.K, Self.V](canonical_collection_key(key), value^)
+            )
         return self
 
     def delete(
@@ -88,11 +85,7 @@ struct JsMap[
         var index = self._find(key)
         if index < 0:
             return False
-        var next = List[_JsMapEntry[Self.K, Self.V]](capacity=len(self) - 1)
-        for current in range(len(self)):
-            if current != index:
-                next.append(self._entries[][current].copy())
-        self._entries[] = rebind_var[Self.Storage](next^)
+        self._entries.delete_at(index)
         return True
 
     def clear(
@@ -100,54 +93,65 @@ struct JsMap[
     ) where conforms_to(Self.K, Copyable & Deinitable) and conforms_to(
         Self.V, Copyable & Deinitable
     ):
-        self._entries[].clear()
+        self._entries.clear()
 
     def keys(
         self,
-    ) -> JsArray[Self.K] where conforms_to(
+    ) -> JsIterator[Self.K] where conforms_to(
         Self.K, Copyable & Deinitable
     ) and conforms_to(Self.V, Copyable & Deinitable):
-        var result = List[Self.K](capacity=len(self))
-        for entry in self._entries[]:
-            result.append(entry.key.copy())
-        return JsArray[Self.K](result^)
+        return self._entries.iterator[Self.K, _map_key[Self.K, Self.V]]()
 
     def values(
         self,
-    ) -> JsArray[Self.V] where conforms_to(
+    ) -> JsIterator[Self.V] where conforms_to(
         Self.K, Copyable & Deinitable
     ) and conforms_to(Self.V, Copyable & Deinitable):
-        var result = List[Self.V](capacity=len(self))
-        for entry in self._entries[]:
-            result.append(entry.value.copy())
-        return JsArray[Self.V](result^)
+        return self._entries.iterator[Self.V, _map_value[Self.K, Self.V]]()
 
     def entries(
         self,
-    ) -> JsArray[Tuple[Self.K, Self.V]] where conforms_to(
+    ) -> JsIterator[Tuple[Self.K, Self.V]] where conforms_to(
         Self.K, Copyable & Deinitable
     ) and conforms_to(Self.V, Copyable & Deinitable):
-        var result = List[Tuple[Self.K, Self.V]](capacity=len(self))
-        for entry in self._entries[]:
-            result.append((entry.key.copy(), entry.value.copy()))
-        return JsArray[Tuple[Self.K, Self.V]](result^)
+        return self._entries.iterator[
+            Tuple[Self.K, Self.V], _map_entry[Self.K, Self.V]
+        ]()
 
     def iter_entries(
         self,
-    ) -> List[Tuple[Self.K, Self.V]] where conforms_to(
+    ) -> JsIterator[Tuple[Self.K, Self.V]] where conforms_to(
         Self.K, Copyable & Deinitable
     ) and conforms_to(Self.V, Copyable & Deinitable):
-        var result = List[Tuple[Self.K, Self.V]](capacity=len(self))
-        for entry in self._entries[]:
-            result.append((entry.key.copy(), entry.value.copy()))
-        return result^
+        return self.entries()
 
     def _find(
         self, key: Self.K
     ) -> Int where conforms_to(
         Self.K, Copyable & Deinitable & Equatable
     ) and conforms_to(Self.V, Copyable & Deinitable):
-        for index in range(len(self)):
-            if same_value_zero(self._entries[][index].key, key):
-                return index
-        return -1
+        return self._entries.find[Self.K, _map_matches[Self.K, Self.V]](key)
+
+
+def _map_key[K: Copyable & Deinitable, V: Copyable & Deinitable](
+    entry: _JsMapEntry[K, V]
+) -> K:
+    return entry.key.copy()
+
+
+def _map_value[K: Copyable & Deinitable, V: Copyable & Deinitable](
+    entry: _JsMapEntry[K, V]
+) -> V:
+    return entry.value.copy()
+
+
+def _map_entry[K: Copyable & Deinitable, V: Copyable & Deinitable](
+    entry: _JsMapEntry[K, V]
+) -> Tuple[K, V]:
+    return (entry.key.copy(), entry.value.copy())
+
+
+def _map_matches[
+    K: Copyable & Deinitable & Equatable, V: Copyable & Deinitable
+](entry: _JsMapEntry[K, V], key: K) -> Bool:
+    return same_value_zero(entry.key, key)

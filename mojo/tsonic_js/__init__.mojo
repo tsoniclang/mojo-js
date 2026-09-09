@@ -49,6 +49,8 @@ from .json import (
     json_stringify_with_space_string,
 )
 from .map import JsMap
+from .iterator import JsIterator
+from .iterator_result import JsIteratorReturn, JsIteratorYield
 from .native_string import *
 from .math import *
 from .number import *
