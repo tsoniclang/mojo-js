@@ -23,7 +23,8 @@ def main() raises:
     var negative = Float64(FloatLiteral.negative_infinity)
     var nan = Float64(FloatLiteral.nan)
     var source = JsString("aba😀")
-    for index in List[Float64](positive, negative, 1e100, -1e100):
+    var outside: List[Float64] = [positive, negative, 1e100, -1e100]
+    for index in outside:
         assert_equal(len(source.char_at(index)), 0)
         assert_false(Bool(source.at(index)))
         assert_false(Bool(source.code_point_at(index)))
@@ -50,9 +51,16 @@ def main() raises:
     assert_equal(units.code_unit_at(2).value(), UInt16(0))
     assert_equal(units.code_unit_at(3).value(), UInt16(0xFFFF))
     assert_equal(units.code_unit_at(4).value(), UInt16(1))
-    for scalar in List[Float64](
-        nan, positive, negative, 1e100, -1, 1.5, 0x110000
-    ):
+    var invalid_scalars: List[Float64] = [
+        nan,
+        positive,
+        negative,
+        1e100,
+        -1,
+        1.5,
+        0x110000,
+    ]
+    for scalar in invalid_scalars:
         with assert_raises(contains="invalid JavaScript Unicode code point"):
             _ = string_from_code_point([scalar])
     assert_equal(native_string_get_index("abc", 1).value(), "b")
