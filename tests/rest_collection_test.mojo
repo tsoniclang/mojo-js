@@ -18,7 +18,7 @@ def insert(values: JsArray[String], value: String) -> Float64:
 def insert_generic[
     T: Copyable & Deinitable
 ](values: JsArray[T], value: T) -> Float64:
-    return values.push([value])
+    return values.push([value.copy()])
 
 
 def main() raises:
