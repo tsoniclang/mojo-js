@@ -1,4 +1,5 @@
 from .string import JsString, string_from_char_code, string_from_code_point
+from std.collections import List
 
 
 def native_string_at(value: String, index: Float64) -> Optional[String]:
@@ -22,7 +23,7 @@ def native_string_code_point_at(
     return JsString(value).code_point_at(index)
 
 
-def native_string_concat(value: String, *others: String) -> String:
+def native_string_concat(value: String, others: List[String]) -> String:
     var result = value
     for other in others:
         result += other
@@ -154,9 +155,9 @@ def native_string_is_well_formed(value: String) -> Bool:
     return True
 
 
-def native_string_from_char_code(*codes: Float64) -> String:
-    return string_from_char_code(*codes).to_native_lossy()
+def native_string_from_char_code(codes: List[Float64]) -> String:
+    return string_from_char_code(codes).to_native_lossy()
 
 
-def native_string_from_code_point(*codes: Float64) raises -> String:
-    return string_from_code_point(*codes).to_native_lossy()
+def native_string_from_code_point(codes: List[Float64]) raises -> String:
+    return string_from_code_point(codes).to_native_lossy()

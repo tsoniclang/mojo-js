@@ -1,4 +1,5 @@
 from .value import JsValue
+from std.collections import List
 
 
 def _console_write_value(value: JsValue):
@@ -18,7 +19,7 @@ def _console_write_value(value: JsValue):
         print("[object Object]", end="")
 
 
-def _console_write(label: String, *data: JsValue):
+def _console_write(label: String, data: List[JsValue]):
     if label:
         print(label, end="")
     for index in range(len(data)):
@@ -28,21 +29,21 @@ def _console_write(label: String, *data: JsValue):
     print()
 
 
-def console_debug(*data: JsValue):
-    _console_write("", *data)
+def console_debug(data: List[JsValue]):
+    _console_write("", data)
 
 
-def console_error(*data: JsValue):
-    _console_write("", *data)
+def console_error(data: List[JsValue]):
+    _console_write("", data)
 
 
-def console_info(*data: JsValue):
-    _console_write("", *data)
+def console_info(data: List[JsValue]):
+    _console_write("", data)
 
 
-def console_log(*data: JsValue):
-    _console_write("", *data)
+def console_log(data: List[JsValue]):
+    _console_write("", data)
 
 
-def console_warn(*data: JsValue):
-    _console_write("", *data)
+def console_warn(data: List[JsValue]):
+    _console_write("", data)

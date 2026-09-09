@@ -108,13 +108,13 @@ struct _JsonParser:
         if unit == 123:
             return self._parse_object(depth)
         if unit == 116:
-            self._consume_literal(116, 114, 117, 101)
+            self._consume_literal([116, 114, 117, 101])
             return self._builder.append_bool(True)
         if unit == 102:
-            self._consume_literal(102, 97, 108, 115, 101)
+            self._consume_literal([102, 97, 108, 115, 101])
             return self._builder.append_bool(False)
         if unit == 110:
-            self._consume_literal(110, 117, 108, 108)
+            self._consume_literal([110, 117, 108, 108])
             return self._builder.append_null()
         if unit == 45 or _is_digit(unit):
             return self._builder.append_number(self._parse_number())
@@ -260,7 +260,7 @@ struct _JsonParser:
             raise Error("invalid JSON number")
         self._position += 1
 
-    def _consume_literal(mut self, *units: UInt16) raises:
+    def _consume_literal(mut self, units: List[UInt16]) raises:
         for unit in units:
             self._expect(unit)
 

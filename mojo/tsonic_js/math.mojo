@@ -1,4 +1,5 @@
 from std import math, random
+from std.collections import List
 
 
 comptime MATH_E = 2.718281828459045
@@ -87,7 +88,7 @@ def math_fround(value: Float64) -> Float64:
     return Float64(Float32(value))
 
 
-def math_hypot(*values: Float64) -> Float64:
+def math_hypot(values: List[Float64]) -> Float64:
     var scale = 0.0
     var sum = 0.0
     for value in values:
@@ -130,7 +131,7 @@ def math_log2(value: Float64) -> Float64:
     return math.log2(value)
 
 
-def math_max(*values: Float64) -> Float64:
+def math_max(values: List[Float64]) -> Float64:
     var result = Float64(FloatLiteral.negative_infinity)
     for value in values:
         if value != value:
@@ -142,7 +143,7 @@ def math_max(*values: Float64) -> Float64:
     return result
 
 
-def math_min(*values: Float64) -> Float64:
+def math_min(values: List[Float64]) -> Float64:
     var result = Float64(FloatLiteral.infinity)
     for value in values:
         if value != value:

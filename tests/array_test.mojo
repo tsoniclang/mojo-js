@@ -10,7 +10,7 @@ def main() raises:
     var array = JsArray[Int32](values^)
     var shared = array
 
-    assert_equal(shared.push(3), 3)
+    assert_equal(shared.push([3]), 3)
     assert_equal(array.get(2).value(), 3)
     assert_true(array.same_storage(shared))
 
@@ -24,8 +24,8 @@ def main() raises:
     assert_false(array.has(1))
 
     var sequence = JsArray[Int32]()
-    assert_equal(sequence.unshift(2, 3), 2)
-    assert_equal(sequence.unshift(1), 3)
+    assert_equal(sequence.unshift([2, 3]), 2)
+    assert_equal(sequence.unshift([1]), 3)
     assert_equal(sequence.shift().value(), 1)
     assert_equal(sequence.pop().value(), 3)
     assert_equal(sequence.at(-1).value(), 2)
@@ -34,12 +34,12 @@ def main() raises:
     assert_equal(sequence.last_index_of(2), 0)
     assert_equal(sequence.join().to_native_strict(), "2")
 
-    _ = sequence.push(4, 6, 8)
+    _ = sequence.push([4, 6, 8])
     var middle = sequence.slice(1, 3)
     assert_equal(len(middle), 2)
     assert_equal(middle.get(0).value(), 4)
     assert_equal(middle.get(1).value(), 6)
-    var removed = sequence.splice(1, 2, 5, 7)
+    var removed = sequence.splice(1, 2, items=[5, 7])
     assert_equal(len(removed), 2)
     assert_equal(removed.get(0).value(), 4)
     assert_equal(removed.get(1).value(), 6)

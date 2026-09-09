@@ -30,7 +30,7 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         return Float64(len(self))
 
     def push(
-        self, *values: Self.T
+        self, values: List[Self.T]
     ) -> Float64 where conforms_to(Self.T, Copyable & Deinitable):
         for value in values:
             self._elements[].append(Optional[Self.T](value.copy()))
@@ -90,7 +90,7 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         return first^
 
     def unshift(
-        self, *values: Self.T
+        self, values: List[Self.T]
     ) -> Float64 where conforms_to(Self.T, Copyable & Deinitable):
         var next = List[Optional[Self.T]](capacity=len(self) + len(values))
         for value in values:
@@ -143,7 +143,8 @@ struct JsArray[T: AnyType](ImplicitlyCopyable, Sized):
         self,
         start: Float64,
         delete_count: Float64 = Float64(FloatLiteral.infinity),
-        *items: Self.T,
+        *,
+        items: List[Self.T],
     ) -> Self where conforms_to(Self.T, Copyable & Deinitable):
         var first = _relative_start(start, len(self))
         var removed_count = len(self) - first if delete_count == Float64(
