@@ -61,24 +61,24 @@ from .object import (
     object_keys,
     object_values,
 )
-from .regexp import *
-from .regexp_callbacks import RegExpNativeResult
-from .regexp_callbacks_exact import *
-from .regexp_callbacks_native import *
-from .regexp_results import (
+from .regexp.core import *
+from .regexp.protocols.records import RegExpNativeResult
+from .regexp.protocols.exact_signatures import *
+from .regexp.protocols.exact_callbacks import *
+from .regexp.protocols.exact_string_callbacks import *
+from .regexp.protocols.native_signatures import *
+from .regexp.protocols.native_callbacks import *
+from .regexp.protocols.native_string_callbacks import *
+from .regexp.results.matches import (
     JsRegExpExecArray,
-    JsRegExpIndicesArray,
     JsRegExpMatchArray,
-    JsRegExpNamedGroups,
-    JsRegExpNamedIndices,
     JsRegExpStringIterator,
     RegExpExecArray,
-    RegExpIndicesArray,
     RegExpMatchArray,
-    RegExpNamedGroups,
-    RegExpNamedIndices,
     RegExpStringIterator,
 )
+from .regexp.results.indices import JsRegExpIndicesArray, RegExpIndicesArray
+from .regexp.results.groups import JsRegExpNamedGroups, JsRegExpNamedIndices, RegExpNamedGroups, RegExpNamedIndices
 from .set import JsSet
 from .string import JsString, string_from_char_code, string_from_code_point
 from .symbol import JsSymbol, symbol_new

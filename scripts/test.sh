@@ -4,6 +4,8 @@ set -euo pipefail
 PIXI_BIN="${PIXI_BIN:-pixi}"
 NATIVE_BUILD=".temp/native-tests"
 
+node --test test/architecture/*.test.mjs
+
 "${PIXI_BIN}" run mojo format --quiet mojo tests
 git diff --exit-code -- mojo tests
 

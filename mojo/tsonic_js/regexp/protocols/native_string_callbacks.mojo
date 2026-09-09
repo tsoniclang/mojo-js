@@ -1,8 +1,5 @@
-from tsonic_runtime import RaisingCallable
-
-from .regexp import JsRegExp
-from .regexp_callbacks import (
-    RegExpNativeResult,
+from .records import RegExpNativeResult, _prepare_native_callback, _prepare_regexp_callback, _prepare_string_callback
+from .apply_native import (
     _apply_native_callback_0,
     _apply_native_callback_1,
     _apply_native_callback_2,
@@ -12,165 +9,20 @@ from .regexp_callbacks import (
     _apply_native_callback_6,
     _apply_native_callback_7,
     _apply_native_callback_8,
-    _prepare_native_callback,
-    _prepare_regexp_callback,
-    _prepare_string_callback,
 )
-from .string import JsString
-from .value import JsValue
-
-
-comptime _N0[E: AnyType] = RaisingCallable[Tuple[], String, E]
-comptime _N1[E: AnyType] = RaisingCallable[Tuple[String], String, E]
-comptime _N2[E: AnyType] = RaisingCallable[Tuple[String, JsValue], String, E]
-comptime _N3[E: AnyType] = RaisingCallable[
-    Tuple[String, JsValue, JsValue], String, E
-]
-comptime _N4[E: AnyType] = RaisingCallable[
-    Tuple[String, JsValue, JsValue, JsValue], String, E
-]
-comptime _N5[E: AnyType] = RaisingCallable[
-    Tuple[String, JsValue, JsValue, JsValue, JsValue], String, E
-]
-comptime _N6[E: AnyType] = RaisingCallable[
-    Tuple[String, JsValue, JsValue, JsValue, JsValue, JsValue], String, E
-]
-comptime _N7[E: AnyType] = RaisingCallable[
-    Tuple[String, JsValue, JsValue, JsValue, JsValue, JsValue, JsValue],
-    String,
-    E,
-]
-comptime _N8[E: AnyType] = RaisingCallable[
-    Tuple[
-        String,
-        JsValue,
-        JsValue,
-        JsValue,
-        JsValue,
-        JsValue,
-        JsValue,
-        JsValue,
-    ],
-    String,
-    E,
-]
-
-
-def regexp_replace_native_callback_0[
-    E: AnyType
-](
-    expression: JsRegExp, input: String, callback: _N0[E]
-) raises E -> RegExpNativeResult[String]:
-    return _apply_native_callback_0(
-        _prepare_native_callback(
-            _prepare_regexp_callback(expression, JsString(input), False)
-        ),
-        callback,
-    )
-
-
-def regexp_replace_native_callback_1[
-    E: AnyType
-](
-    expression: JsRegExp, input: String, callback: _N1[E]
-) raises E -> RegExpNativeResult[String]:
-    return _apply_native_callback_1(
-        _prepare_native_callback(
-            _prepare_regexp_callback(expression, JsString(input), False)
-        ),
-        callback,
-    )
-
-
-def regexp_replace_native_callback_2[
-    E: AnyType
-](
-    expression: JsRegExp, input: String, callback: _N2[E]
-) raises E -> RegExpNativeResult[String]:
-    return _apply_native_callback_2(
-        _prepare_native_callback(
-            _prepare_regexp_callback(expression, JsString(input), False)
-        ),
-        callback,
-    )
-
-
-def regexp_replace_native_callback_3[
-    E: AnyType
-](
-    expression: JsRegExp, input: String, callback: _N3[E]
-) raises E -> RegExpNativeResult[String]:
-    return _apply_native_callback_3(
-        _prepare_native_callback(
-            _prepare_regexp_callback(expression, JsString(input), False)
-        ),
-        callback,
-    )
-
-
-def regexp_replace_native_callback_4[
-    E: AnyType
-](
-    expression: JsRegExp, input: String, callback: _N4[E]
-) raises E -> RegExpNativeResult[String]:
-    return _apply_native_callback_4(
-        _prepare_native_callback(
-            _prepare_regexp_callback(expression, JsString(input), False)
-        ),
-        callback,
-    )
-
-
-def regexp_replace_native_callback_5[
-    E: AnyType
-](
-    expression: JsRegExp, input: String, callback: _N5[E]
-) raises E -> RegExpNativeResult[String]:
-    return _apply_native_callback_5(
-        _prepare_native_callback(
-            _prepare_regexp_callback(expression, JsString(input), False)
-        ),
-        callback,
-    )
-
-
-def regexp_replace_native_callback_6[
-    E: AnyType
-](
-    expression: JsRegExp, input: String, callback: _N6[E]
-) raises E -> RegExpNativeResult[String]:
-    return _apply_native_callback_6(
-        _prepare_native_callback(
-            _prepare_regexp_callback(expression, JsString(input), False)
-        ),
-        callback,
-    )
-
-
-def regexp_replace_native_callback_7[
-    E: AnyType
-](
-    expression: JsRegExp, input: String, callback: _N7[E]
-) raises E -> RegExpNativeResult[String]:
-    return _apply_native_callback_7(
-        _prepare_native_callback(
-            _prepare_regexp_callback(expression, JsString(input), False)
-        ),
-        callback,
-    )
-
-
-def regexp_replace_native_callback_8[
-    E: AnyType
-](
-    expression: JsRegExp, input: String, callback: _N8[E]
-) raises E -> RegExpNativeResult[String]:
-    return _apply_native_callback_8(
-        _prepare_native_callback(
-            _prepare_regexp_callback(expression, JsString(input), False)
-        ),
-        callback,
-    )
+from ...string import JsString
+from .native_signatures import (
+    _N0,
+    _N1,
+    _N2,
+    _N3,
+    _N4,
+    _N5,
+    _N6,
+    _N7,
+    _N8,
+)
+from ..core import JsRegExp
 
 
 def _native_string_callback_0[

@@ -1,25 +1,49 @@
-from std.collections import List
 from std.ffi import c_int, c_size_t, external_call
 from std.memory import ArcPointer
-
-from .json import json_parse
-from .string import JsString
-from .value import JsValue
+from ...json import json_parse
+from ...string import JsString
+from ...value import JsValue
 
 
 comptime _REGEXP_EXEC = 1
+
+
 comptime _REGEXP_TEST = 2
+
+
 comptime _REGEXP_MATCH = 3
+
+
 comptime _REGEXP_MATCH_ALL = 4
+
+
 comptime _REGEXP_SEARCH = 5
+
+
 comptime _REGEXP_SPLIT = 6
+
+
 comptime _REGEXP_REPLACE = 7
+
+
 comptime _REGEXP_REPLACE_ALL = 8
+
+
 comptime _REGEXP_DESCRIBE = 9
+
+
 comptime _REGEXP_ESCAPE = 10
+
+
 comptime _REGEXP_CALLBACK_REPLACE = 11
+
+
 comptime _REGEXP_CALLBACK_REPLACE_ALL = 12
+
+
 comptime _STRING_CALLBACK_REPLACE = 13
+
+
 comptime _STRING_CALLBACK_REPLACE_ALL = 14
 
 
