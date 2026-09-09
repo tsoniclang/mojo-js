@@ -39,6 +39,7 @@ struct _SourceValueView:
     var has: Optional[Callable[Tuple[Int], Bool]]
     var value: Callable[Tuple[Int], JsValue]
     var to_json: Optional[RaisingCallable[Tuple[String], JsValue, Error]]
+    var property_reader: Optional[RaisingCallable[Tuple[JsString], JsValue, Error]]
 
 
 struct _JsValueNode(Movable):
@@ -255,6 +256,21 @@ struct JsValue(ImplicitlyCopyable, Writable):
             if self._aggregate_key(index) == key:
                 return Optional[Self](self._aggregate_value(index))
         return None
+
+    def property_get(self, key: JsString) raises -> Self:
+        var own = self.object_get(key)
+        if own:
+            return own.value()
+        var view = self._nodes[][self._index].source_view
+        if view and view.value()[].property_reader:
+            return view.value()[].property_reader.value().call((key,))
+        return Self()
+
+    def array_property(self, index: Int) raises -> Self:
+        var length = self.array_length()
+        if index < 0 or index >= length:
+            return Self()
+        return self._aggregate_value(index)
 
     def same_identity(self, other: Self) -> Bool:
         if self.is_array() or self.is_object():

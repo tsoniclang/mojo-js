@@ -1,6 +1,7 @@
 from std.collections import List
 from std.collections.string import Codepoint
 from std.memory import ArcPointer
+from std.hashlib import Hashable, Hasher
 from .intl.casing_units import convert_case_units
 from tsonic_runtime.numeric import (
     source_number_to_integer_or_infinity,
@@ -16,8 +17,11 @@ from .string_indexes import (
 )
 
 
-struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
+struct JsString(Equatable, Hashable, ImplicitlyCopyable, Sized, Writable):
     var _code_units: ArcPointer[List[UInt16]]
+
+    def __hash__(self, mut hasher: Some[Hasher]):
+        self._code_units[].__hash__(hasher)
 
     def __init__(out self):
         self._code_units = ArcPointer(List[UInt16]())
