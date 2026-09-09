@@ -9,6 +9,10 @@ typedef struct TsonicIntlResult TsonicIntlResult;
 TsonicIntlResult *tsonic_js_intl_locale(const char *tag, size_t length);
 TsonicIntlResult *tsonic_js_intl_default_locale(void);
 int tsonic_js_intl_collation_available(const char *locale);
+int tsonic_js_intl_date_available(const char *locale);
+TsonicIntlResult *tsonic_js_intl_date(double timestamp, const char *locale,
+    const char *zone, int has_zone, const char *calendar, const char *numbering,
+    const char *skeleton, int date_style, int time_style, int hour12, const char *hour_cycle, int basic);
 TsonicIntlResult *tsonic_js_intl_case(
     const uint16_t *source, size_t length, const char *locale, int upper);
 TsonicIntlResult *tsonic_js_intl_compare(

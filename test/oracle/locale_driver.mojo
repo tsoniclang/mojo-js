@@ -1,6 +1,7 @@
 from std.pathlib import Path
 from std.sys import argv
 from tsonic_js import JsString, JsValue, json_parse, json_stringify, js_value_from_string, js_value_from_number, js_string_to_locale_lower_case, js_string_to_locale_upper_case, js_string_locale_compare
+from tsonic_js import date_new, date_to_locale_string, date_to_locale_date_string, date_to_locale_time_string
 
 
 def field(record: JsValue, name: String) raises -> JsValue:
@@ -10,6 +11,15 @@ def field(record: JsValue, name: String) raises -> JsValue:
 
 def evaluate(record: JsValue) raises -> JsValue:
     var operation = field(record, "operation").string_value().to_native_strict()
+    if operation == "date" or operation == "time" or operation == "datetime":
+        var input = field(record, "value")
+        var date = date_new(input.string_value()) if input.is_string() else date_new(input.number_value())
+        var locales = field(record, "locales")
+        var options = field(record, "options")
+        var output = date_to_locale_date_string(date, locales, options) if operation == "date" else (
+            date_to_locale_time_string(date, locales, options) if operation == "time" else date_to_locale_string(date, locales, options)
+        )
+        return js_value_from_string(JsString(output))
     var value = field(record, "value").string_value()
     var locales = field(record, "locales")
     if operation == "lower":

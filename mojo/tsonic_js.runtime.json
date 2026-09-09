@@ -12,6 +12,9 @@
     { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/locales.c" },
     { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/casing.c" },
     { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/collation.c" },
+    { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/date_locale.c" },
+    { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/date_format.c" },
+    { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/date_matching.c" },
     {
       "language": "c",
       "standard": "c11",
@@ -30,7 +33,8 @@
   ],
   "assets": [
     "tsonic_js.native/intl/api.h",
-    "tsonic_js.native/intl/model.h"
+    "tsonic_js.native/intl/model.h",
+    "tsonic_js.native/intl/date_model.h"
   ],
   "includeDirectories": [
     "include/quickjs"

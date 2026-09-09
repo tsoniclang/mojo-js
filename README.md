@@ -27,6 +27,14 @@ the OS. Local operations use the host timezone and the pinned ICU transition
 database. Omitted setter arguments retain their old fields; supplied undefined
 or NaN invalidates the date. Default source strings remain native strings.
 
+`intl/` owns closed locale/options validation and ICU-backed casing, collation
+and Date locale presentation. Date styles, components, calendars, numbering
+systems, time zones and hour-cycle controls remain independent inputs. The
+basic format matcher scores ICU's available formats; best fit delegates to its
+pattern generator. Regional hour preferences come from ICU's CLDR data rather
+than country-name branches. Invalid Date returns before locale/options access.
+These Date methods do not imply support for every Intl constructor API.
+
 ## Development
 
 ```bash

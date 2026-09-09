@@ -28,14 +28,14 @@ def boolean_option(options: JsValue, name: String) raises -> Int32:
 
 def validate_unicode_type(value: String) raises:
     if len(value) == 0:
-        raise Error("Collation must be a non-empty Unicode locale type")
+        raise Error("Unicode locale type must be non-empty")
     for part in value.split("-"):
         var bytes = String(part).as_bytes()
         if len(bytes) < 3 or len(bytes) > 8:
-            raise Error("Invalid Unicode collation type")
+            raise Error("Invalid Unicode locale type")
         for byte in bytes:
             if not ((byte >= 48 and byte <= 57) or (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122)):
-                raise Error("Invalid Unicode collation type")
+                raise Error("Invalid Unicode locale type")
 
 
 struct CollationOptions(Copyable):
