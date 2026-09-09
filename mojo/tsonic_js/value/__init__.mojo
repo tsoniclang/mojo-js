@@ -44,3 +44,4 @@ from .clone import (
     js_value_structured_clone,
 )
 from .weak_identity import JsValueWeakIdentity
+from .transport import encode_structured_clone, decode_structured_clone
