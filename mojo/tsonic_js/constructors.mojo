@@ -5,11 +5,8 @@ from .set import JsSet
 from .string import JsString
 
 
-def array_new[T: Copyable & Deinitable](*items: T) -> JsArray[T]:
-    var values = List[T](capacity=len(items))
-    for item in items:
-        values.append(item.copy())
-    return JsArray[T](values^)
+def array_new[T: Copyable & Deinitable](items: List[T]) -> JsArray[T]:
+    return JsArray[T](items.copy())
 
 
 def array_from[T: Copyable & Deinitable](values: JsArray[T]) -> JsArray[T]:

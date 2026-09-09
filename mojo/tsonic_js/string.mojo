@@ -61,10 +61,10 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
         return not self < other
 
     def __add__(self, other: Self) -> Self:
-        return self.concat(other)
+        return self.concat([other])
 
     def __iadd__(mut self, other: Self):
-        self = self.concat(other)
+        self = self.concat([other])
 
     def write_to(self, mut writer: Some[Writer]):
         writer.write(self.to_native_lossy())
@@ -128,7 +128,7 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
             )
         )
 
-    def concat(self, *others: Self) -> Self:
+    def concat(self, others: List[Self]) -> Self:
         var units = self._code_units[].copy()
         for other in others:
             for unit in other._code_units[]:
@@ -253,13 +253,15 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
         if found < 0:
             return self
         return self._range(0, found).concat(
-            _expand_replacement(
-                replacement,
-                self._range(found, found + len(search)),
-                self._range(0, found),
+            [
+                _expand_replacement(
+                    replacement,
+                    self._range(found, found + len(search)),
+                    self._range(0, found),
+                    self._range(found + len(search), len(self)),
+                ),
                 self._range(found + len(search), len(self)),
-            ),
-            self._range(found + len(search), len(self)),
+            ]
         )
 
     def replace_all(self, search: Self, replacement: Self) raises -> Self:
@@ -267,31 +269,35 @@ struct JsString(Equatable, ImplicitlyCopyable, Sized, Writable):
             var result = Self()
             for index in range(len(self) + 1):
                 result = result.concat(
-                    _expand_replacement(
-                        replacement,
-                        Self(),
-                        self._range(0, index),
-                        self._range(index, len(self)),
-                    )
+                    [
+                        _expand_replacement(
+                            replacement,
+                            Self(),
+                            self._range(0, index),
+                            self._range(index, len(self)),
+                        )
+                    ]
                 )
                 if index < len(self):
-                    result = result.concat(self.char_at(Float64(index)))
+                    result = result.concat([self.char_at(Float64(index))])
             return result
         var result = Self()
         var start = 0
         while start <= len(self):
             var found = Int(self.index_of(search, Float64(start)))
             if found < 0:
-                result = result.concat(self._range(start, len(self)))
+                result = result.concat([self._range(start, len(self))])
                 break
             result = result.concat(
-                self._range(start, found),
-                _expand_replacement(
-                    replacement,
-                    search,
-                    self._range(0, found),
-                    self._range(found + len(search), len(self)),
-                ),
+                [
+                    self._range(start, found),
+                    _expand_replacement(
+                        replacement,
+                        search,
+                        self._range(0, found),
+                        self._range(found + len(search), len(self)),
+                    ),
+                ]
             )
             start = found + len(search)
         return result
@@ -502,14 +508,14 @@ def _is_js_whitespace(unit: UInt16) -> Bool:
     )
 
 
-def string_from_char_code(*codes: Float64) -> JsString:
+def string_from_char_code(codes: List[Float64]) -> JsString:
     var units = List[UInt16](capacity=len(codes))
     for code in codes:
         units.append(UInt16(UInt32(Int64(code)) & 0xFFFF))
     return JsString(code_units=units^)
 
 
-def string_from_code_point(*codes: Float64) raises -> JsString:
+def string_from_code_point(codes: List[Float64]) raises -> JsString:
     var units = List[UInt16]()
     for code in codes:
         var scalar = Int64(code)
@@ -536,21 +542,21 @@ def _expand_replacement(
         if replacement.code_unit_at(index).value() != 0x24 or index + 1 >= len(
             replacement
         ):
-            result = result.concat(replacement.char_at(Float64(index)))
+            result = result.concat([replacement.char_at(Float64(index))])
             index += 1
             continue
         var marker = replacement.code_unit_at(index + 1).value()
         if marker == 0x24:
-            result = result.concat(JsString("$"))
+            result = result.concat([JsString("$")])
         elif marker == 0x26:
-            result = result.concat(matched)
+            result = result.concat([matched])
         elif marker == 0x60:
-            result = result.concat(prefix)
+            result = result.concat([prefix])
         elif marker == 0x27:
-            result = result.concat(suffix)
+            result = result.concat([suffix])
         else:
             result = result.concat(
-                JsString("$"), replacement.char_at(Float64(index + 1))
+                [JsString("$"), replacement.char_at(Float64(index + 1))]
             )
         index += 2
     return result
