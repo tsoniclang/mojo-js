@@ -57,7 +57,7 @@ struct CollationOptions(Copyable):
         var collation = option_value(options, "collation")
         self.collation = String()
         if not collation.is_undefined():
-            self.collation = string_option(options, "collation", "").lower()
+            self.collation = string_option(options, "collation", "")
             validate_unicode_type(self.collation)
         self.numeric = boolean_option(options, "numeric")
         var case_first = string_option(options, "caseFirst", "")

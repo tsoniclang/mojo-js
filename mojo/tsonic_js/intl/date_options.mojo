@@ -23,7 +23,7 @@ def _style(options: JsValue, name: String) raises -> Int32:
 def _unicode_type(options: JsValue, name: String) raises -> String:
     if option_value(options, name).is_undefined():
         return String()
-    var value = string_option(options, name, "").lower()
+    var value = string_option(options, name, "")
     validate_unicode_type(value)
     return value^
 

@@ -21,7 +21,8 @@ const options = [
   { sensitivity: "accent" }, { sensitivity: "case" }, { sensitivity: "variant" },
   { caseFirst: "upper" }, { caseFirst: "lower" }, { caseFirst: "false" },
   { ignorePunctuation: true }, { ignorePunctuation: false }, { usage: "search" },
-  { collation: "phonebk" }, { collation: "bogus" }, { collation: "search" },
+  { collation: "phonebk" }, { collation: "PHONEBK" },
+  { collation: "bogus" }, { collation: "search" },
   { localeMatcher: "lookup", numeric: true, sensitivity: "base" },
 ];
 for (const locale of locales) {
@@ -49,6 +50,7 @@ const dateOptions = [
   { hourCycle: "h23" }, { hourCycle: "h24" }, { hour12: false, hourCycle: "h12" },
   { calendar: "gregory", numberingSystem: "latn" },
   { calendar: "japanese", numberingSystem: "arab" },
+  { calendar: "BUDDHIST", numberingSystem: "ARAB" },
   { calendar: "bogus", numberingSystem: "bogus" },
 ];
 for (const operation of ["date", "time", "datetime"]) {
@@ -103,7 +105,8 @@ const numberOptions = [
   { minimumFractionDigits: 2, trailingZeroDisplay: "stripIfInteger" },
   { notation: "scientific" }, { notation: "engineering" },
   { notation: "compact" }, { notation: "compact", compactDisplay: "long" },
-  { numberingSystem: "arab" }, { numberingSystem: "bogus" },
+  { numberingSystem: "arab" }, { numberingSystem: "ARAB" },
+  { numberingSystem: "bogus" },
 ];
 for (const signDisplay of ["auto", "always", "never", "exceptZero", "negative"]) numberOptions.push({ signDisplay });
 for (const roundingMode of ["ceil", "floor", "expand", "trunc", "halfCeil", "halfFloor", "halfExpand", "halfTrunc", "halfEven"]) {

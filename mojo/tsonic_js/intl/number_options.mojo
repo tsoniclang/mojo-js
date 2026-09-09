@@ -55,7 +55,7 @@ struct NumberOptions(Movable):
         _ = number_choice(options, "localeMatcher", "best fit", "lookup|best fit")
         self.numbering = String()
         if not option_value(options, "numberingSystem").is_undefined():
-            self.numbering = string_option(options, "numberingSystem", "").lower()
+            self.numbering = string_option(options, "numberingSystem", "")
             validate_unicode_type(self.numbering)
         var style = number_choice(options, "style", "decimal", "decimal|percent|currency")
         var currency = _currency(options)
