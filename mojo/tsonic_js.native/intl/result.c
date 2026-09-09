@@ -46,6 +46,9 @@ int tsonic_js_intl_order(const TsonicIntlResult *result) {
 
 void tsonic_js_intl_free(TsonicIntlResult *result) {
     if (result == NULL) return;
+    if (result->resource != NULL && result->free_resource != NULL) {
+        result->free_resource(result->resource);
+    }
     free(result->text);
     free(result->units);
     free(result);

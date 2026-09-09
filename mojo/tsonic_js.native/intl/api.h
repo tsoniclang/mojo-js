@@ -24,6 +24,13 @@ TsonicIntlResult *tsonic_js_intl_compare(
     const uint16_t *right, size_t right_length,
     const char *locale, const char *collation, int search,
     int numeric, int case_first, int sensitivity, int punctuation);
+TsonicIntlResult *tsonic_js_intl_collator_open(const char *locale,
+    const char *collation, int search, int numeric, int case_first,
+    int sensitivity, int punctuation);
+TsonicIntlResult *tsonic_js_intl_collator_compare(const TsonicIntlResult *owner,
+    const uint16_t *left, size_t left_length, const uint16_t *right, size_t right_length);
+const char *tsonic_js_intl_collator_text(const TsonicIntlResult *owner, int field);
+int tsonic_js_intl_collator_option(const TsonicIntlResult *owner, int field);
 int tsonic_js_intl_failed(const TsonicIntlResult *result);
 const char *tsonic_js_intl_error(const TsonicIntlResult *result);
 const char *tsonic_js_intl_text(const TsonicIntlResult *result);

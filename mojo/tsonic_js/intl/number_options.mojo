@@ -1,13 +1,14 @@
 from std.ffi import c_int, external_call
 from ..value import JsValue, js_truthy
-from .options import option_value, string_option, validate_unicode_type
+from .options import option_value, option_string, unicode_type_option
 from .number_precision import number_choice, number_precision
 
 
 def _currency(options: JsValue) raises -> String:
-    if option_value(options, "currency").is_undefined():
+    var selected = option_value(options, "currency")
+    if selected.is_undefined():
         return String()
-    var value = string_option(options, "currency", "")
+    var value = option_string(selected, "")
     var bytes = value.as_bytes()
     if len(bytes) != 3:
         raise Error("Currency must contain exactly three ASCII letters")
@@ -53,16 +54,12 @@ struct NumberOptions(Movable):
 
     def __init__(out self, options: JsValue) raises:
         _ = number_choice(options, "localeMatcher", "best fit", "lookup|best fit")
-        self.numbering = String()
-        if not option_value(options, "numberingSystem").is_undefined():
-            self.numbering = string_option(options, "numberingSystem", "")
-            validate_unicode_type(self.numbering)
+        self.numbering = unicode_type_option(options, "numberingSystem")
         var style = number_choice(options, "style", "decimal", "decimal|percent|currency")
         var currency = _currency(options)
         var currency_display = number_choice(options, "currencyDisplay", "symbol", "code|symbol|narrowSymbol|name")
         var currency_sign = number_choice(options, "currencySign", "standard", "standard|accounting")
         var notation = number_choice(options, "notation", "standard", "standard|scientific|engineering|compact")
-        var compact_display = number_choice(options, "compactDisplay", "short", "short|long")
         var minimum_fraction = 0
         var maximum_fraction = 3
         self.skeleton = String()
@@ -72,8 +69,9 @@ struct NumberOptions(Movable):
             var digits = Int(external_call["tsonic_js_intl_currency_digits", c_int](currency.as_c_string_slice().ptr()))
             if digits < 0:
                 raise Error("Unable to resolve currency fraction digits")
-            minimum_fraction = digits
-            maximum_fraction = digits
+            if notation == "standard":
+                minimum_fraction = digits
+                maximum_fraction = digits
             var width = String("short")
             if currency_display == "code":
                 width = String("iso-code")
@@ -86,6 +84,7 @@ struct NumberOptions(Movable):
             maximum_fraction = 0
             self.skeleton = String("percent scale/100 ")
         self.skeleton += number_precision(options, notation == "compact", minimum_fraction, maximum_fraction)
+        var compact_display = number_choice(options, "compactDisplay", "short", "short|long")
         if notation == "compact":
             self.skeleton += " compact-" + compact_display
         elif notation != "standard":

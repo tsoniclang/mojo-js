@@ -34,6 +34,40 @@ static void expect_date_score(const char *requested, const char *candidate, int 
     assert(U_SUCCESS(status));
 }
 
+static void collator_contracts(void) {
+    TsonicIntlResult *owner = tsonic_js_intl_collator_open("en@colnumeric=yes", "", 0, 1, 1, 0, 1);
+    assert(!tsonic_js_intl_failed(owner));
+    assert(tsonic_js_intl_collator_option(owner, 0) == 0);
+    assert(tsonic_js_intl_collator_option(owner, 1) == 0);
+    assert(tsonic_js_intl_collator_option(owner, 2) == 1);
+    assert(tsonic_js_intl_collator_option(owner, 3) == 1);
+    assert(tsonic_js_intl_collator_option(owner, 4) == 1);
+    assert(strstr(tsonic_js_intl_collator_text(owner, 0), "kn") != NULL);
+    assert(strcmp(tsonic_js_intl_collator_text(owner, 1), "default") == 0);
+    const uint16_t first[] = { 'f', 'i', 'l', 'e', '2' };
+    const uint16_t second[] = { 'f', 'i', 'l', 'e', '1', '0' };
+    for (int index = 0; index < 64; ++index) {
+        TsonicIntlResult *comparison = tsonic_js_intl_collator_compare(owner, first, 5, second, 6);
+        assert(!tsonic_js_intl_failed(comparison));
+        assert(tsonic_js_intl_order(comparison) < 0);
+        tsonic_js_intl_free(comparison);
+    }
+    assert(tsonic_js_intl_collator_text(owner, 2) == NULL);
+    assert(tsonic_js_intl_collator_option(owner, 5) == -1);
+    TsonicIntlResult *invalid = tsonic_js_intl_collator_compare(owner, NULL, 1, second, 6);
+    assert(tsonic_js_intl_failed(invalid));
+    tsonic_js_intl_free(invalid);
+    tsonic_js_intl_free(owner);
+    owner = tsonic_js_intl_collator_open("en@colnumeric=yes", "", 0, 0, -1, -1, -1);
+    assert(!tsonic_js_intl_failed(owner));
+    assert(strstr(tsonic_js_intl_collator_text(owner, 0), "kn") == NULL);
+    tsonic_js_intl_free(owner);
+    invalid = tsonic_js_intl_collator_open("en", "", 0, 2, -1, -1, -1);
+    assert(tsonic_js_intl_failed(invalid));
+    assert(tsonic_js_intl_collator_text(invalid, 0) == NULL);
+    tsonic_js_intl_free(invalid);
+}
+
 static void date_contracts(void) {
     expect_date_score("yMd", "M/d/y", 0);
     expect_date_score("yMd", "M/y", -120);
@@ -119,6 +153,7 @@ static void number_contracts(void) {
 }
 
 int main(void) {
+    collator_contracts();
     date_contracts();
     number_contracts();
     const char *valid[] = { "en", "tr-TR", "de-DE-u-co-phonebk", "en-u-kn-true-kf-upper",

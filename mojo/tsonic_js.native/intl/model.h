@@ -14,6 +14,8 @@ struct TsonicIntlResult {
     int order;
     int failed;
     char error[192];
+    void *resource;
+    void (*free_resource)(void *);
 };
 
 TsonicIntlResult *tsonic_intl_failure(const char *message);

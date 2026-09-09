@@ -6,17 +6,27 @@ def option_value(options: JsValue, name: String) raises -> JsValue:
     if options.is_null():
         raise Error("Internationalization options cannot be null")
     if options.is_object():
-        var value = options.object_get(JsString(name))
-        if value:
-            return value.value()
+        return options.property_get(JsString(name))
     return JsValue()
 
 
 def string_option(options: JsValue, name: String, default: String) raises -> String:
-    var value = option_value(options, name)
+    return option_string(option_value(options, name), default)
+
+
+def option_string(value: JsValue, default: String) raises -> String:
     if value.is_symbol():
         raise Error("A symbol cannot be converted to an internationalization option string")
     return default if value.is_undefined() else js_value_to_string(value).to_native_strict()
+
+
+def unicode_type_option(options: JsValue, name: String) raises -> String:
+    var selected = option_value(options, name)
+    if selected.is_undefined():
+        return String()
+    var value = option_string(selected, "")
+    validate_unicode_type(value)
+    return value^
 
 
 def boolean_option(options: JsValue, name: String) raises -> Int32:
@@ -52,15 +62,12 @@ struct CollationOptions(Copyable):
         var matcher = string_option(options, "localeMatcher", "best fit")
         if matcher != "lookup" and matcher != "best fit":
             raise Error("Locale matcher must be lookup or best fit")
-        var collation = option_value(options, "collation")
-        self.collation = String()
-        if not collation.is_undefined():
-            self.collation = string_option(options, "collation", "")
-            validate_unicode_type(self.collation)
+        self.collation = unicode_type_option(options, "collation")
         self.numeric = boolean_option(options, "numeric")
-        var case_first = string_option(options, "caseFirst", "")
+        var case_value = option_value(options, "caseFirst")
+        var case_first = option_string(case_value, "")
         if case_first == "":
-            if not option_value(options, "caseFirst").is_undefined():
+            if not case_value.is_undefined():
                 raise Error("Invalid collation case order")
             self.case_first = -1
         elif case_first == "false":
@@ -71,9 +78,10 @@ struct CollationOptions(Copyable):
             self.case_first = 2
         else:
             raise Error("Invalid collation case order")
-        var sensitivity = string_option(options, "sensitivity", "")
+        var sensitivity_value = option_value(options, "sensitivity")
+        var sensitivity = option_string(sensitivity_value, "")
         if sensitivity == "":
-            if not option_value(options, "sensitivity").is_undefined():
+            if not sensitivity_value.is_undefined():
                 raise Error("Invalid collation sensitivity")
             self.sensitivity = -1
         elif sensitivity == "base":

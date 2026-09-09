@@ -1,12 +1,13 @@
 from std import math
 from ..value import JsValue
-from .options import boolean_option, option_value, string_option, validate_unicode_type
+from .options import boolean_option, option_value, option_string, string_option, unicode_type_option
 
 
 def _selection(options: JsValue, name: String, choices: String, patterns: String) raises -> String:
-    if option_value(options, name).is_undefined():
+    var value = option_value(options, name)
+    if value.is_undefined():
         return String()
-    var selected = string_option(options, name, "")
+    var selected = option_string(value, "")
     var values = choices.split("|")
     var targets = patterns.split("|")
     for index in range(len(values)):
@@ -18,14 +19,6 @@ def _selection(options: JsValue, name: String, choices: String, patterns: String
 def _style(options: JsValue, name: String) raises -> Int32:
     var value = _selection(options, name, "full|long|medium|short", "0|1|2|3")
     return Int32(-1) if value == "" else Int32(Int(value))
-
-
-def _unicode_type(options: JsValue, name: String) raises -> String:
-    if option_value(options, name).is_undefined():
-        return String()
-    var value = string_option(options, name, "")
-    validate_unicode_type(value)
-    return value^
 
 
 struct DateOptions(Movable):
@@ -44,12 +37,13 @@ struct DateOptions(Movable):
         var matcher = string_option(options, "localeMatcher", "best fit")
         if matcher != "lookup" and matcher != "best fit":
             raise Error("Locale matcher must be lookup or best fit")
-        self.calendar = _unicode_type(options, "calendar")
-        self.numbering = _unicode_type(options, "numberingSystem")
+        self.calendar = unicode_type_option(options, "calendar")
+        self.numbering = unicode_type_option(options, "numberingSystem")
         self.hour12 = boolean_option(options, "hour12")
         self.hour_cycle = _selection(options, "hourCycle", "h11|h12|h23|h24", "h11|h12|h23|h24")
-        self.has_zone = not option_value(options, "timeZone").is_undefined()
-        self.zone = string_option(options, "timeZone", "")
+        var zone = option_value(options, "timeZone")
+        self.has_zone = not zone.is_undefined()
+        self.zone = option_string(zone, "")
         if self.has_zone and (self.zone == "" or len(self.zone.as_bytes()) > 511 or "\0" in self.zone):
             raise Error("Invalid time-zone identifier")
         var weekday = _selection(options, "weekday", "long|short|narrow", "EEEE|EEE|EEEEE")
