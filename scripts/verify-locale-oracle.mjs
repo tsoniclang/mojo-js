@@ -105,7 +105,7 @@ const numberOptions = [
   { minimumFractionDigits: 2, trailingZeroDisplay: "stripIfInteger" },
   { notation: "scientific" }, { notation: "engineering" },
   { notation: "compact" }, { notation: "compact", compactDisplay: "long" },
-  { numberingSystem: "arab" }, { numberingSystem: "ARAB" },
+  { numberingSystem: "arab" }, { numberingSystem: "ARAB" }, { numberingSystem: "mathsans" },
   { numberingSystem: "bogus" },
 ];
 for (const signDisplay of ["auto", "always", "never", "exceptZero", "negative"]) numberOptions.push({ signDisplay });
@@ -134,6 +134,32 @@ for (const selected of [null, { style: "currency" }, { currency: "US" }, { curre
 for (const locale of [null, "invalid_tag", ["en-US", "invalid_tag"]]) {
   cases.push({ operation: "number", value: 42, locales: locale });
 }
+for (const locale of ["en-US", "de-DE", "ar-EG", "ja-JP", "en-US-u-nu-arab"]) {
+  for (const selected of numberOptions) {
+    cases.push({ operation: "numberResolved", locales: locale, options: selected });
+    for (const value of ["-0", "NaN", "-Infinity", -1234.5, 0.001, 12000]) {
+      cases.push({ operation: "numberFormat", value, locales: locale, options: selected });
+      cases.push({ operation: "numberParts", value, locales: locale, options: selected });
+    }
+    cases.push({ operation: "numberParts", value: "9007199254740993", numericKind: "integer", locales: locale, options: selected });
+  }
+}
+for (const locale of dateLocales) {
+  for (const selected of [...dateOptions, { dateStyle: "full", timeStyle: "long" }]) {
+    const options = { timeZone: "UTC", ...selected };
+    cases.push({ operation: "dateResolvedBase", locales: locale, options });
+    for (const value of [0, 1710064800123]) {
+      cases.push({ operation: "dateFormat", value, locales: locale, options });
+      cases.push({ operation: "dateParts", value, locales: locale, options });
+    }
+  }
+}
+for (const locale of ["en", "de", "sv", "th", "de-u-co-phonebk", "en-u-kn-kf-upper"]) {
+  for (const selected of options) {
+    cases.push({ operation: "collatorResolved", locales: locale, options: selected });
+    cases.push({ operation: "collatorCompare", value: "file2", right: "file10", locales: locale, options: selected });
+  }
+}
 mkdirSync(directory, { recursive: true });
 const input = path.join(directory, "cases.jsonl");
 writeFileSync(input, cases.map((entry) => JSON.stringify(entry)).join("\n") + "\n");
@@ -148,7 +174,15 @@ for (const [index, entry] of cases.entries()) {
   let expected;
   try {
     const number = entry.numericKind === "integer" ? BigInt(entry.value) : Number(entry.value);
-    const value = entry.operation === "number" ? number.toLocaleString(entry.locales, entry.options)
+    const value = entry.operation === "numberFormat" ? new Intl.NumberFormat(entry.locales, entry.options).format(number)
+      : entry.operation === "numberParts" ? new Intl.NumberFormat(entry.locales, entry.options).formatToParts(number)
+        : entry.operation === "numberResolved" ? new Intl.NumberFormat(entry.locales, entry.options).resolvedOptions()
+          : entry.operation === "dateFormat" ? new Intl.DateTimeFormat(entry.locales, entry.options).format(Number(entry.value))
+            : entry.operation === "dateParts" ? new Intl.DateTimeFormat(entry.locales, entry.options).formatToParts(Number(entry.value))
+              : entry.operation === "dateResolvedBase" ? dateResolvedBase(entry)
+                : entry.operation === "collatorResolved" ? new Intl.Collator(entry.locales, entry.options).resolvedOptions()
+                  : entry.operation === "collatorCompare" ? Math.sign(new Intl.Collator(entry.locales, entry.options).compare(entry.value, entry.right))
+      : entry.operation === "number" ? number.toLocaleString(entry.locales, entry.options)
       : entry.operation === "date" ? new Date(entry.value).toLocaleDateString(entry.locales, entry.options)
       : entry.operation === "time" ? new Date(entry.value).toLocaleTimeString(entry.locales, entry.options)
         : entry.operation === "datetime" ? new Date(entry.value).toLocaleString(entry.locales, entry.options)
@@ -165,3 +199,8 @@ for (const [index, entry] of cases.entries()) {
 }
 assert.deepEqual(failures, []);
 console.log(`Locale string/date/number oracle: ${cases.length}/${cases.length}`);
+
+function dateResolvedBase(entry) {
+  const result = new Intl.DateTimeFormat(entry.locales, entry.options).resolvedOptions();
+  return { locale: result.locale, calendar: result.calendar, numberingSystem: result.numberingSystem, timeZone: result.timeZone };
+}

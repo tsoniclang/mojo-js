@@ -20,6 +20,8 @@
     { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/date_parts.c" },
     { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/date_matching.c" },
     { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/number_format.c" },
+    { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/number_instance.c" },
+    { "language": "c", "standard": "c11", "path": "tsonic_js.native/intl/number_parts.c" },
     {
       "language": "c",
       "standard": "c11",
@@ -40,7 +42,8 @@
     "tsonic_js.native/intl/api.h",
     "tsonic_js.native/intl/model.h",
     "tsonic_js.native/intl/parts.h",
-    "tsonic_js.native/intl/date_model.h"
+    "tsonic_js.native/intl/date_model.h",
+    "tsonic_js.native/intl/number_model.h"
   ],
   "includeDirectories": [
     "include/quickjs"

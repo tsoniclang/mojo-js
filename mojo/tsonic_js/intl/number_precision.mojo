@@ -32,7 +32,21 @@ def _increment(value: Int, fraction: Int) -> String:
     return "precision-increment/" + String(digits[:split]) + "." + String(digits[split:])
 
 
-def number_precision(options: JsValue, compact: Bool, default_minimum: Int, default_maximum: Int) raises -> String:
+@fieldwise_init
+struct NumberPrecision(ImplicitlyCopyable):
+    var skeleton: String
+    var minimum_integer: Float64
+    var minimum_fraction: Optional[Float64]
+    var maximum_fraction: Optional[Float64]
+    var minimum_significant: Optional[Float64]
+    var maximum_significant: Optional[Float64]
+    var rounding_increment: Float64
+    var rounding_mode: String
+    var rounding_priority: String
+    var trailing_zero_display: String
+
+
+def number_precision(options: JsValue, compact: Bool, default_minimum: Int, default_maximum: Int) raises -> NumberPrecision:
     var minimum_integer = number_option(option_value(options, "minimumIntegerDigits"), 1, 21, 1)
     var minimum_fraction = option_value(options, "minimumFractionDigits")
     var maximum_fraction = option_value(options, "maximumFractionDigits")
@@ -62,10 +76,16 @@ def number_precision(options: JsValue, compact: Bool, default_minimum: Int, defa
     var fraction = String()
     var fraction_minimum = 0
     var fraction_maximum = 0
+    var resolved_minimum_fraction = Optional[Float64]()
+    var resolved_maximum_fraction = Optional[Float64]()
+    var resolved_minimum_significant = Optional[Float64]()
+    var resolved_maximum_significant = Optional[Float64]()
     if need_significant:
         var minimum = number_option(minimum_significant, 1, 21, 1)
         var maximum = number_option(maximum_significant, minimum, 21, 21)
         significant = "@" * minimum + "#" * (maximum - minimum)
+        resolved_minimum_significant = Float64(minimum)
+        resolved_maximum_significant = Float64(maximum)
     if need_fraction:
         var minimum = number_option(minimum_fraction, 0, 100, -1)
         var maximum = number_option(maximum_fraction, 0, 100, -1)
@@ -79,10 +99,16 @@ def number_precision(options: JsValue, compact: Bool, default_minimum: Int, defa
         fraction_minimum = minimum
         fraction_maximum = maximum
         fraction = "." + "0" * minimum + "#" * (maximum - minimum)
+        resolved_minimum_fraction = Float64(minimum)
+        resolved_maximum_fraction = Float64(maximum)
     if not need_fraction and not need_significant:
         fraction = String(".")
         significant = String("@#")
         priority = String("morePrecision")
+        resolved_minimum_fraction = 0.0
+        resolved_maximum_fraction = 0.0
+        resolved_minimum_significant = 1.0
+        resolved_maximum_significant = 2.0
     var precision = significant if not need_fraction and need_significant else fraction
     if priority != "auto":
         precision = fraction + "/" + significant + ("r" if priority == "morePrecision" else "s")
@@ -92,4 +118,9 @@ def number_precision(options: JsValue, compact: Bool, default_minimum: Int, defa
         precision = _increment(increment, fraction_minimum)
     if trailing == "stripIfInteger":
         precision += "/w"
-    return precision + " " + rounding + " integer-width/*" + "0" * minimum_integer
+    return NumberPrecision(
+        precision + " " + rounding + " integer-width/*" + "0" * minimum_integer,
+        Float64(minimum_integer), resolved_minimum_fraction, resolved_maximum_fraction,
+        resolved_minimum_significant, resolved_maximum_significant, Float64(increment),
+        mode^, priority^, trailing^,
+    )

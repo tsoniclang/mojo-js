@@ -1,4 +1,5 @@
-#include "model.h"
+#include "number_model.h"
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unicode/ucurr.h>
@@ -55,12 +56,9 @@ static TsonicIntlResult *formatted_result(const UFormattedNumber *formatted) {
     return result;
 }
 
-TsonicIntlResult *tsonic_js_intl_number(double value, const char *decimal,
-    const char *locale, const char *numbering, const char *skeleton) {
-    if (!bounded_ascii(locale, TSONIC_INTL_MAX_LOCALE) || !bounded_ascii(numbering, 128) ||
-        !bounded_ascii(skeleton, 1024) || (decimal != NULL && !bounded_ascii(decimal, 128))) {
-        return tsonic_intl_failure("Invalid localized number contract");
-    }
+TsonicIntlResult *tsonic_intl_format_number(const UNumberFormatter *formatter,
+    double value, const char *decimal, int parts) {
+    if (decimal != NULL && !bounded_ascii(decimal, 128)) return tsonic_intl_failure("Invalid exact numeric input");
     if (decimal != NULL) {
         size_t length = strlen(decimal), index = decimal[0] == '-' ? 1 : 0;
         if (length == index) return tsonic_intl_failure("Exact localized integer is empty");
@@ -71,24 +69,19 @@ TsonicIntlResult *tsonic_js_intl_number(double value, const char *decimal,
         }
     }
     UErrorCode status = U_ZERO_ERROR;
-    char selected[TSONIC_INTL_MAX_LOCALE + 1];
-    uloc_canonicalize(locale, selected, sizeof(selected), &status);
-    tsonic_intl_numbering(selected, sizeof(selected), numbering, &status);
-    if (U_FAILURE(status)) return tsonic_intl_icu_failure(status);
-    UChar pattern[1025];
-    int32_t length = (int32_t)strlen(skeleton);
-    for (int32_t index = 0; index < length; ++index) pattern[index] = skeleton[index];
-    UNumberFormatter *formatter = unumf_openForSkeletonAndLocale(pattern, length, selected, &status);
-    UFormattedNumber *formatted = U_SUCCESS(status) ? unumf_openResult(&status) : NULL;
-    if (U_FAILURE(status) || formatter == NULL || formatted == NULL) {
+    UFormattedNumber *formatted = unumf_openResult(&status);
+    if (U_FAILURE(status) || formatted == NULL) {
         unumf_closeResult(formatted);
-        unumf_close(formatter);
         return tsonic_intl_icu_failure(U_FAILURE(status) ? status : U_MEMORY_ALLOCATION_ERROR);
     }
-    if (decimal == NULL) unumf_formatDouble(formatter, value, formatted, &status);
+    if (decimal == NULL) unumf_formatDouble(formatter, isnan(value) ? NAN : value, formatted, &status);
     else unumf_formatDecimal(formatter, decimal, (int32_t)strlen(decimal), formatted, &status);
     TsonicIntlResult *result = U_FAILURE(status) ? tsonic_intl_icu_failure(status) : formatted_result(formatted);
+    if (parts && result != NULL && !result->failed) {
+        int special = decimal != NULL ? 0 : isnan(value) ? 1 : isinf(value) ? 2 : 0;
+        int negative = decimal != NULL ? decimal[0] == '-' : !isnan(value) && signbit(value);
+        tsonic_intl_number_parts(result, formatted, negative, special);
+    }
     unumf_closeResult(formatted);
-    unumf_close(formatter);
     return result;
 }

@@ -3,3 +3,5 @@ from .collator_options import IntlResolvedCollatorOptions
 from .datetime import IntlDateTimeFormat, intl_datetime_format_new
 from .datetime_options import IntlResolvedDateTimeFormatOptions
 from .format_part import IntlFormatPart
+from .number_formatter import IntlNumberFormat, intl_number_format_new
+from .number_resolved import IntlResolvedNumberFormatOptions

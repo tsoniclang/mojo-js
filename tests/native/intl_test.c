@@ -225,12 +225,53 @@ static void number_contracts(void) {
     tsonic_js_intl_free(invalid_pattern);
 }
 
+static void number_instance_contracts(void) {
+    TsonicIntlResult *owner = tsonic_js_intl_number_formatter_open("en_US", "", ".###");
+    assert(owner != NULL && !tsonic_js_intl_failed(owner));
+    assert(strcmp(tsonic_js_intl_number_formatter_text(owner, 0), "en-US") == 0);
+    assert(strcmp(tsonic_js_intl_number_formatter_text(owner, 1), "latn") == 0);
+    assert(tsonic_js_intl_number_formatter_text(owner, 2) == NULL);
+    assert(tsonic_js_intl_datetime_text(owner, 0) == NULL);
+    TsonicIntlResult *parts = tsonic_js_intl_number_formatter_format(owner, -1234.5, NULL, 1);
+    assert(parts != NULL && !tsonic_js_intl_failed(parts));
+    const char *types[] = { "minusSign", "integer", "group", "integer", "decimal", "fraction" };
+    assert(tsonic_js_intl_part_count(parts) == 6);
+    size_t position = 0;
+    for (size_t index = 0; index < 6; ++index) {
+        assert(strcmp(tsonic_js_intl_part_type(parts, index), types[index]) == 0);
+        assert(tsonic_js_intl_part_start(parts, index) == position);
+        position += tsonic_js_intl_part_length(parts, index);
+    }
+    assert(position == tsonic_js_intl_length(parts));
+    tsonic_js_intl_free(parts);
+    for (int index = 0; index < 32; ++index) {
+        TsonicIntlResult *integer = tsonic_js_intl_number_formatter_format(owner, 0, "9007199254740993", 1);
+        assert(integer != NULL && !tsonic_js_intl_failed(integer));
+        const char *expected = "9,007,199,254,740,993";
+        assert(tsonic_js_intl_length(integer) == strlen(expected));
+        for (size_t offset = 0; offset < strlen(expected); ++offset) {
+            assert(tsonic_js_intl_units(integer)[offset] == (uint16_t)expected[offset]);
+        }
+        tsonic_js_intl_free(integer);
+    }
+    TsonicIntlResult *invalid = tsonic_js_intl_number_formatter_format(owner, 0, "12.3", 1);
+    assert(tsonic_js_intl_failed(invalid));
+    tsonic_js_intl_free(invalid);
+    tsonic_js_intl_free(owner);
+    owner = tsonic_js_intl_number_formatter_open("en@numbers=arab", "latn", ".###");
+    assert(owner != NULL && !tsonic_js_intl_failed(owner));
+    assert(strcmp(tsonic_js_intl_number_formatter_text(owner, 0), "en") == 0);
+    assert(strcmp(tsonic_js_intl_number_formatter_text(owner, 1), "latn") == 0);
+    tsonic_js_intl_free(owner);
+}
+
 int main(void) {
     collator_contracts();
     datetime_instance_contracts();
     field_partition_contracts();
     date_contracts();
     number_contracts();
+    number_instance_contracts();
     const char *valid[] = { "en", "tr-TR", "de-DE-u-co-phonebk", "en-u-kn-true-kf-upper",
         "en-x-private", "sr-Latn-RS", "sl-rozaj-biske", "en-t-en-US-h0-hybrid", "und" };
     const char *invalid[] = { "", "en_US", "i-klingon", "x-private", "abcd", "en-",

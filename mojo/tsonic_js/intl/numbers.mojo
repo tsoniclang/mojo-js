@@ -1,23 +1,15 @@
 from std.ffi import c_int, external_call
 from ..string import JsString
 from ..value import JsValue
-from .locales import default_locale, requested_locales
+from .locales import number_locale, requested_locales
 from .native import IntlResult
 from .number_options import NumberOptions
 
 
-def _number_locale(locales: JsValue) raises -> String:
-    var requested = requested_locales(locales)
-    for locale in requested:
-        var candidate = String(locale)
-        if external_call["tsonic_js_intl_number_available", c_int](candidate.as_c_string_slice().ptr()):
-            return candidate^
-    return default_locale()
-
-
 def _present(value: Float64, decimal: OptionalPointer[UInt8, ImmUntrackedOrigin], locales: JsValue, options: JsValue) raises -> String:
-    var locale = _number_locale(locales)
+    var requested = requested_locales(locales)
     var settings = NumberOptions(options)
+    var locale = number_locale(requested)
     var result = IntlResult(external_call[
         "tsonic_js_intl_number", OptionalPointer[NoneType, MutUntrackedOrigin],
     ](value, decimal, locale.as_c_string_slice().ptr(), settings.numbering.as_c_string_slice().ptr(),

@@ -2,7 +2,7 @@ from std.collections import List
 from std.memory import ArcPointer
 from std.testing import assert_equal, assert_true
 from tsonic_runtime import Callable, ErasedCallableContext, RaisingCallable, WeakReferenceIdentity, allocate_callable_environment, destroy_callable_environment
-from tsonic_js import JsString, JsValue, js_value_from_source_object, json_parse
+from tsonic_js import IntlCollator, IntlDateTimeFormat, IntlNumberFormat, JsString, JsValue, js_value_from_source_object, json_parse
 from tsonic_js.intl.date_options import DateOptions
 from tsonic_js.intl.number_options import NumberOptions
 from tsonic_js.intl.options import CollationOptions
@@ -86,3 +86,26 @@ def main() raises:
     var collator_settings = CollationOptions(options(collator))
     assert_equal(collator_settings.numeric, 1)
     assert_reads(collator, "usage|localeMatcher|collation|numeric|caseFirst|sensitivity|ignorePunctuation")
+    number[].reads.clear()
+    var number_formatter = IntlNumberFormat(JsValue(JsString("en")), options(number))
+    var number_reads = len(number[].reads)
+    number[].values = json_parse(JsString('{"style":"percent"}'))
+    assert_equal(number_formatter.format(12.5), "$12.50")
+    _ = number_formatter.format_to_parts(12.5)
+    _ = number_formatter.resolved_options()
+    assert_equal(len(number[].reads), number_reads)
+    date[].reads.clear()
+    var date_formatter = IntlDateTimeFormat(JsValue(JsString("en")), options(date))
+    var date_reads = len(date[].reads)
+    date[].values = json_parse(JsString('{"year":"2-digit"}'))
+    assert_equal(date_formatter.format(0.0), "1970")
+    _ = date_formatter.format_to_parts(0.0)
+    _ = date_formatter.resolved_options()
+    assert_equal(len(date[].reads), date_reads)
+    collator[].reads.clear()
+    var retained_collator = IntlCollator(JsValue(JsString("en")), options(collator))
+    var collator_reads = len(collator[].reads)
+    collator[].values = json_parse(JsString('{"numeric":false}'))
+    assert_true(retained_collator.compare("file2", "file10") < 0)
+    _ = retained_collator.resolved_options()
+    assert_equal(len(collator[].reads), collator_reads)

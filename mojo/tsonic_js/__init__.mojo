@@ -121,3 +121,4 @@ from .value import (
 )
 from .intl import IntlCollator, IntlResolvedCollatorOptions, intl_collator_new
 from .intl import IntlDateTimeFormat, IntlResolvedDateTimeFormatOptions, IntlFormatPart, intl_datetime_format_new
+from .intl import IntlNumberFormat, IntlResolvedNumberFormatOptions, intl_number_format_new

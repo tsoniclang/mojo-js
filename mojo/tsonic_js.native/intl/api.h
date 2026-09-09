@@ -14,6 +14,11 @@ int tsonic_js_intl_number_available(const char *locale);
 int tsonic_js_intl_currency_digits(const char *currency);
 TsonicIntlResult *tsonic_js_intl_number(double value, const char *decimal,
     const char *locale, const char *numbering, const char *skeleton);
+TsonicIntlResult *tsonic_js_intl_number_formatter_open(const char *locale,
+    const char *numbering, const char *skeleton);
+TsonicIntlResult *tsonic_js_intl_number_formatter_format(const TsonicIntlResult *owner,
+    double value, const char *decimal, int parts);
+const char *tsonic_js_intl_number_formatter_text(const TsonicIntlResult *owner, int field);
 TsonicIntlResult *tsonic_js_intl_date(double timestamp, const char *locale,
     const char *zone, int has_zone, const char *calendar, const char *numbering,
     const char *skeleton, int date_style, int time_style, int hour12, const char *hour_cycle, int basic);
