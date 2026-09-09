@@ -21,6 +21,12 @@ constructors, structured cloning and tagged callback decoding. Representation
 does not depend on those consumers. The `value` entrypoint preserves imports
 used by the JSON, collection, RegExp and Node runtimes.
 
+`date/` separates timestamp arithmetic, ISO/display parsing, ICU timezone
+queries, formatting and the mutable Date value. UTC arithmetic does not consult
+the OS. Local operations use the host timezone and the pinned ICU transition
+database. Omitted setter arguments retain their old fields; supplied undefined
+or NaN invalidates the date. Default source strings remain native strings.
+
 ## Development
 
 ```bash
