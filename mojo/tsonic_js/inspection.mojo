@@ -83,8 +83,6 @@ def _inspect(value: JsValue, depth: Int, array_limit: Int, mut active: List[JsVa
     var node = value._node_index()
     if value.is_symbol():
         return String(storage[][node].symbol_value.value())
-    if value.is_json_projection():
-        return "[Object]"
     for ancestor in active:
         if ancestor.same_identity(value):
             return "[Circular]"

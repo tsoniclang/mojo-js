@@ -7,7 +7,7 @@ from tsonic_js import (
     js_truthy,
     js_value_from_array_values,
     js_value_from_object_entries,
-    js_value_from_json_projection,
+    js_value_from_source_object,
     js_value_structured_clone,
     js_value_to_string,
     json_parse,
@@ -23,9 +23,11 @@ from tsonic_js import (
 )
 from tsonic_js.value import _JsValueBuilder
 from tsonic_runtime import (
+    Callable,
     ErasedCallableContext,
     Location,
     RaisingCallable,
+    WeakReferenceIdentity,
     allocate_callable_environment,
     destroy_callable_environment,
 )
@@ -57,8 +59,25 @@ struct JsonReplacerEnvironment:
 
 
 @fieldwise_init
-struct JsonProjectionEnvironment:
+struct JsonProjectionOwner:
     var calls: Location[Int]
+
+
+@fieldwise_init
+struct JsonProjectionEnvironment:
+    var owner: ArcPointer[JsonProjectionOwner]
+
+    @staticmethod
+    def length(_context: ErasedCallableContext, var _arguments: Tuple[]) -> Int:
+        return 0
+
+    @staticmethod
+    def key(_context: ErasedCallableContext, var _arguments: Tuple[Int]) -> JsString:
+        return JsString()
+
+    @staticmethod
+    def value(_context: ErasedCallableContext, var _arguments: Tuple[Int]) -> JsValue:
+        return JsValue()
 
     @staticmethod
     def project(
@@ -66,7 +85,7 @@ struct JsonProjectionEnvironment:
         var arguments: Tuple[String],
     ) raises -> JsValue:
         var environment = context.unsafe_bitcast[JsonProjectionEnvironment]()
-        environment[].calls.write(environment[].calls.read() + 1)
+        environment[].owner[].calls.write(environment[].owner[].calls.read() + 1)
         var keys = List[JsString]()
         keys.append(JsString("key"))
         var values = List[JsValue]()
@@ -87,10 +106,15 @@ def json_replacer_environment(
 
 
 def json_projection(calls: Location[Int]) -> JsValue:
+    var owner = ArcPointer(JsonProjectionOwner(calls))
     var environment = allocate_callable_environment(
-        JsonProjectionEnvironment(calls), JsonProjectionEnvironment.destroy
+        JsonProjectionEnvironment(owner), JsonProjectionEnvironment.destroy
     )
-    return js_value_from_json_projection(
+    return js_value_from_source_object(
+        WeakReferenceIdentity(owner),
+        Callable[Tuple[], Int](environment, JsonProjectionEnvironment.length),
+        Callable[Tuple[Int], JsString](environment, JsonProjectionEnvironment.key),
+        Callable[Tuple[Int], JsValue](environment, JsonProjectionEnvironment.value),
         RaisingCallable[Tuple[String], JsValue](
             environment, JsonProjectionEnvironment.project
         )
@@ -214,14 +238,11 @@ def main() raises:
     assert_equal(projected_replacer_calls.read(), 2)
     assert_equal(projection_calls.read(), 3)
 
-    try:
-        _ = js_value_structured_clone(projection)
-        raise Error("JSON projection unexpectedly structured-cloned")
-    except error:
-        assert_equal(
-            String(error),
-            "JavaScript JSON projections cannot be structured-cloned",
-        )
+    var cloned_projection = js_value_structured_clone(projection)
+    assert_equal(cloned_projection.object_length(), 0)
+    assert_false(cloned_projection.same_identity(projection))
+    assert_false(cloned_projection.has_selected_to_json())
+    assert_equal(projection_calls.read(), 3)
 
     var shared_object = json_parse(JsString('{"shared":true}'))
     var shared_keys = List[JsString]()

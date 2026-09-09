@@ -9,8 +9,8 @@ struct JsValueWeakIdentity(ImplicitlyCopyable):
     def __init__(out self, value: JsValue):
         self._kind = value._kind()
         self._identity = None
-        if value.is_array() or value.is_object() or value.is_json_projection():
-            self._identity = Optional[WeakReferenceIdentity](value.weak_identity())
+        if value.is_array() or value.is_object():
+            self._identity = Optional[WeakReferenceIdentity](value._weak_identity())
 
     def is_alive(self) -> Bool:
         return Bool(self._identity) and self._identity.value().is_alive()

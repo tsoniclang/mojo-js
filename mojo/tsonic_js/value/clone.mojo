@@ -42,8 +42,8 @@ struct _Clone:
             target = self.builder.append_number(value._number_value())
         elif value.is_string():
             target = self.builder.append_string(value._string_value())
-        elif value.is_symbol() or value.is_json_projection():
-            raise Error("JavaScript symbols and executable projections cannot be structured-cloned")
+        elif value.is_symbol():
+            raise Error("JavaScript symbols cannot be structured-cloned")
         elif value.is_array() or value.is_object():
             if not value._nodes[][value._index].source_view and not value._nodes[][value._index].identity:
                 raise Error("JavaScript aggregate has no allocation identity")

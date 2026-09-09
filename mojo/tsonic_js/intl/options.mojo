@@ -9,8 +9,6 @@ def option_value(options: JsValue, name: String) raises -> JsValue:
         var value = options.object_get(JsString(name))
         if value:
             return value.value()
-    elif options.is_json_projection():
-        raise Error("Internationalization options require a statically closed data view")
     return JsValue()
 
 

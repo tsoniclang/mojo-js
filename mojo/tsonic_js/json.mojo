@@ -381,11 +381,6 @@ struct _JsonWriter:
         if value.is_string():
             self._write_string(value._string_value())
             return True
-        if value.is_json_projection():
-            raise Error(
-                "A selected toJSON projection returned another unresolved JSON"
-                " projection"
-            )
         if not value.is_array() and not value.is_object():
             return False
         self._enter(value)

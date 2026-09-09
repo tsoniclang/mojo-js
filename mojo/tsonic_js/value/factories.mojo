@@ -3,7 +3,7 @@ from std.memory import ArcPointer
 from tsonic_runtime import Callable, RaisingCallable, WeakReferenceIdentity
 from ..string import JsString
 from ..symbol import JsSymbol
-from .model import JsValue, _JsonProjectionState, _SourceValueView, _JsValueNode, _ARRAY, _OBJECT
+from .model import JsValue, _SourceValueView, _JsValueNode, _ARRAY, _OBJECT
 from .builder import _JsValueBuilder
 from .graph import _append_js_value_graph
 
@@ -30,12 +30,6 @@ def js_value_from_null() -> JsValue:
 
 def js_value_from_undefined() -> JsValue:
     return JsValue.undefined()
-
-
-def js_value_from_json_projection(
-    project: RaisingCallable[Tuple[String], JsValue, Error]
-) -> JsValue:
-    return JsValue(ArcPointer(_JsonProjectionState(project)))
 
 
 def js_value_from_source_array(

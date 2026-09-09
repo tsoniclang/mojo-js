@@ -31,14 +31,6 @@ comptime _OBJECT = 6
 comptime _SYMBOL = 7
 
 
-comptime _JSON_PROJECTION = 8
-
-
-@fieldwise_init
-struct _JsonProjectionState:
-    var project: RaisingCallable[Tuple[String], JsValue, Error]
-
-
 @fieldwise_init
 struct _SourceValueView:
     var identity: WeakReferenceIdentity
@@ -56,7 +48,6 @@ struct _JsValueNode(Movable):
     var string_value: JsString
     var symbol_value: Optional[JsSymbol]
     var identity: Optional[ArcPointer[Bool]]
-    var json_projection: Optional[ArcPointer[_JsonProjectionState]]
     var source_view: Optional[ArcPointer[_SourceValueView]]
     var keys: List[JsString]
     var children: List[Int]
@@ -68,7 +59,6 @@ struct _JsValueNode(Movable):
         self.string_value = JsString()
         self.symbol_value = None
         self.identity = None
-        self.json_projection = None
         self.source_view = None
         self.keys = List[JsString]()
         self.children = List[Int]()
@@ -112,15 +102,6 @@ struct _JsValueNode(Movable):
         self.keys = keys^
         self.children = children^
 
-    def __init__(
-        out self,
-        projection: ArcPointer[_JsonProjectionState],
-    ):
-        self = Self(_JSON_PROJECTION)
-        self.json_projection = Optional[ArcPointer[_JsonProjectionState]](
-            projection
-        )
-
     def __init__(out self, kind: Int, view: ArcPointer[_SourceValueView]):
         self = Self(kind)
         self.source_view = Optional[ArcPointer[_SourceValueView]](view)
@@ -157,15 +138,6 @@ struct JsValue(ImplicitlyCopyable, Writable):
     def __init__(out self, value: JsSymbol):
         var nodes = List[_JsValueNode]()
         nodes.append(_JsValueNode(value))
-        self._nodes = ArcPointer(nodes^)
-        self._index = 0
-
-    def __init__(
-        out self,
-        projection: ArcPointer[_JsonProjectionState],
-    ):
-        var nodes = List[_JsValueNode]()
-        nodes.append(_JsValueNode(projection))
         self._nodes = ArcPointer(nodes^)
         self._index = 0
 
@@ -214,12 +186,9 @@ struct JsValue(ImplicitlyCopyable, Writable):
     def is_object(self) -> Bool:
         return self._kind() == _OBJECT
 
-    def is_json_projection(self) -> Bool:
-        return self._kind() == _JSON_PROJECTION
-
     def has_selected_to_json(self) -> Bool:
         var view = self._nodes[][self._index].source_view
-        return self.is_json_projection() or (Bool(view) and Bool(view.value()[].to_json))
+        return Bool(view) and Bool(view.value()[].to_json)
 
     def bool_value(self) raises -> Bool:
         if not self.is_bool():
@@ -292,15 +261,6 @@ struct JsValue(ImplicitlyCopyable, Writable):
             if self._kind() != other._kind():
                 return False
             return self._identity_address() == other._identity_address()
-        if self.is_json_projection():
-            var left = self._nodes[][self._index].json_projection
-            var right = other._nodes[][other._index].json_projection
-            return (
-                other.is_json_projection()
-                and Bool(left)
-                and Bool(right)
-                and left.value() is right.value()
-            )
         return self._nodes is other._nodes and self._index == other._index
 
     def _aggregate_identity(self) raises -> ArcPointer[Bool]:
@@ -309,20 +269,11 @@ struct JsValue(ImplicitlyCopyable, Writable):
             raise Error("JavaScript value is not an aggregate")
         return identity.value()
 
-    def _json_projection(self) raises -> ArcPointer[_JsonProjectionState]:
-        var projection = self._nodes[][self._index].json_projection
-        if not projection:
-            raise Error("JavaScript value is not a JSON projection")
-        return projection.value()
-
     def _project_json(self, key: String) raises -> Self:
         var view = self._nodes[][self._index].source_view
-        if view:
-            var project = view.value()[].to_json
-            if not project:
-                raise Error("Source value has no selected toJSON operation")
-            return project.value().call((key,))
-        return self._json_projection()[].project.call((key,))
+        if not view or not view.value()[].to_json:
+            raise Error("Source value has no selected toJSON operation")
+        return view.value()[].to_json.value().call((key,))
 
     def _aggregate_length(self) -> Int:
         var view = self._nodes[][self._index].source_view
@@ -347,19 +298,14 @@ struct JsValue(ImplicitlyCopyable, Writable):
         if view:
             return view.value()[].identity.address
         var identity = self._nodes[][self._index].identity
-        if identity:
-            return UInt(Int(identity.value().ptr()))
-        var projection = self._nodes[][self._index].json_projection
-        return UInt(Int(projection.value().ptr())) if projection else UInt(Int(self._nodes.ptr()))
+        return UInt(Int(identity.value().ptr()))
 
-    def weak_identity(self) -> WeakReferenceIdentity:
+    def _weak_identity(self) -> WeakReferenceIdentity:
         var view = self._nodes[][self._index].source_view
         if view:
             return view.value()[].identity
         var identity = self._nodes[][self._index].identity
-        if identity:
-            return WeakReferenceIdentity(identity.value())
-        return WeakReferenceIdentity(self._nodes[][self._index].json_projection.value())
+        return WeakReferenceIdentity(identity.value())
 
     def _kind(self) -> Int:
         return self._nodes[][self._index].kind
@@ -400,8 +346,6 @@ def js_value_to_string(value: JsValue) -> JsString:
             + description.value()
             + JsString(")") if description else JsString("Symbol()")
         )
-    if value.is_json_projection():
-        return JsString("[object Object]")
     if value.is_object():
         return JsString("[object Object]")
     return _array_to_string(value)
