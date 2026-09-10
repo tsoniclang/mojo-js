@@ -10,10 +10,16 @@ struct JsValueWeakIdentity(ImplicitlyCopyable):
         self._kind = value._kind()
         self._identity = None
         if value.is_array() or value.is_object():
-            self._identity = Optional[WeakReferenceIdentity](value._weak_identity())
+            self._identity = Optional[WeakReferenceIdentity](
+                value._weak_identity()
+            )
 
     def is_alive(self) -> Bool:
         return Bool(self._identity) and self._identity.value().is_alive()
 
     def matches(self, value: JsValue) -> Bool:
-        return self.is_alive() and value._kind() == self._kind and self._identity.value().address == value._identity_address()
+        return (
+            self.is_alive()
+            and value._kind() == self._kind
+            and self._identity.value().address == value._identity_address()
+        )

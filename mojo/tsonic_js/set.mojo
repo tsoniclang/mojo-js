@@ -62,7 +62,9 @@ struct JsSet[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
     ) -> JsIterator[Tuple[Self.T, Self.T]] where conforms_to(
         Self.T, Copyable & Deinitable
     ):
-        return self._values.iterator[Tuple[Self.T, Self.T], _set_entry[Self.T]]()
+        return self._values.iterator[
+            Tuple[Self.T, Self.T], _set_entry[Self.T]
+        ]()
 
     def union(
         self, other: Self

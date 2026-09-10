@@ -4,8 +4,20 @@ from std.utils import Variant
 from tsonic_runtime import Null
 
 from ..string import JsString
-from .arithmetic import constructor_year, from_components, invalid_time, supplied_number, time_clip
-from .formatting import iso_string, local_date_string, local_string, local_time_string, utc_string
+from .arithmetic import (
+    constructor_year,
+    from_components,
+    invalid_time,
+    supplied_number,
+    time_clip,
+)
+from .formatting import (
+    iso_string,
+    local_date_string,
+    local_string,
+    local_time_string,
+    utc_string,
+)
 from .model import JsDate
 from .parsing import parse_date
 from .timezone import utc_time
@@ -21,7 +33,9 @@ def date_now() -> Float64:
     var value = _RealtimeSpec(0, 0)
     if external_call["clock_gettime", c_int](c_int(0), Pointer(to=value)) != 0:
         return invalid_time()
-    return Float64(value.seconds) * 1000.0 + Float64(value.nanoseconds / 1000000)
+    return Float64(value.seconds) * 1000.0 + Float64(
+        value.nanoseconds / 1000000
+    )
 
 
 def date_new() -> JsDate:
@@ -53,10 +67,19 @@ def date_new(
     second: Optional[Float64] = Optional[Float64](0),
     millisecond: Optional[Float64] = Optional[Float64](0),
 ) raises -> JsDate:
-    return JsDate(utc_time(from_components(
-        constructor_year(year), month, supplied_number(day), supplied_number(hour),
-        supplied_number(minute), supplied_number(second), supplied_number(millisecond),
-    )))
+    return JsDate(
+        utc_time(
+            from_components(
+                constructor_year(year),
+                month,
+                supplied_number(day),
+                supplied_number(hour),
+                supplied_number(minute),
+                supplied_number(second),
+                supplied_number(millisecond),
+            )
+        )
+    )
 
 
 def date_utc(
@@ -68,11 +91,17 @@ def date_utc(
     second: Optional[Float64] = Optional[Float64](0),
     millisecond: Optional[Float64] = Optional[Float64](0),
 ) -> Float64:
-    return time_clip(from_components(
-        constructor_year(year), supplied_number(month), supplied_number(day),
-        supplied_number(hour), supplied_number(minute), supplied_number(second),
-        supplied_number(millisecond),
-    ))
+    return time_clip(
+        from_components(
+            constructor_year(year),
+            supplied_number(month),
+            supplied_number(day),
+            supplied_number(hour),
+            supplied_number(minute),
+            supplied_number(second),
+            supplied_number(millisecond),
+        )
+    )
 
 
 def date_parse(value: JsString) raises -> Float64:

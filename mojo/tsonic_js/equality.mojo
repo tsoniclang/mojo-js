@@ -13,9 +13,13 @@ def same_value[T: Equatable](left: T, right: T) -> Bool:
     comptime if T == Float64:
         return _same_float_value(rebind[Float64](left), rebind[Float64](right))
     elif T == Float32:
-        return _same_float_value(Float64(rebind[Float32](left)), Float64(rebind[Float32](right)))
+        return _same_float_value(
+            Float64(rebind[Float32](left)), Float64(rebind[Float32](right))
+        )
     elif T == Float16:
-        return _same_float_value(Float64(rebind[Float16](left)), Float64(rebind[Float16](right)))
+        return _same_float_value(
+            Float64(rebind[Float16](left)), Float64(rebind[Float16](right))
+        )
     return left == right
 
 

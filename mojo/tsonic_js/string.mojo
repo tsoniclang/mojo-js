@@ -330,7 +330,9 @@ struct JsString(Equatable, Hashable, ImplicitlyCopyable, Sized, Writable):
         return self._pad(target_length, fill, False)
 
     def to_lower_case(self) raises -> Self:
-        return Self(code_units=convert_case_units(self._code_units[], "", False))
+        return Self(
+            code_units=convert_case_units(self._code_units[], "", False)
+        )
 
     def to_upper_case(self) raises -> Self:
         return Self(code_units=convert_case_units(self._code_units[], "", True))

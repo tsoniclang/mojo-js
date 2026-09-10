@@ -9,7 +9,12 @@ from .results.matches import (
     RegExpMatchArray,
     RegExpStringIterator,
 )
-from .results.decode import _parse_exact_exec, _parse_exact_match, _parse_exact_match_all, _required_object_field
+from .results.decode import (
+    _parse_exact_exec,
+    _parse_exact_match,
+    _parse_exact_match_all,
+    _required_object_field,
+)
 from ..string import JsString
 from tsonic_runtime import Undefined
 from ..value import JsValue

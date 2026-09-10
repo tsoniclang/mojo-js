@@ -1,5 +1,9 @@
 from ..core import JsRegExp
-from .records import RegExpNativeResult, _prepare_native_callback, _prepare_regexp_callback
+from .records import (
+    RegExpNativeResult,
+    _prepare_native_callback,
+    _prepare_regexp_callback,
+)
 from .apply_native import (
     _apply_native_callback_0,
     _apply_native_callback_1,

@@ -47,7 +47,9 @@ struct CollectionStorage[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
         matches: def(Self.T, Key) thin -> Bool,
     ](self, key: Key) -> Int where conforms_to(Self.T, Copyable & Deinitable):
         for index in range(self.slot_count()):
-            if self.present(index) and matches(self._data[].slots[index].value(), key):
+            if self.present(index) and matches(
+                self._data[].slots[index].value(), key
+            ):
                 return index
         return -1
 

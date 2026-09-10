@@ -10,14 +10,21 @@ def option_value(options: JsValue, name: String) raises -> JsValue:
     return JsValue()
 
 
-def string_option(options: JsValue, name: String, default: String) raises -> String:
+def string_option(
+    options: JsValue, name: String, default: String
+) raises -> String:
     return option_string(option_value(options, name), default)
 
 
 def option_string(value: JsValue, default: String) raises -> String:
     if value.is_symbol():
-        raise Error("A symbol cannot be converted to an internationalization option string")
-    return default if value.is_undefined() else js_value_to_string(value).to_native_strict()
+        raise Error(
+            "A symbol cannot be converted to an internationalization option"
+            " string"
+        )
+    return default if value.is_undefined() else js_value_to_string(
+        value
+    ).to_native_strict()
 
 
 def unicode_type_option(options: JsValue, name: String) raises -> String:
@@ -42,7 +49,11 @@ def validate_unicode_type(value: String) raises:
         if len(bytes) < 3 or len(bytes) > 8:
             raise Error("Invalid Unicode locale type")
         for byte in bytes:
-            if not ((byte >= 48 and byte <= 57) or (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122)):
+            if not (
+                (byte >= 48 and byte <= 57)
+                or (byte >= 65 and byte <= 90)
+                or (byte >= 97 and byte <= 122)
+            ):
                 raise Error("Invalid Unicode locale type")
 
 

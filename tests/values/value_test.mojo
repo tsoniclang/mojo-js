@@ -72,11 +72,15 @@ struct JsonProjectionEnvironment:
         return 0
 
     @staticmethod
-    def key(_context: ErasedCallableContext, var _arguments: Tuple[Int]) -> JsString:
+    def key(
+        _context: ErasedCallableContext, var _arguments: Tuple[Int]
+    ) -> JsString:
         return JsString()
 
     @staticmethod
-    def value(_context: ErasedCallableContext, var _arguments: Tuple[Int]) -> JsValue:
+    def value(
+        _context: ErasedCallableContext, var _arguments: Tuple[Int]
+    ) -> JsValue:
         return JsValue()
 
     @staticmethod
@@ -85,7 +89,9 @@ struct JsonProjectionEnvironment:
         var arguments: Tuple[String],
     ) raises -> JsValue:
         var environment = context.unsafe_bitcast[JsonProjectionEnvironment]()
-        environment[].owner[].calls.write(environment[].owner[].calls.read() + 1)
+        environment[].owner[].calls.write(
+            environment[].owner[].calls.read() + 1
+        )
         var keys = List[JsString]()
         keys.append(JsString("key"))
         var values = List[JsValue]()
@@ -114,11 +120,15 @@ def json_projection(calls: Location[Int]) -> JsValue:
         WeakReferenceIdentity(owner),
         "",
         Callable[Tuple[], Int](environment, JsonProjectionEnvironment.length),
-        Callable[Tuple[Int], JsString](environment, JsonProjectionEnvironment.key),
-        Callable[Tuple[Int], JsValue](environment, JsonProjectionEnvironment.value),
+        Callable[Tuple[Int], JsString](
+            environment, JsonProjectionEnvironment.key
+        ),
+        Callable[Tuple[Int], JsValue](
+            environment, JsonProjectionEnvironment.value
+        ),
         RaisingCallable[Tuple[String], JsValue](
             environment, JsonProjectionEnvironment.project
-        )
+        ),
     )
 
 

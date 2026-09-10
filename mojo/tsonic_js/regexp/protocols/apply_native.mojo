@@ -1,6 +1,10 @@
 from std.collections import List
 from tsonic_runtime import RaisingCallable
-from .records import RegExpNativeResult, _NativeRegExpCallbackBatch, _complete_native_callback
+from .records import (
+    RegExpNativeResult,
+    _NativeRegExpCallbackBatch,
+    _complete_native_callback,
+)
 from ...value import JsValue
 
 

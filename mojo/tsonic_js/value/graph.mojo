@@ -26,7 +26,9 @@ def _append_js_value_graph(
     if value.is_symbol():
         return builder.append_symbol(value.symbol_value())
     if value.is_byte_view():
-        return builder.append_byte_view(value.byte_view(), value._nodes[][value._index].native_presentation)
+        return builder.append_byte_view(
+            value.byte_view(), value._nodes[][value._index].native_presentation
+        )
     var view = value._nodes[][value._index].source_view
     if view:
         return builder.append_source_view(value._kind(), view.value())
@@ -36,7 +38,9 @@ def _append_js_value_graph(
     if depth > 512:
         raise Error("JavaScript value graph exceeds its nesting budget")
     if value.is_array():
-        var target = builder.append_array(List[Int](), value._aggregate_identity())
+        var target = builder.append_array(
+            List[Int](), value._aggregate_identity()
+        )
         copied.append(value)
         copied_indexes.append(target)
         var children = List[Int](capacity=value.array_length())
@@ -59,7 +63,9 @@ def _append_js_value_graph(
         var keys = List[JsString](capacity=value.object_length())
         for index in range(value.object_length()):
             keys.append(value.object_key(index))
-        var target = builder.append_object(keys^, List[Int](), value._aggregate_identity())
+        var target = builder.append_object(
+            keys^, List[Int](), value._aggregate_identity()
+        )
         copied.append(value)
         copied_indexes.append(target)
         var children = List[Int](capacity=value.object_length())

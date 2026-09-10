@@ -1,4 +1,8 @@
-from .records import RegExpNativeResult, _prepare_regexp_callback, _prepare_string_callback
+from .records import (
+    RegExpNativeResult,
+    _prepare_regexp_callback,
+    _prepare_string_callback,
+)
 from .apply_exact import (
     _apply_exact_callback_0,
     _apply_exact_callback_1,

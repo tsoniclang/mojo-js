@@ -16,7 +16,8 @@ struct _NumberResolvedOptions:
 
 def _text(owner: IntlResult, field: Int) raises -> String:
     var pointer = external_call[
-        "tsonic_js_intl_number_formatter_text", OptionalPointer[UInt8, ImmUntrackedOrigin],
+        "tsonic_js_intl_number_formatter_text",
+        OptionalPointer[UInt8, ImmUntrackedOrigin],
     ](owner.pointer.value(), c_int(field))
     if not pointer:
         raise Error("A retained number formatter has no resolved text field")
@@ -30,7 +31,11 @@ struct IntlResolvedNumberFormatOptions(Equatable, ImplicitlyCopyable):
         var grouping = Variant[Bool, String](False)
         if options.grouping:
             grouping = Variant[Bool, String](options.grouping.value())
-        self._state = ArcPointer(_NumberResolvedOptions(_text(owner, 0), _text(owner, 1), options, grouping^))
+        self._state = ArcPointer(
+            _NumberResolvedOptions(
+                _text(owner, 0), _text(owner, 1), options, grouping^
+            )
+        )
 
     def __eq__(self, other: Self) -> Bool:
         return self._state is other._state

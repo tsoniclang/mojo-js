@@ -19,7 +19,9 @@ struct JsIteratorYield[T: AnyType](Equatable, ImplicitlyCopyable):
     var _state: ArcPointer[_IteratorYieldState[Self.T]]
 
     def __init__(out self, var value: Self.Value):
-        self._state = ArcPointer(_IteratorYieldState[Self.T](Optional(False), value^))
+        self._state = ArcPointer(
+            _IteratorYieldState[Self.T](Optional(False), value^)
+        )
 
     def __eq__(self, other: Self) -> Bool:
         return self._state is other._state

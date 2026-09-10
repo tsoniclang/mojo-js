@@ -1,6 +1,13 @@
 from std.collections import List
 from std.testing import assert_equal, assert_false, assert_true
-from tsonic_js import JsString, JsValue, js_value_from_array_values, js_value_structured_clone, js_value_to_string, json_stringify
+from tsonic_js import (
+    JsString,
+    JsValue,
+    js_value_from_array_values,
+    js_value_structured_clone,
+    js_value_to_string,
+    json_stringify,
+)
 from tsonic_js.inspection import inspect_value
 from tsonic_js.value import _JsValueBuilder
 
@@ -25,10 +32,14 @@ def main() raises:
     assert_equal(js_value_to_string(clone).to_native_strict(), "1,,2")
     var nested = js_value_from_array_values(List[JsValue](source, source))
     assert_true(nested.array_at(0).same_identity(nested.array_at(1)))
-    assert_true(nested.array_at(0).same_identity(nested.array_at(0).array_at(1)))
+    assert_true(
+        nested.array_at(0).same_identity(nested.array_at(0).array_at(1))
+    )
     assert_equal(js_value_to_string(nested).to_native_strict(), "1,,2,1,,2")
     var nested_clone = js_value_structured_clone(nested)
-    assert_true(nested_clone.array_at(0).same_identity(nested_clone.array_at(1)))
+    assert_true(
+        nested_clone.array_at(0).same_identity(nested_clone.array_at(1))
+    )
     assert_false(nested_clone.array_at(0).same_identity(source))
     var rejected = False
     try:
@@ -38,8 +49,12 @@ def main() raises:
     assert_true(rejected)
 
     var builder = _JsValueBuilder()
-    var first = builder.append_object(List[JsString](JsString("next")), List[Int]())
-    var second = builder.append_object(List[JsString](JsString("next")), List[Int](first))
+    var first = builder.append_object(
+        List[JsString](JsString("next")), List[Int]()
+    )
+    var second = builder.append_object(
+        List[JsString](JsString("next")), List[Int](first)
+    )
     builder.set_aggregate_children(first, List[Int](second))
     var object = builder.value(first)
     var copied = js_value_structured_clone(object)

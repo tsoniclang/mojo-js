@@ -53,7 +53,9 @@ struct _SourceValueView:
     var has: Optional[Callable[Tuple[Int], Bool]]
     var value: Callable[Tuple[Int], JsValue]
     var to_json: Optional[RaisingCallable[Tuple[String], JsValue, Error]]
-    var property_reader: Optional[RaisingCallable[Tuple[JsString], JsValue, Error]]
+    var property_reader: Optional[
+        RaisingCallable[Tuple[JsString], JsValue, Error]
+    ]
 
 
 struct _JsValueNode(Movable):
@@ -125,7 +127,11 @@ struct _JsValueNode(Movable):
         self = Self(kind)
         self.source_view = Optional[ArcPointer[_SourceValueView]](view)
 
-    def __init__(out self, view: JsByteView, presentation: Optional[ArcPointer[_NativeValuePresentation]] = None):
+    def __init__(
+        out self,
+        view: JsByteView,
+        presentation: Optional[ArcPointer[_NativeValuePresentation]] = None,
+    ):
         self = Self(_BYTE_VIEW)
         self.byte_view = view
         self.native_presentation = presentation
@@ -267,8 +273,12 @@ struct JsValue(ImplicitlyCopyable, Writable):
             return not left or left.value()[].brand == right.value()[].brand
         var left = self._nodes[][self._index].source_view
         var right = other._nodes[][other._index].source_view
-        var left_identity = left.value()[].prototype_identity if left else String()
-        var right_identity = right.value()[].prototype_identity if right else String()
+        var left_identity = (
+            left.value()[].prototype_identity if left else String()
+        )
+        var right_identity = (
+            right.value()[].prototype_identity if right else String()
+        )
         return left_identity == right_identity
 
     def has_selected_to_json(self) -> Bool:
@@ -354,7 +364,9 @@ struct JsValue(ImplicitlyCopyable, Writable):
         var own = self.object_get(key)
         if own:
             return own.value()
-        if self.is_byte_view() and (key == JsString("length") or key == JsString("byteLength")):
+        if self.is_byte_view() and (
+            key == JsString("length") or key == JsString("byteLength")
+        ):
             return Self(Float64(self.byte_view().length))
         if self.is_byte_view() and key == JsString("byteOffset"):
             return Self(Float64(self.byte_view().offset))
@@ -395,13 +407,20 @@ struct JsValue(ImplicitlyCopyable, Writable):
         if self.is_byte_view():
             return self._nodes[][self._index].byte_view.value().length
         var view = self._nodes[][self._index].source_view
-        return view.value()[].length.call(()) if view else len(self._nodes[][self._index].children)
+        return view.value()[].length.call(()) if view else len(
+            self._nodes[][self._index].children
+        )
 
     def _aggregate_key(self, index: Int) -> JsString:
         if self.is_byte_view():
             return JsString(String(index))
         var view = self._nodes[][self._index].source_view
-        return view.value()[].key.value().call((index,)) if view else self._nodes[][self._index].keys[index]
+        return (
+            view.value()[]
+            .key.value()
+            .call((index,)) if view else self._nodes[][self._index]
+            .keys[index]
+        )
 
     def _aggregate_value(self, index: Int) -> Self:
         if self.is_byte_view():
@@ -410,11 +429,19 @@ struct JsValue(ImplicitlyCopyable, Writable):
         if self.is_array() and not self._aggregate_has(index):
             return Self()
         var view = self._nodes[][self._index].source_view
-        return view.value()[].value.call((index,)) if view else Self(self._nodes, self._nodes[][self._index].children[index])
+        return view.value()[].value.call((index,)) if view else Self(
+            self._nodes, self._nodes[][self._index].children[index]
+        )
 
     def _aggregate_has(self, index: Int) -> Bool:
         var view = self._nodes[][self._index].source_view
-        return view.value()[].has.value().call((index,)) if view else self._nodes[][self._index].children[index] != -1
+        return (
+            view.value()[]
+            .has.value()
+            .call((index,)) if view else self._nodes[][self._index]
+            .children[index]
+            != -1
+        )
 
     def _identity_address(self) -> UInt:
         var view = self._nodes[][self._index].source_view

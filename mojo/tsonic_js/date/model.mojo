@@ -6,7 +6,11 @@ from tsonic_runtime import Null
 from ..string import JsString
 from .arithmetic import changed_parts, read_part, supplied_number, time_clip
 from .formatting import (
-    iso_string, local_date_string, local_string, local_time_string, utc_string,
+    iso_string,
+    local_date_string,
+    local_string,
+    local_time_string,
+    utc_string,
 )
 from .timezone import local_time, utc_time, zone_offset
 

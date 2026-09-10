@@ -11,7 +11,9 @@ from tsonic_runtime.callable import (
 )
 
 
-struct JsIterator[T: AnyType](Equatable, ImplicitlyCopyable, Iterable, Iterator):
+struct JsIterator[T: AnyType](
+    Equatable, ImplicitlyCopyable, Iterable, Iterator
+):
     comptime Element = downcast[Self.T, Copyable & Deinitable]
     comptime IteratorType[
         iterable_mut: Bool, //, iterable_origin: Origin[mut=iterable_mut]
@@ -19,9 +21,7 @@ struct JsIterator[T: AnyType](Equatable, ImplicitlyCopyable, Iterable, Iterator)
 
     var _read: Callable[Tuple[], Optional[Self.Element]]
 
-    def __init__(
-        out self, read: Callable[Tuple[], Optional[Self.Element]]
-    ):
+    def __init__(out self, read: Callable[Tuple[], Optional[Self.Element]]):
         self._read = read
 
     def __eq__(self, other: Self) -> Bool:
@@ -42,7 +42,9 @@ struct JsIterator[T: AnyType](Equatable, ImplicitlyCopyable, Iterable, Iterator)
     def iter_values(self) -> Self:
         return self
 
-    def next(self) -> Variant[JsIteratorYield[Self.T], JsIteratorReturn[JsValue]]:
+    def next(
+        self,
+    ) -> Variant[JsIteratorYield[Self.T], JsIteratorReturn[JsValue]]:
         var value = self.next_optional()
         if value:
             return Variant[JsIteratorYield[Self.T], JsIteratorReturn[JsValue]](
@@ -52,7 +54,9 @@ struct JsIterator[T: AnyType](Equatable, ImplicitlyCopyable, Iterable, Iterator)
             JsIteratorReturn[JsValue](JsValue())
         )
 
-    def next(self, value: JsValue) -> Variant[JsIteratorYield[Self.T], JsIteratorReturn[JsValue]]:
+    def next(
+        self, value: JsValue
+    ) -> Variant[JsIteratorYield[Self.T], JsIteratorReturn[JsValue]]:
         return self.next()
 
 

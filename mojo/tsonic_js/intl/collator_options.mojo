@@ -17,7 +17,8 @@ struct _CollatorOptions:
 
 def _text(owner: IntlResult, field: Int) raises -> String:
     var pointer = external_call[
-        "tsonic_js_intl_collator_text", OptionalPointer[UInt8, ImmUntrackedOrigin],
+        "tsonic_js_intl_collator_text",
+        OptionalPointer[UInt8, ImmUntrackedOrigin],
     ](owner.pointer.value(), c_int(field))
     if not pointer:
         raise Error("A retained collator has no resolved text field")
@@ -25,7 +26,11 @@ def _text(owner: IntlResult, field: Int) raises -> String:
 
 
 def _option(owner: IntlResult, field: Int, maximum: Int) raises -> Int:
-    var value = Int(external_call["tsonic_js_intl_collator_option", c_int](owner.pointer.value(), c_int(field)))
+    var value = Int(
+        external_call["tsonic_js_intl_collator_option", c_int](
+            owner.pointer.value(), c_int(field)
+        )
+    )
     if value < 0 or value > maximum:
         raise Error("A retained collator has no resolved option field")
     return value
@@ -44,10 +49,17 @@ struct IntlResolvedCollatorOptions(Equatable, ImplicitlyCopyable):
         var case_names = String("false|upper|lower")
         var sensitivities = sensitivity_names.split("|")
         var cases = case_names.split("|")
-        self._state = ArcPointer(_CollatorOptions(
-            _text(owner, 0), String("search" if search else "sort"), String(sensitivities[sensitivity]),
-            Bool(punctuation), _text(owner, 1), Bool(numeric), String(cases[case_first]),
-        ))
+        self._state = ArcPointer(
+            _CollatorOptions(
+                _text(owner, 0),
+                String("search" if search else "sort"),
+                String(sensitivities[sensitivity]),
+                Bool(punctuation),
+                _text(owner, 1),
+                Bool(numeric),
+                String(cases[case_first]),
+            )
+        )
 
     def __eq__(self, other: Self) -> Bool:
         return self._state is other._state

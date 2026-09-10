@@ -38,9 +38,7 @@ def array_from(values: JsString) -> JsArray[JsString]:
     return JsArray[JsString](values.iter_values())
 
 
-def array_from[
-    T: Copyable & Deinitable
-](values: JsIterator[T]) -> JsArray[T]:
+def array_from[T: Copyable & Deinitable](values: JsIterator[T]) -> JsArray[T]:
     var result = List[T]()
     for value in values:
         result.append(value.copy())

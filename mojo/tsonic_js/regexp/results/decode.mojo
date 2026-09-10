@@ -2,7 +2,11 @@ from std.collections import List
 from ...array import JsArray
 from ...string import JsString
 from ...value import JsValue
-from .matches import JsRegExpExecArray, JsRegExpMatchArray, JsRegExpStringIterator
+from .matches import (
+    JsRegExpExecArray,
+    JsRegExpMatchArray,
+    JsRegExpStringIterator,
+)
 from .groups import (
     JsRegExpNamedGroups,
     JsRegExpNamedIndices,

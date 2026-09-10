@@ -1,11 +1,25 @@
 from std.collections import List
 from std.memory import ArcPointer
 from std.testing import assert_equal, assert_false, assert_true
-from tsonic_runtime import Callable, ErasedCallableContext, RaisingCallable, WeakReferenceIdentity, allocate_callable_environment, destroy_callable_environment
+from tsonic_runtime import (
+    Callable,
+    ErasedCallableContext,
+    RaisingCallable,
+    WeakReferenceIdentity,
+    allocate_callable_environment,
+    destroy_callable_environment,
+)
 from tsonic_js import (
-    JsString, JsValue, js_value_from_array_values, js_value_from_source_array,
-    js_value_from_source_object, js_value_structured_clone, json_stringify,
-    encode_structured_clone, decode_structured_clone, object_keys,
+    JsString,
+    JsValue,
+    js_value_from_array_values,
+    js_value_from_source_array,
+    js_value_from_source_object,
+    js_value_structured_clone,
+    json_stringify,
+    encode_structured_clone,
+    decode_structured_clone,
+    object_keys,
 )
 from tsonic_js.inspection import inspect_value
 from tsonic_js.value import JsValueWeakIdentity
@@ -31,7 +45,9 @@ struct SourceAdapter:
         return 2 if context.unsafe_bitcast[Self]()[].owner[].recursive else 1
 
     @staticmethod
-    def key(_context: ErasedCallableContext, var arguments: Tuple[Int]) -> JsString:
+    def key(
+        _context: ErasedCallableContext, var arguments: Tuple[Int]
+    ) -> JsString:
         return JsString("count" if arguments[0] == 0 else "self")
 
     @staticmethod
@@ -39,7 +55,9 @@ struct SourceAdapter:
         return arguments[0] >= 0 and arguments[0] < Self.length(context, ())
 
     @staticmethod
-    def value(context: ErasedCallableContext, var arguments: Tuple[Int]) -> JsValue:
+    def value(
+        context: ErasedCallableContext, var arguments: Tuple[Int]
+    ) -> JsValue:
         var owner = context.unsafe_bitcast[Self]()[].owner
         owner[].reads += 1
         if arguments[0] == 0:
@@ -47,7 +65,9 @@ struct SourceAdapter:
         return source_view(owner, array=context.unsafe_bitcast[Self]()[].array)
 
     @staticmethod
-    def project(context: ErasedCallableContext, var _arguments: Tuple[String]) raises -> JsValue:
+    def project(
+        context: ErasedCallableContext, var _arguments: Tuple[String]
+    ) raises -> JsValue:
         var owner = context.unsafe_bitcast[Self]()[].owner
         owner[].json_calls += 1
         if owner[].return_self:
@@ -55,18 +75,36 @@ struct SourceAdapter:
         return JsValue(Float64(owner[].count))
 
 
-def source_view(owner: ArcPointer[SourceState], selected_json: Bool = False, array: Bool = False, prototype_identity: String = "") -> JsValue:
-    var environment = allocate_callable_environment(SourceAdapter(owner, array), destroy_callable_environment[SourceAdapter])
+def source_view(
+    owner: ArcPointer[SourceState],
+    selected_json: Bool = False,
+    array: Bool = False,
+    prototype_identity: String = "",
+) -> JsValue:
+    var environment = allocate_callable_environment(
+        SourceAdapter(owner, array), destroy_callable_environment[SourceAdapter]
+    )
     var length = Callable[Tuple[], Int](environment, SourceAdapter.length)
     var value = Callable[Tuple[Int], JsValue](environment, SourceAdapter.value)
     if array:
         var has = Callable[Tuple[Int], Bool](environment, SourceAdapter.has)
-        return js_value_from_source_array(WeakReferenceIdentity(owner), length, has, value)
+        return js_value_from_source_array(
+            WeakReferenceIdentity(owner), length, has, value
+        )
     var key = Callable[Tuple[Int], JsString](environment, SourceAdapter.key)
     var projection = Optional[RaisingCallable[Tuple[String], JsValue, Error]]()
     if selected_json:
-        projection = RaisingCallable[Tuple[String], JsValue, Error](environment, SourceAdapter.project)
-    return js_value_from_source_object(WeakReferenceIdentity(owner), prototype_identity, length, key, value, projection)
+        projection = RaisingCallable[Tuple[String], JsValue, Error](
+            environment, SourceAdapter.project
+        )
+    return js_value_from_source_object(
+        WeakReferenceIdentity(owner),
+        prototype_identity,
+        length,
+        key,
+        value,
+        projection,
+    )
 
 
 def weak_temporary(owner: ArcPointer[SourceState]) -> JsValueWeakIdentity:
@@ -82,8 +120,16 @@ def main() raises:
     var owner = ArcPointer(SourceState(1, 0, 0, False, False))
     var view = source_view(owner, selected_json=True)
     var class_view = source_view(owner, prototype_identity="proof.Source")
-    assert_true(class_view.same_prototype(source_view(owner, prototype_identity="proof.Source")))
-    assert_false(class_view.same_prototype(source_view(owner, prototype_identity="proof.Other")))
+    assert_true(
+        class_view.same_prototype(
+            source_view(owner, prototype_identity="proof.Source")
+        )
+    )
+    assert_false(
+        class_view.same_prototype(
+            source_view(owner, prototype_identity="proof.Other")
+        )
+    )
     assert_false(class_view.same_prototype(view))
     assert_true(view.same_prototype(js_value_structured_clone(class_view)))
     owner[].reads = 0
@@ -119,10 +165,14 @@ def main() raises:
     assert_equal(enclosing.array_at(0).object_value(0)._number_value(), 5)
     var recursive_owner = ArcPointer(SourceState(7, 0, 0, True, False))
     var recursive_view = source_view(recursive_owner)
-    assert_equal(inspect_value(recursive_view), "{ count: 7, self: [Circular] }")
+    assert_equal(
+        inspect_value(recursive_view), "{ count: 7, self: [Circular] }"
+    )
     var recursive_clone = js_value_structured_clone(recursive_view)
     assert_true(recursive_clone.same_identity(recursive_clone.object_value(1)))
-    var transported = decode_structured_clone(encode_structured_clone(recursive_view))
+    var transported = decode_structured_clone(
+        encode_structured_clone(recursive_view)
+    )
     assert_true(transported.same_identity(transported.object_value(1)))
     var rejected = False
     try:
@@ -138,6 +188,8 @@ def main() raises:
     owner[].count = 6
     assert_equal(_implicit_value_string(array_view).to_native_strict(), "6")
     var recursive_array = source_view(recursive_owner, array=True)
-    assert_equal(_implicit_value_string(recursive_array).to_native_strict(), "7,")
+    assert_equal(
+        _implicit_value_string(recursive_array).to_native_strict(), "7,"
+    )
     var array_clone = js_value_structured_clone(recursive_array)
     assert_true(array_clone.same_identity(array_clone.array_at(1)))

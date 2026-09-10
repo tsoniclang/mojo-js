@@ -13,7 +13,9 @@ def released_owner() raises -> WeakReferenceIdentity:
 
 
 def main() raises:
-    var german = IntlCollator(data('"de"'), data('{"numeric":true,"sensitivity":"base"}'))
+    var german = IntlCollator(
+        data('"de"'), data('{"numeric":true,"sensitivity":"base"}')
+    )
     var retained_alias = german
     assert_equal(german, retained_alias)
     assert_true(german.weak_identity().same(retained_alias.weak_identity()))
@@ -41,7 +43,10 @@ def main() raises:
     var override = IntlCollator(data('"en-u-kn"'), data('{"numeric":false}'))
     assert_equal(override.resolved_options().get_numeric(), False)
     assert_false("kn" in override.resolved_options().get_locale())
-    var search = IntlCollator(data('"de"'), data('{"usage":"search","ignorePunctuation":true,"caseFirst":"upper"}'))
+    var search = IntlCollator(
+        data('"de"'),
+        data('{"usage":"search","ignorePunctuation":true,"caseFirst":"upper"}'),
+    )
     assert_equal(search.resolved_options().get_usage(), "search")
     assert_equal(search.resolved_options().get_collation(), "default")
     assert_equal(search.resolved_options().get_ignore_punctuation(), True)

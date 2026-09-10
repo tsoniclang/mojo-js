@@ -18,7 +18,9 @@ def object_is(left: JsValue, right: JsValue) -> Bool:
             return False
         return same_value(left._number_value(), right._number_value())
     if left.is_bigint():
-        return right.is_bigint() and left._string_value() == right._string_value()
+        return (
+            right.is_bigint() and left._string_value() == right._string_value()
+        )
     if left.is_string():
         if not right.is_string():
             return False
@@ -65,7 +67,9 @@ def object_has_own(value: JsValue, key: JsString) raises -> Bool:
         var index = _array_index(key)
         if not index:
             return False
-        return value.array_has(Int(index.value())) if value.is_array() else Int(index.value()) < len(value._string_value())
+        return value.array_has(Int(index.value())) if value.is_array() else Int(
+            index.value()
+        ) < len(value._string_value())
     return False
 
 
@@ -73,7 +77,9 @@ def _object_key_order(value: JsValue) raises -> List[Int]:
     _require_object_coercible(value)
     if value.is_array() or value.is_string():
         var entries = List[Int]()
-        var length = value.array_length() if value.is_array() else len(value._string_value())
+        var length = value.array_length() if value.is_array() else len(
+            value._string_value()
+        )
         for index in range(length):
             if value.is_string() or value.array_has(index):
                 entries.append(index)
@@ -102,14 +108,18 @@ def _object_key_order(value: JsValue) raises -> List[Int]:
 
 
 def _own_key(value: JsValue, index: Int) raises -> JsString:
-    return value.object_key(index) if value.is_object() else JsString(String(index))
+    return value.object_key(index) if value.is_object() else JsString(
+        String(index)
+    )
 
 
 def _own_value(value: JsValue, index: Int) raises -> JsValue:
     if value.is_array():
         return value.array_at(index)
     if value.is_string():
-        return js_value_from_string(value._string_value().char_at(Float64(index)))
+        return js_value_from_string(
+            value._string_value().char_at(Float64(index))
+        )
     return value.object_value(index)
 
 

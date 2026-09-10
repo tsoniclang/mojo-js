@@ -1,6 +1,10 @@
 from std.math import copysign
 from std.testing import assert_equal, assert_false, assert_true
-from tsonic_js.equality import canonical_collection_key, same_value, same_value_zero
+from tsonic_js.equality import (
+    canonical_collection_key,
+    same_value,
+    same_value_zero,
+)
 
 
 def scalar_width[dtype: DType]() raises:
@@ -20,7 +24,9 @@ def scalar_width[dtype: DType]() raises:
     assert_false(same_value(infinity, -infinity))
     assert_true(same_value(Scalar(3.5), Scalar(3.5)))
     assert_false(same_value(Scalar(3.5), Scalar(4.5)))
-    assert_equal(copysign(Scalar(1), canonical_collection_key(negative_zero)), Scalar(1))
+    assert_equal(
+        copysign(Scalar(1), canonical_collection_key(negative_zero)), Scalar(1)
+    )
 
 
 def main() raises:

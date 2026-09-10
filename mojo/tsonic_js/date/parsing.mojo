@@ -36,7 +36,9 @@ def parse_iso(value: String) raises -> Float64:
     if month < 1 or month > 12:
         return invalid_time()
     if position == length:
-        return time_clip(from_components(Float64(year), Float64(month - 1), 1, 0, 0, 0, 0))
+        return time_clip(
+            from_components(Float64(year), Float64(month - 1), 1, 0, 0, 0, 0)
+        )
     if byte_at(value, position) != 45:
         return invalid_time()
     day = digits(value, position + 1, 2)
@@ -44,9 +46,11 @@ def parse_iso(value: String) raises -> Float64:
     if day < 1 or day > 31:
         return invalid_time()
     if position == length:
-        return time_clip(from_components(
-            Float64(year), Float64(month - 1), Float64(day), 0, 0, 0, 0
-        ))
+        return time_clip(
+            from_components(
+                Float64(year), Float64(month - 1), Float64(day), 0, 0, 0, 0
+            )
+        )
     if byte_at(value, position) != 84:
         return invalid_time()
     var hour = digits(value, position + 1, 2)
@@ -73,19 +77,30 @@ def parse_iso(value: String) raises -> Float64:
             if position == fractional_start:
                 return invalid_time()
     if (
-        hour < 0 or hour > 24 or minute < 0 or minute > 59
-        or second < 0 or second > 59
+        hour < 0
+        or hour > 24
+        or minute < 0
+        or minute > 59
+        or second < 0
+        or second > 59
         or (hour == 24 and (minute != 0 or second != 0 or millisecond != 0))
     ):
         return invalid_time()
     var timestamp = from_components(
-        Float64(year), Float64(month - 1), Float64(day), Float64(hour),
-        Float64(minute), Float64(second), Float64(millisecond),
+        Float64(year),
+        Float64(month - 1),
+        Float64(day),
+        Float64(hour),
+        Float64(minute),
+        Float64(second),
+        Float64(millisecond),
     )
     if position == length:
         return time_clip(utc_time(timestamp))
     if byte_at(value, position) == 90:
-        return time_clip(timestamp) if position + 1 == length else invalid_time()
+        return (
+            time_clip(timestamp) if position + 1 == length else invalid_time()
+        )
     var direction = byte_at(value, position)
     if direction != 43 and direction != 45:
         return invalid_time()
@@ -93,10 +108,17 @@ def parse_iso(value: String) raises -> Float64:
         return invalid_time()
     var offset_hours = digits(value, position + 1, 2)
     var offset_minutes = digits(value, position + 4, 2)
-    if offset_hours < 0 or offset_hours > 23 or offset_minutes < 0 or offset_minutes > 59:
+    if (
+        offset_hours < 0
+        or offset_hours > 23
+        or offset_minutes < 0
+        or offset_minutes > 59
+    ):
         return invalid_time()
     var offset = Float64(offset_hours * 60 + offset_minutes) * 60000.0
-    return time_clip(timestamp - offset if direction == 43 else timestamp + offset)
+    return time_clip(
+        timestamp - offset if direction == 43 else timestamp + offset
+    )
 
 
 def parse_display_date(value: String) -> Float64:
@@ -116,18 +138,31 @@ def parse_display_date(value: String) -> Float64:
     var year_text = fields[3]
     var negative_year = byte_at(year_text, 0) == 45
     var year_start = 1 if negative_year else 0
-    var year = digits(year_text, year_start, year_text.byte_length() - year_start)
+    var year = digits(
+        year_text, year_start, year_text.byte_length() - year_start
+    )
     if year < 0 or month < 0 or day < 1 or day > 31:
         return invalid_time()
     if negative_year:
         year = -year
     var clock = fields[4]
-    if clock.byte_length() != 8 or byte_at(clock, 2) != 58 or byte_at(clock, 5) != 58:
+    if (
+        clock.byte_length() != 8
+        or byte_at(clock, 2) != 58
+        or byte_at(clock, 5) != 58
+    ):
         return invalid_time()
     var hour = digits(clock, 0, 2)
     var minute = digits(clock, 3, 2)
     var second = digits(clock, 6, 2)
-    if hour < 0 or hour > 23 or minute < 0 or minute > 59 or second < 0 or second > 59:
+    if (
+        hour < 0
+        or hour > 23
+        or minute < 0
+        or minute > 59
+        or second < 0
+        or second > 59
+    ):
         return invalid_time()
     var offset = 0
     var timezone = fields[5]
@@ -140,15 +175,31 @@ def parse_display_date(value: String) -> Float64:
         var direction = byte_at(timezone, 3)
         var hours = digits(timezone, 4, 2)
         var minutes = digits(timezone, 6, 2)
-        if (direction != 43 and direction != 45) or hours < 0 or hours > 23 or minutes < 0 or minutes > 59:
+        if (
+            (direction != 43 and direction != 45)
+            or hours < 0
+            or hours > 23
+            or minutes < 0
+            or minutes > 59
+        ):
             return invalid_time()
         offset = (hours * 60 + minutes) * (1 if direction == 43 else -1)
-        if len(fields) > 6 and (byte_at(fields[6], 0) != 40 or byte_at(value, value.byte_length() - 1) != 41):
+        if len(fields) > 6 and (
+            byte_at(fields[6], 0) != 40
+            or byte_at(value, value.byte_length() - 1) != 41
+        ):
             return invalid_time()
-    return time_clip(from_components(
-        Float64(year), Float64(month), Float64(day), Float64(hour),
-        Float64(minute - offset), Float64(second), 0,
-    ))
+    return time_clip(
+        from_components(
+            Float64(year),
+            Float64(month),
+            Float64(day),
+            Float64(hour),
+            Float64(minute - offset),
+            Float64(second),
+            0,
+        )
+    )
 
 
 def has_prefix(value: StringSlice, prefix: StringSlice) -> Bool:
@@ -167,7 +218,12 @@ def byte_at(value: StringSlice, position: Int) -> Int:
 
 
 def digits(value: StringSlice, start: Int, count: Int) -> Int:
-    if count < 1 or count > 6 or start < 0 or start + count > value.byte_length():
+    if (
+        count < 1
+        or count > 6
+        or start < 0
+        or start + count > value.byte_length()
+    ):
         return -1
     var result = 0
     for index in range(start, start + count):

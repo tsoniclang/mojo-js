@@ -31,7 +31,10 @@ def zone_name(milliseconds: Float64) raises -> String:
         output.append(0)
     var length = Int32(0)
     var status = external_call["tsonic_js_date_zone_name", c_int](
-        milliseconds, output.unsafe_ptr(), Int32(len(output)), Pointer(to=length)
+        milliseconds,
+        output.unsafe_ptr(),
+        Int32(len(output)),
+        Pointer(to=length),
     )
     if status != 0:
         raise Error("Date timezone name lookup failed: " + String(status))

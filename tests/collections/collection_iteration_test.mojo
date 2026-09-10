@@ -1,6 +1,13 @@
 from std.memory import bitcast
 from std.testing import assert_equal, assert_false, assert_true
-from tsonic_js import JsIteratorReturn, JsIteratorYield, JsMap, JsSet, JsValue, array_from
+from tsonic_js import (
+    JsIteratorReturn,
+    JsIteratorYield,
+    JsMap,
+    JsSet,
+    JsValue,
+    array_from,
+)
 
 
 def map_mutations() raises:
