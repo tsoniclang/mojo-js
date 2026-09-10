@@ -59,7 +59,21 @@ def main() raises:
     var context = allocate_callable_environment(DecimalReplacer(), DecimalReplacer.destroy)
     var replacer = RaisingCallable[Tuple[String, JsValue], JsValue, Error](context, DecimalReplacer.replace)
     assert_equal(json_stringify_with_replacer_and_space_number(nested, replacer, 0).value().to_native_strict(), '["9007199254740993"]')
-    for invalid in ("", "-", "-0", "00", "01", "+1", "1.0", "1e3", " 1", "1 ", "1n", "１", "😀"):
+    var invalid_values = List[String]()
+    invalid_values.append("")
+    invalid_values.append("-")
+    invalid_values.append("-0")
+    invalid_values.append("00")
+    invalid_values.append("01")
+    invalid_values.append("+1")
+    invalid_values.append("1.0")
+    invalid_values.append("1e3")
+    invalid_values.append(" 1")
+    invalid_values.append("1 ")
+    invalid_values.append("1n")
+    invalid_values.append("１")
+    invalid_values.append("😀")
+    for invalid in invalid_values:
         var rejected = False
         try:
             _ = JsValue.bigint(JsString(invalid))
@@ -67,9 +81,9 @@ def main() raises:
             rejected = True
         assert_true(rejected)
     var canonical = encode_structured_clone(js_value_from_bigint(UInt64(12)))
-    for version in (UInt8(0x31), UInt8(0x32), UInt8(0x33)):
+    for version in range(0x31, 0x34):
         var old = canonical.copy()
-        old[3] = version
+        old[3] = UInt8(version)
         var rejected = False
         try:
             _ = decode_structured_clone(old^)
