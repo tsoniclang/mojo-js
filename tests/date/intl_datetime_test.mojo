@@ -19,9 +19,9 @@ def released_owner() raises -> WeakReferenceIdentity:
 def main() raises:
     var options = data('{"timeZone":"UTC"}')
     var formatter = IntlDateTimeFormat(data('"en-US"'), options)
-    var alias = formatter
-    assert_equal(alias, formatter)
-    assert_true(alias.weak_identity().same(formatter.weak_identity()))
+    var retained_alias = formatter
+    assert_equal(retained_alias, formatter)
+    assert_true(retained_alias.weak_identity().same(formatter.weak_identity()))
     assert_equal(formatter.format(0.0), "1/1/1970")
     assert_equal(formatter.format(date_new(0.0)), "1/1/1970")
     assert_equal(formatter.format(Variant[JsDate, Float64](0.0)), "1/1/1970")
@@ -30,7 +30,7 @@ def main() raises:
     assert_true(len(formatter.format(Optional[Float64]())) > 0)
     assert_true(len(formatter.format()) > 0)
     for _ in range(32):
-        assert_equal(alias.format(0.5), "1/1/1970")
+        assert_equal(retained_alias.format(0.5), "1/1/1970")
     var parts = formatter.format_to_parts(0.0)
     var text = String()
     for part in parts:

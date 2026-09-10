@@ -14,12 +14,12 @@ def released_owner() raises -> WeakReferenceIdentity:
 
 def main() raises:
     var german = IntlCollator(data('"de"'), data('{"numeric":true,"sensitivity":"base"}'))
-    var alias = german
-    assert_equal(german, alias)
-    assert_true(german.weak_identity().same(alias.weak_identity()))
+    var retained_alias = german
+    assert_equal(german, retained_alias)
+    assert_true(german.weak_identity().same(retained_alias.weak_identity()))
     assert_equal(german.compare("ä", "a"), 0.0)
     for _ in range(64):
-        assert_true(alias.compare("file2", "file10") < 0.0)
+        assert_true(retained_alias.compare("file2", "file10") < 0.0)
     var swedish = IntlCollator(data('"sv"'), data('{"sensitivity":"base"}'))
     assert_true(swedish.compare("ä", "a") > 0.0)
     var resolved = german.resolved_options()

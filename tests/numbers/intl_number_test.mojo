@@ -29,15 +29,15 @@ def released_owner() raises -> WeakReferenceIdentity:
 
 def main() raises:
     var formatter = IntlNumberFormat(data('"en-US"'))
-    var alias = formatter
-    assert_equal(alias, formatter)
-    assert_true(alias.weak_identity().same(formatter.weak_identity()))
+    var retained_alias = formatter
+    assert_equal(retained_alias, formatter)
+    assert_true(retained_alias.weak_identity().same(formatter.weak_identity()))
     assert_equal(formatter.format(1234.5), "1,234.5")
     assert_equal(formatter.format(Int64(-9223372036854775807) - 1), "-9,223,372,036,854,775,808")
     assert_equal(formatter.format(UInt64(18446744073709551615)), "18,446,744,073,709,551,615")
     assert_equal(formatter.format(UInt(9007199254740993)), "9,007,199,254,740,993")
     for _ in range(32):
-        assert_equal(alias.format(Int(9007199254740993)), "9,007,199,254,740,993")
+        assert_equal(retained_alias.format(Int(9007199254740993)), "9,007,199,254,740,993")
     var parts = formatter.format_to_parts(1234.5)
     assert_equal(joined(parts), formatter.format(1234.5))
     assert_true(has_type(parts, "group"))

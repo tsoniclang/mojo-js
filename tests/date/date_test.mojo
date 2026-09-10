@@ -36,9 +36,9 @@ def main() raises:
     assert_true(math.isnan(omitted.set_utc_full_year(2000, None)))
 
     var original = date_new(0.0)
-    var alias = original
+    var retained_alias = original
     var separate = date_new(original)
-    _ = alias.set_time(5000)
+    _ = retained_alias.set_time(5000)
     assert_equal(original.get_time(), 5000)
     assert_equal(separate.get_time(), 0)
     assert_equal(date_new(-0.75).get_time(), 0)
