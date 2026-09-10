@@ -224,6 +224,21 @@ struct JsValue(ImplicitlyCopyable, Writable):
     def is_undefined(self) -> Bool:
         return self._kind() == _UNDEFINED
 
+    def type_of(self) -> String:
+        if self.is_undefined():
+            return "undefined"
+        if self.is_bool():
+            return "boolean"
+        if self.is_number():
+            return "number"
+        if self.is_bigint():
+            return "bigint"
+        if self.is_string():
+            return "string"
+        if self.is_symbol():
+            return "symbol"
+        return "object"
+
     def is_null(self) -> Bool:
         return self._kind() == _NULL
 
