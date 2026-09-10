@@ -46,6 +46,8 @@ struct _Clone:
             target = self.builder.append_bool(value._bool_value())
         elif value.is_number():
             target = self.builder.append_number(value._number_value())
+        elif value.is_bigint():
+            target = self.builder.append_bigint(value._string_value())
         elif value.is_string():
             target = self.builder.append_string(value._string_value())
         elif value.is_symbol():

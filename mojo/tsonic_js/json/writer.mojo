@@ -86,6 +86,8 @@ struct _JsonWriter:
         if value.is_null():
             self._append_ascii("null")
             return True
+        if value.is_bigint():
+            raise Error("Bigint values cannot be serialized as JSON")
         if value.is_bool():
             if value._bool_value():
                 self._append_ascii("true")

@@ -19,6 +19,8 @@ def _append_js_value_graph(
         return builder.append_bool(value._bool_value())
     if value.is_number():
         return builder.append_number(value._number_value())
+    if value.is_bigint():
+        return builder.append_bigint(value._string_value())
     if value.is_string():
         return builder.append_string(value._string_value())
     if value.is_symbol():

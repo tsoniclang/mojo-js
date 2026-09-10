@@ -107,6 +107,7 @@ from .value import (
     js_value_from_bool,
     js_value_from_null,
     js_value_from_number,
+    js_value_from_bigint,
     js_value_from_source_array,
     js_value_from_source_object,
     js_value_from_string,

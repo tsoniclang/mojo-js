@@ -33,6 +33,8 @@ comptime _SYMBOL = 7
 
 comptime _BYTE_VIEW = 8
 
+comptime _BIGINT = 9
+
 
 @fieldwise_init
 struct _NativeValuePresentation:
@@ -130,6 +132,21 @@ struct _JsValueNode(Movable):
         self.identity = view.identity
 
 
+def _require_bigint_digits(value: JsString) raises:
+    var length = len(value)
+    if length == 0:
+        raise Error("Bigint digits must be canonical signed decimal text")
+    var start = 1 if value.code_unit_at(0).value() == 45 else 0
+    if start == length:
+        raise Error("Bigint digits must be canonical signed decimal text")
+    if value.code_unit_at(start).value() == 48 and (start != 0 or length != 1):
+        raise Error("Bigint digits must be canonical signed decimal text")
+    for index in range(start, length):
+        var digit = value.code_unit_at(index).value()
+        if digit < 48 or digit > 57:
+            raise Error("Bigint digits must be canonical signed decimal text")
+
+
 struct JsValue(ImplicitlyCopyable, Writable):
     var _nodes: ArcPointer[List[_JsValueNode]]
     var _index: Int
@@ -185,6 +202,19 @@ struct JsValue(ImplicitlyCopyable, Writable):
     def undefined() -> Self:
         return Self()
 
+    @staticmethod
+    def bigint(value: JsString) raises -> Self:
+        _require_bigint_digits(value)
+        return Self._from_bigint_digits(value)
+
+    @staticmethod
+    def _from_bigint_digits(value: JsString) -> Self:
+        var node = _JsValueNode(value)
+        node.kind = _BIGINT
+        var nodes = List[_JsValueNode]()
+        nodes.append(node^)
+        return Self(ArcPointer(nodes^), 0)
+
     def is_undefined(self) -> Bool:
         return self._kind() == _UNDEFINED
 
@@ -196,6 +226,9 @@ struct JsValue(ImplicitlyCopyable, Writable):
 
     def is_number(self) -> Bool:
         return self._kind() == _NUMBER
+
+    def is_bigint(self) -> Bool:
+        return self._kind() == _BIGINT
 
     def is_string(self) -> Bool:
         return self._kind() == _STRING
@@ -253,6 +286,11 @@ struct JsValue(ImplicitlyCopyable, Writable):
         if not self.is_number():
             raise Error("JavaScript value is not a number")
         return self._number_value()
+
+    def bigint_value(self) raises -> JsString:
+        if not self.is_bigint():
+            raise Error("JavaScript value is not a bigint")
+        return self._string_value()
 
     def string_value(self) raises -> JsString:
         if not self.is_string():
@@ -420,6 +458,8 @@ def js_value_to_string(value: JsValue) -> JsString:
         return boolean_to_string(value._bool_value())
     if value.is_number():
         return number_to_string(value._number_value())
+    if value.is_bigint():
+        return value._string_value()
     if value.is_string():
         return value._string_value()
     if value.is_symbol():
@@ -487,6 +527,8 @@ def js_truthy(value: JsValue) -> Bool:
     if value.is_number():
         var number = value._number_value()
         return number != 0 and number == number
+    if value.is_bigint():
+        return value._string_value() != JsString("0")
     if value.is_string():
         return len(value._string_value()) != 0
     return True

@@ -2,7 +2,7 @@ from std.collections import List
 from std.memory import ArcPointer
 from ..string import JsString
 from ..symbol import JsSymbol
-from .model import JsValue, _JsValueNode, _SourceValueView, _NativeValuePresentation, _UNDEFINED, _NULL, _ARRAY, _OBJECT
+from .model import JsValue, _JsValueNode, _SourceValueView, _NativeValuePresentation, _UNDEFINED, _NULL, _ARRAY, _OBJECT, _BIGINT, _require_bigint_digits
 from .byte_view import JsByteView
 
 
@@ -23,6 +23,12 @@ struct _JsValueBuilder(ImplicitlyCopyable):
 
     def append_number(mut self, value: Float64) raises -> Int:
         return self._append(_JsValueNode(value))
+
+    def append_bigint(mut self, value: JsString) raises -> Int:
+        _require_bigint_digits(value)
+        var node = _JsValueNode(value)
+        node.kind = _BIGINT
+        return self._append(node^)
 
     def append_string(mut self, value: JsString) raises -> Int:
         return self._append(_JsValueNode(value))

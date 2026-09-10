@@ -17,6 +17,8 @@ def object_is(left: JsValue, right: JsValue) -> Bool:
         if not right.is_number():
             return False
         return same_value(left._number_value(), right._number_value())
+    if left.is_bigint():
+        return right.is_bigint() and left._string_value() == right._string_value()
     if left.is_string():
         if not right.is_string():
             return False

@@ -77,6 +77,8 @@ def _inspect(value: JsValue, depth: Int, array_limit: Int, mut active: List[JsVa
     if value.is_number():
         var number = value._number_value()
         return "-0" if number == 0 and bitcast[.uint64](number) != 0 else source_number_to_string(number)
+    if value.is_bigint():
+        return value._string_value().to_native_lossy() + "n"
     if value.is_string():
         return quote_inspected_string(value._string_value())
     var storage = value._storage()

@@ -30,7 +30,7 @@ owns the unsigned-byte data representation only.
 
 Structured cloning preserves shared backing between cloned views but never
 shares that backing with the source. It strips producer-specific presentation
-and returns plain unsigned-byte views. The strict version-3 transport records
+and returns plain unsigned-byte views. The strict version-4 transport records
 each backing store once and validates view bounds before exposing a result;
 older transport versions reject. Byte storage/transport is capped at 16 MiB.
 These additions are written but unverified in the current coding-only phase.

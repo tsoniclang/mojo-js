@@ -1,7 +1,7 @@
 from std.collections import Dict, List
 from std.memory import ArcPointer, bitcast
 from ..string import JsString
-from .model import JsValue, _UNDEFINED, _NULL, _BOOL, _NUMBER, _STRING, _ARRAY, _OBJECT, _BYTE_VIEW
+from .model import JsValue, _UNDEFINED, _NULL, _BOOL, _NUMBER, _STRING, _ARRAY, _OBJECT, _BYTE_VIEW, _BIGINT
 from .byte_view import JsByteView
 from .builder import _JsValueBuilder
 from .clone import js_value_structured_clone
@@ -9,7 +9,7 @@ from .clone import js_value_structured_clone
 
 comptime _BYTE_LIMIT = 16 * 1024 * 1024
 comptime _NODE_LIMIT = 1048576
-comptime _MAGIC = UInt32(0x3356474A)
+comptime _MAGIC = UInt32(0x3456474A)
 
 
 struct _Writer:
@@ -86,6 +86,8 @@ def encode_structured_clone(value: JsValue) raises -> List[UInt8]:
             writer.integer(UInt64(node.bool_value), 1)
         elif node.kind == _NUMBER:
             writer.integer(bitcast[.uint64](node.number_value), 8)
+        elif node.kind == _BIGINT:
+            writer.string(node.string_value)
         elif node.kind == _STRING:
             writer.string(node.string_value)
         elif node.kind == _BYTE_VIEW:
@@ -141,6 +143,8 @@ def decode_structured_clone(var bytes: List[UInt8]) raises -> JsValue:
             _ = builder.append_bool(value != 0)
         elif kind == _NUMBER:
             _ = builder.append_number(bitcast[.float64](reader.integer(8)))
+        elif kind == _BIGINT:
+            _ = builder.append_bigint(reader.string())
         elif kind == _STRING:
             _ = builder.append_string(reader.string())
         elif kind == _BYTE_VIEW:
