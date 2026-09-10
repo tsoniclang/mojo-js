@@ -38,7 +38,9 @@ def object_is(left: JsValue, right: JsValue) -> Bool:
 
 def strict_equal(left: JsValue, right: JsValue) -> Bool:
     if left.is_number():
-        return right.is_number() and left._number_value() == right._number_value()
+        return (
+            right.is_number() and left._number_value() == right._number_value()
+        )
     return object_is(left, right)
 
 

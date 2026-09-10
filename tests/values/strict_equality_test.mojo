@@ -16,7 +16,9 @@ def main() raises:
     assert_true(strict_equal(JsValue.null(), JsValue.null()))
     assert_true(strict_equal(JsValue.undefined(), JsValue.undefined()))
     assert_false(strict_equal(JsValue.null(), JsValue.undefined()))
-    assert_true(strict_equal(JsValue(JsString("proof")), JsValue(JsString("proof"))))
+    assert_true(
+        strict_equal(JsValue(JsString("proof")), JsValue(JsString("proof")))
+    )
     var object = json_parse(JsString("{}"))
     assert_true(strict_equal(object, object))
     assert_false(strict_equal(object, json_parse(JsString("{}"))))
@@ -25,4 +27,6 @@ def main() raises:
     assert_false(strict_equal(array, json_parse(JsString("[]"))))
     var symbol = symbol_new(JsString("id"))
     assert_true(strict_equal(JsValue(symbol), JsValue(symbol)))
-    assert_false(strict_equal(JsValue(symbol), JsValue(symbol_new(JsString("id")))))
+    assert_false(
+        strict_equal(JsValue(symbol), JsValue(symbol_new(JsString("id"))))
+    )
