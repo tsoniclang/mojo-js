@@ -33,15 +33,22 @@ from .date import (
     date_now,
     date_parse,
     date_parse_native,
+    date_to_date_string_native,
     date_to_iso_string_native,
     date_to_json_native,
     date_to_string_native,
+    date_to_time_string_native,
     date_to_utc_string_native,
     date_utc,
 )
+from .intl.dates import date_to_locale_string, date_to_locale_date_string, date_to_locale_time_string
+from .intl.numbers import number_to_locale_string
 from .json import (
     json_parse,
     json_stringify,
+    json_stringify_with_property_list,
+    json_stringify_with_property_list_and_space_number,
+    json_stringify_with_property_list_and_space_string,
     json_stringify_with_replacer,
     json_stringify_with_replacer_and_space_number,
     json_stringify_with_replacer_and_space_string,
@@ -49,6 +56,8 @@ from .json import (
     json_stringify_with_space_string,
 )
 from .map import JsMap
+from .iterator import JsIterator
+from .iterator_result import JsIteratorReturn, JsIteratorYield
 from .native_string import *
 from .math import *
 from .number import *
@@ -59,35 +68,47 @@ from .object import (
     object_keys,
     object_values,
 )
-from .regexp import *
-from .regexp_callbacks import RegExpNativeResult
-from .regexp_callbacks_exact import *
-from .regexp_callbacks_native import *
-from .regexp_results import (
+from .regexp.core import *
+from .regexp.protocols.records import RegExpNativeResult
+from .regexp.protocols.exact_signatures import *
+from .regexp.protocols.exact_callbacks import *
+from .regexp.protocols.exact_string_callbacks import *
+from .regexp.protocols.native_signatures import *
+from .regexp.protocols.native_callbacks import *
+from .regexp.protocols.native_string_callbacks import *
+from .regexp.results.matches import (
     JsRegExpExecArray,
-    JsRegExpIndicesArray,
     JsRegExpMatchArray,
-    JsRegExpNamedGroups,
-    JsRegExpNamedIndices,
     JsRegExpStringIterator,
     RegExpExecArray,
-    RegExpIndicesArray,
     RegExpMatchArray,
-    RegExpNamedGroups,
-    RegExpNamedIndices,
     RegExpStringIterator,
 )
+from .regexp.results.indices import JsRegExpIndicesArray, RegExpIndicesArray
+from .regexp.results.groups import JsRegExpNamedGroups, JsRegExpNamedIndices, RegExpNamedGroups, RegExpNamedIndices
 from .set import JsSet
 from .string import JsString, string_from_char_code, string_from_code_point
 from .symbol import JsSymbol, symbol_new
 from .string_array import string_split
 from .unicode_normalization import js_string_normalize, string_normalize
+from .intl.strings import (
+    js_string_locale_compare,
+    js_string_to_locale_lower_case,
+    js_string_to_locale_upper_case,
+    string_locale_compare,
+    string_to_locale_lower_case,
+    string_to_locale_upper_case,
+)
 from .value import (
+    JsByteView,
+    js_value_from_byte_view,
+    js_value_from_native_bytes,
     JsValue,
     js_value_from_bool,
     js_value_from_null,
     js_value_from_number,
-    js_value_from_json_projection,
+    js_value_from_source_array,
+    js_value_from_source_object,
     js_value_from_string,
     js_value_from_symbol,
     js_value_from_undefined,
@@ -101,3 +122,6 @@ from .value import (
     js_truthy_present_result,
     js_event_key_equal,
 )
+from .intl import IntlCollator, IntlResolvedCollatorOptions, intl_collator_new
+from .intl import IntlDateTimeFormat, IntlResolvedDateTimeFormatOptions, IntlFormatPart, intl_datetime_format_new
+from .intl import IntlNumberFormat, IntlResolvedNumberFormatOptions, intl_number_format_new

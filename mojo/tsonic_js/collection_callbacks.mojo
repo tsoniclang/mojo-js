@@ -9,7 +9,7 @@ def map_for_each_zero[
     CallbackError: AnyType,
     Callback: def() raises CallbackError -> R,
 ](map: JsMap[K, V], callback: Callback) raises CallbackError:
-    for _ in map._entries[]:
+    for _ in map.keys():
         _ = callback()
 
 
@@ -20,8 +20,8 @@ def map_for_each_value[
     CallbackError: AnyType,
     Callback: def(V) raises CallbackError -> R,
 ](map: JsMap[K, V], callback: Callback) raises CallbackError:
-    for entry in map._entries[]:
-        _ = callback(entry.value.copy())
+    for value in map.values():
+        _ = callback(value.copy())
 
 
 def map_for_each_value_key[
@@ -31,8 +31,8 @@ def map_for_each_value_key[
     CallbackError: AnyType,
     Callback: def(V, K) raises CallbackError -> R,
 ](map: JsMap[K, V], callback: Callback) raises CallbackError:
-    for entry in map._entries[]:
-        _ = callback(entry.value.copy(), entry.key.copy())
+    for entry in map.iter_entries():
+        _ = callback(entry[1].copy(), entry[0].copy())
 
 
 def map_for_each_with_map[
@@ -42,8 +42,8 @@ def map_for_each_with_map[
     CallbackError: AnyType,
     Callback: def(V, K, JsMap[K, V]) raises CallbackError -> R,
 ](map: JsMap[K, V], callback: Callback,) raises CallbackError:
-    for entry in map._entries[]:
-        _ = callback(entry.value.copy(), entry.key.copy(), map)
+    for entry in map.iter_entries():
+        _ = callback(entry[1].copy(), entry[0].copy(), map)
 
 
 def set_for_each_zero[
@@ -52,7 +52,7 @@ def set_for_each_zero[
     CallbackError: AnyType,
     Callback: def() raises CallbackError -> R,
 ](set: JsSet[T], callback: Callback) raises CallbackError:
-    for _ in set._values[]:
+    for _ in set.values():
         _ = callback()
 
 
@@ -62,7 +62,7 @@ def set_for_each_value[
     CallbackError: AnyType,
     Callback: def(T) raises CallbackError -> R,
 ](set: JsSet[T], callback: Callback) raises CallbackError:
-    for value in set._values[]:
+    for value in set.values():
         _ = callback(value.copy())
 
 
@@ -72,7 +72,7 @@ def set_for_each_value_key[
     CallbackError: AnyType,
     Callback: def(T, T) raises CallbackError -> R,
 ](set: JsSet[T], callback: Callback) raises CallbackError:
-    for value in set._values[]:
+    for value in set.values():
         _ = callback(value.copy(), value.copy())
 
 
@@ -82,5 +82,5 @@ def set_for_each_with_set[
     CallbackError: AnyType,
     Callback: def(T, T, JsSet[T]) raises CallbackError -> R,
 ](set: JsSet[T], callback: Callback,) raises CallbackError:
-    for value in set._values[]:
+    for value in set.values():
         _ = callback(value.copy(), value.copy(), set)
