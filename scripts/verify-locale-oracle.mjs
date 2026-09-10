@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { canonicalIntlOptions, equivalentLocaleResult, referenceDate, referenceResolvedLocale } from "./locale-reference.mjs";
 
 const executable = process.argv[2];
 assert.ok(executable, "Expected the compiled locale oracle");
@@ -170,9 +171,14 @@ assert.equal(actual.stderr, "");
 const lines = actual.stdout.trimEnd().split("\n");
 assert.equal(lines.length, cases.length);
 const failures = [];
-for (const [index, entry] of cases.entries()) {
+let localeDataVariations = 0;
+for (const [index, original] of cases.entries()) {
   let expected;
   try {
+    const invalidPrototypeDate = ["date", "time", "datetime"].includes(original.operation) &&
+      Number.isNaN(new Date(original.value).getTime());
+    const entry = { ...original, options: invalidPrototypeDate ? original.options : canonicalIntlOptions(original.options) };
+    if (entry.operation === "lower" || entry.operation === "upper") Intl.getCanonicalLocales(entry.locales);
     const number = entry.numericKind === "integer" ? BigInt(entry.value) : Number(entry.value);
     const value = entry.operation === "numberFormat" ? new Intl.NumberFormat(entry.locales, entry.options).format(number)
       : entry.operation === "numberParts" ? new Intl.NumberFormat(entry.locales, entry.options).formatToParts(number)
@@ -180,12 +186,10 @@ for (const [index, entry] of cases.entries()) {
           : entry.operation === "dateFormat" ? new Intl.DateTimeFormat(entry.locales, entry.options).format(Number(entry.value))
             : entry.operation === "dateParts" ? new Intl.DateTimeFormat(entry.locales, entry.options).formatToParts(Number(entry.value))
               : entry.operation === "dateResolvedBase" ? dateResolvedBase(entry)
-                : entry.operation === "collatorResolved" ? new Intl.Collator(entry.locales, entry.options).resolvedOptions()
+                : entry.operation === "collatorResolved" ? collatorResolved(entry)
                   : entry.operation === "collatorCompare" ? Math.sign(new Intl.Collator(entry.locales, entry.options).compare(entry.value, entry.right))
       : entry.operation === "number" ? number.toLocaleString(entry.locales, entry.options)
-      : entry.operation === "date" ? new Date(entry.value).toLocaleDateString(entry.locales, entry.options)
-      : entry.operation === "time" ? new Date(entry.value).toLocaleTimeString(entry.locales, entry.options)
-        : entry.operation === "datetime" ? new Date(entry.value).toLocaleString(entry.locales, entry.options)
+      : ["date", "time", "datetime"].includes(entry.operation) ? referenceDate(entry)
           : entry.operation === "lower" ? entry.value.toLocaleLowerCase(entry.locales)
       : entry.operation === "upper" ? entry.value.toLocaleUpperCase(entry.locales)
         : entry.operation === "defaultLower" ? entry.value.toLowerCase()
@@ -195,12 +199,18 @@ for (const [index, entry] of cases.entries()) {
   } catch {
     expected = "!error";
   }
-  if (lines[index] !== expected) failures.push({ entry, expected, actual: lines[index] });
+  if (!equivalentLocaleResult(original, expected, lines[index])) failures.push({ entry: original, expected, actual: lines[index] });
+  else if (lines[index] !== expected) localeDataVariations += 1;
 }
 assert.deepEqual(failures, []);
-console.log(`Locale string/date/number oracle: ${cases.length}/${cases.length}`);
+console.log(`Locale string/date/number oracle: ${cases.length}/${cases.length}; permitted date-literal data variations: ${localeDataVariations}`);
 
 function dateResolvedBase(entry) {
   const result = new Intl.DateTimeFormat(entry.locales, entry.options).resolvedOptions();
-  return { locale: result.locale, calendar: result.calendar, numberingSystem: result.numberingSystem, timeZone: result.timeZone };
+  return { locale: referenceResolvedLocale(entry, result, Intl.DateTimeFormat), calendar: result.calendar, numberingSystem: result.numberingSystem, timeZone: result.timeZone };
+}
+
+function collatorResolved(entry) {
+  const result = new Intl.Collator(entry.locales, entry.options).resolvedOptions();
+  return { ...result, locale: referenceResolvedLocale(entry, result, Intl.Collator) };
 }

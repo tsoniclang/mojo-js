@@ -33,7 +33,7 @@ def unicode_type_option(options: JsValue, name: String) raises -> String:
         return String()
     var value = option_string(selected, "")
     validate_unicode_type(value)
-    return value^
+    return value.lower()
 
 
 def boolean_option(options: JsValue, name: String) raises -> Int32:
