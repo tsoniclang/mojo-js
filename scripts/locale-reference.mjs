@@ -39,7 +39,29 @@ export function referenceDate(entry) {
       }
     }
   }
-  return new Intl.DateTimeFormat(entry.locales, options).format(date);
+  return referenceDateTimeFormat(entry.locales, options).format(date);
+}
+
+export function referenceDateTimeFormat(locales, options) {
+  const requested = options?.hour12 === undefined ? locales :
+    Intl.getCanonicalLocales(locales).map(withoutHourCycle);
+  return new Intl.DateTimeFormat(requested, options);
+}
+
+function withoutHourCycle(tag) {
+  const parts = tag.split("-");
+  const start = parts.indexOf("u");
+  const privateUse = parts.indexOf("x");
+  if (start === -1 || privateUse !== -1 && privateUse < start) return tag;
+  for (let index = start + 1; index < parts.length && parts[index].length !== 1; index += 1) {
+    if (parts[index] !== "hc") continue;
+    let end = index + 1;
+    while (end < parts.length && parts[end].length > 2) end += 1;
+    parts.splice(index, end - index);
+    if (parts[start + 1] === undefined || parts[start + 1].length === 1) parts.splice(start, 1);
+    break;
+  }
+  return parts.join("-");
 }
 
 function unicodeKeywords(tag) {

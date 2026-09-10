@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { canonicalIntlOptions, equivalentLocaleResult, referenceDate, referenceResolvedLocale } from "./locale-reference.mjs";
+import { canonicalIntlOptions, equivalentLocaleResult, referenceDate, referenceDateTimeFormat, referenceResolvedLocale } from "./locale-reference.mjs";
 
 const executable = process.argv[2];
 assert.ok(executable, "Expected the compiled locale oracle");
@@ -183,8 +183,8 @@ for (const [index, original] of cases.entries()) {
     const value = entry.operation === "numberFormat" ? new Intl.NumberFormat(entry.locales, entry.options).format(number)
       : entry.operation === "numberParts" ? new Intl.NumberFormat(entry.locales, entry.options).formatToParts(number)
         : entry.operation === "numberResolved" ? new Intl.NumberFormat(entry.locales, entry.options).resolvedOptions()
-          : entry.operation === "dateFormat" ? new Intl.DateTimeFormat(entry.locales, entry.options).format(Number(entry.value))
-            : entry.operation === "dateParts" ? new Intl.DateTimeFormat(entry.locales, entry.options).formatToParts(Number(entry.value))
+          : entry.operation === "dateFormat" ? referenceDateTimeFormat(entry.locales, entry.options).format(Number(entry.value))
+            : entry.operation === "dateParts" ? referenceDateTimeFormat(entry.locales, entry.options).formatToParts(Number(entry.value))
               : entry.operation === "dateResolvedBase" ? dateResolvedBase(entry)
                 : entry.operation === "collatorResolved" ? collatorResolved(entry)
                   : entry.operation === "collatorCompare" ? Math.sign(new Intl.Collator(entry.locales, entry.options).compare(entry.value, entry.right))
@@ -206,7 +206,7 @@ assert.deepEqual(failures, []);
 console.log(`Locale string/date/number oracle: ${cases.length}/${cases.length}; permitted date-literal data variations: ${localeDataVariations}`);
 
 function dateResolvedBase(entry) {
-  const result = new Intl.DateTimeFormat(entry.locales, entry.options).resolvedOptions();
+  const result = referenceDateTimeFormat(entry.locales, entry.options).resolvedOptions();
   return { locale: referenceResolvedLocale(entry, result, Intl.DateTimeFormat), calendar: result.calendar, numberingSystem: result.numberingSystem, timeZone: result.timeZone };
 }
 

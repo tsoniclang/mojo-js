@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canonicalIntlOptions, equivalentLocaleResult, referenceDate, referenceResolvedLocale } from "../../scripts/locale-reference.mjs";
+import { canonicalIntlOptions, equivalentLocaleResult, referenceDate, referenceDateTimeFormat, referenceResolvedLocale } from "../../scripts/locale-reference.mjs";
 
 test("date reference applies prototype defaults without dropping explicit hour cycles", () => {
   for (const [hourCycle, expectedHour] of [["h11", "0"], ["h12", "12"], ["h23", "00"], ["h24", "24"]]) {
@@ -9,6 +9,16 @@ test("date reference applies prototype defaults without dropping explicit hour c
   }
   assert.equal(referenceDate({ operation: "date", value: "invalid", locales: "bad_tag", options: null }), "Invalid Date");
   assert.throws(() => referenceDate({ operation: "time", value: 0, options: { dateStyle: "full" } }), TypeError);
+  for (const hour12 of [false, true]) {
+    const options = { timeZone: "UTC", hour: "numeric", hour12 };
+    const baseline = new Intl.DateTimeFormat("en-US-u-ca-buddhist-nu-arab", options);
+    for (const cycle of ["h11", "h12", "h23", "h24"]) {
+      const actual = referenceDateTimeFormat(`en-US-u-ca-buddhist-hc-${cycle}-nu-arab`, options);
+      assert.equal(actual.format(0), baseline.format(0));
+      assert.equal(actual.resolvedOptions().calendar, "buddhist");
+      assert.equal(actual.resolvedOptions().numberingSystem, "arab");
+    }
+  }
 });
 
 test("resolved locale retains only requested supported keywords not overridden by options", () => {
