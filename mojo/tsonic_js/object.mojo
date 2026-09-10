@@ -36,6 +36,12 @@ def object_is(left: JsValue, right: JsValue) -> Bool:
     return False
 
 
+def strict_equal(left: JsValue, right: JsValue) -> Bool:
+    if left.is_number():
+        return right.is_number() and left._number_value() == right._number_value()
+    return object_is(left, right)
+
+
 def object_keys(value: JsValue) raises -> JsArray[JsString]:
     var keys = List[JsString]()
     for index in _object_key_order(value):
