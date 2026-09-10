@@ -6,6 +6,7 @@ from tsonic_js.inspection import inspect_value
 from tsonic_js.value import encode_structured_clone, decode_structured_clone
 
 
+@fieldwise_init
 struct DecimalReplacer:
     @staticmethod
     def replace(_context: ErasedCallableContext, var arguments: Tuple[String, JsValue]) raises -> JsValue:
