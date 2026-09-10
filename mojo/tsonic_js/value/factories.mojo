@@ -3,7 +3,8 @@ from std.memory import ArcPointer
 from tsonic_runtime import Callable, RaisingCallable, WeakReferenceIdentity
 from ..string import JsString
 from ..symbol import JsSymbol
-from .model import JsValue, _SourceValueView, _JsValueNode, _ARRAY, _OBJECT
+from .model import JsValue, _SourceValueView, _NativeValuePresentation, _JsValueNode, _ARRAY, _OBJECT
+from .byte_view import JsByteView
 from .builder import _JsValueBuilder
 from .graph import _append_js_value_graph
 
@@ -30,6 +31,25 @@ def js_value_from_null() -> JsValue:
 
 def js_value_from_undefined() -> JsValue:
     return JsValue.undefined()
+
+
+def js_value_from_byte_view(view: JsByteView) -> JsValue:
+    var nodes = List[_JsValueNode]()
+    nodes.append(_JsValueNode(view))
+    return JsValue(ArcPointer(nodes^), 0)
+
+
+def js_value_from_native_bytes(
+    view: JsByteView,
+    brand: String,
+    to_json: RaisingCallable[Tuple[String], JsValue, Error],
+    to_string: Callable[Tuple[], JsString],
+    inspect: Callable[Tuple[Int], String],
+) -> JsValue:
+    var presentation = ArcPointer(_NativeValuePresentation(brand, to_json, to_string, inspect))
+    var nodes = List[_JsValueNode]()
+    nodes.append(_JsValueNode(view, Optional(presentation)))
+    return JsValue(ArcPointer(nodes^), 0)
 
 
 def js_value_from_source_array(

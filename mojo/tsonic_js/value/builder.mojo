@@ -2,7 +2,8 @@ from std.collections import List
 from std.memory import ArcPointer
 from ..string import JsString
 from ..symbol import JsSymbol
-from .model import JsValue, _JsValueNode, _SourceValueView, _UNDEFINED, _NULL, _ARRAY, _OBJECT
+from .model import JsValue, _JsValueNode, _SourceValueView, _NativeValuePresentation, _UNDEFINED, _NULL, _ARRAY, _OBJECT
+from .byte_view import JsByteView
 
 
 struct _JsValueBuilder(ImplicitlyCopyable):
@@ -28,6 +29,10 @@ struct _JsValueBuilder(ImplicitlyCopyable):
 
     def append_symbol(mut self, value: JsSymbol) raises -> Int:
         return self._append(_JsValueNode(value))
+
+    def append_byte_view(mut self, view: JsByteView, presentation: Optional[ArcPointer[_NativeValuePresentation]] = None) raises -> Int:
+        view.validate()
+        return self._append(_JsValueNode(view, presentation))
 
     def append_array(mut self, var children: List[Int]) raises -> Int:
         return self._append(_JsValueNode(_ARRAY, List[JsString](), children^))

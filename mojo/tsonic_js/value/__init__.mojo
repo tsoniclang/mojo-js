@@ -19,6 +19,8 @@ from .builder import (
     _JsValueBuilder,
 )
 from .factories import (
+    js_value_from_byte_view,
+    js_value_from_native_bytes,
     js_value_from_bool,
     js_value_from_number,
     js_value_from_string,
@@ -43,4 +45,5 @@ from .clone import (
     js_value_structured_clone,
 )
 from .weak_identity import JsValueWeakIdentity
+from .byte_view import JsByteView
 from .transport import encode_structured_clone, decode_structured_clone

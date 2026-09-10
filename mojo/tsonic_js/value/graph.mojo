@@ -23,6 +23,8 @@ def _append_js_value_graph(
         return builder.append_string(value._string_value())
     if value.is_symbol():
         return builder.append_symbol(value.symbol_value())
+    if value.is_byte_view():
+        return builder.append_byte_view(value.byte_view(), value._nodes[][value._index].native_presentation)
     var view = value._nodes[][value._index].source_view
     if view:
         return builder.append_source_view(value._kind(), view.value())

@@ -5,6 +5,7 @@ from ..boolean import boolean_to_string
 from ..number import number_to_string
 from ..string import JsString
 from ..symbol import JsSymbol
+from .byte_view import JsByteView
 
 
 comptime _UNDEFINED = 0
@@ -30,6 +31,16 @@ comptime _OBJECT = 6
 
 comptime _SYMBOL = 7
 
+comptime _BYTE_VIEW = 8
+
+
+@fieldwise_init
+struct _NativeValuePresentation:
+    var brand: String
+    var to_json: RaisingCallable[Tuple[String], JsValue, Error]
+    var to_string: Callable[Tuple[], JsString]
+    var inspect: Callable[Tuple[Int], String]
+
 
 @fieldwise_init
 struct _SourceValueView:
@@ -50,6 +61,8 @@ struct _JsValueNode(Movable):
     var symbol_value: Optional[JsSymbol]
     var identity: Optional[ArcPointer[Bool]]
     var source_view: Optional[ArcPointer[_SourceValueView]]
+    var byte_view: Optional[JsByteView]
+    var native_presentation: Optional[ArcPointer[_NativeValuePresentation]]
     var keys: List[JsString]
     var children: List[Int]
 
@@ -61,6 +74,8 @@ struct _JsValueNode(Movable):
         self.symbol_value = None
         self.identity = None
         self.source_view = None
+        self.byte_view = None
+        self.native_presentation = None
         self.keys = List[JsString]()
         self.children = List[Int]()
 
@@ -106,6 +121,12 @@ struct _JsValueNode(Movable):
     def __init__(out self, kind: Int, view: ArcPointer[_SourceValueView]):
         self = Self(kind)
         self.source_view = Optional[ArcPointer[_SourceValueView]](view)
+
+    def __init__(out self, view: JsByteView, presentation: Optional[ArcPointer[_NativeValuePresentation]] = None):
+        self = Self(_BYTE_VIEW)
+        self.byte_view = view
+        self.native_presentation = presentation
+        self.identity = view.identity
 
 
 struct JsValue(ImplicitlyCopyable, Writable):
@@ -185,9 +206,25 @@ struct JsValue(ImplicitlyCopyable, Writable):
         return self._kind() == _ARRAY
 
     def is_object(self) -> Bool:
-        return self._kind() == _OBJECT
+        return self._kind() == _OBJECT or self._kind() == _BYTE_VIEW
+
+    def is_byte_view(self) -> Bool:
+        return self._kind() == _BYTE_VIEW
+
+    def byte_view(self) raises -> JsByteView:
+        if not self.is_byte_view():
+            raise Error("JavaScript value is not an unsigned byte view")
+        var view = self._nodes[][self._index].byte_view.value()
+        view.validate()
+        return view
+
+    def has_native_brand(self, brand: String) -> Bool:
+        var presentation = self._nodes[][self._index].native_presentation
+        return Bool(presentation) and presentation.value()[].brand == brand
 
     def has_selected_to_json(self) -> Bool:
+        if self._nodes[][self._index].native_presentation:
+            return True
         var view = self._nodes[][self._index].source_view
         return Bool(view) and Bool(view.value()[].to_json)
 
@@ -229,6 +266,8 @@ struct JsValue(ImplicitlyCopyable, Writable):
     def object_length(self) raises -> Int:
         if not self.is_object():
             raise Error("JavaScript value is not an object")
+        if self.is_byte_view():
+            self._nodes[][self._index].byte_view.value().validate()
         return self._aggregate_length()
 
     def object_key(self, index: Int) raises -> JsString:
@@ -261,6 +300,10 @@ struct JsValue(ImplicitlyCopyable, Writable):
         var own = self.object_get(key)
         if own:
             return own.value()
+        if self.is_byte_view() and (key == JsString("length") or key == JsString("byteLength")):
+            return Self(Float64(self.byte_view().length))
+        if self.is_byte_view() and key == JsString("byteOffset"):
+            return Self(Float64(self.byte_view().offset))
         var view = self._nodes[][self._index].source_view
         if view and view.value()[].property_reader:
             return view.value()[].property_reader.value().call((key,))
@@ -286,20 +329,30 @@ struct JsValue(ImplicitlyCopyable, Writable):
         return identity.value()
 
     def _project_json(self, key: String) raises -> Self:
+        var native = self._nodes[][self._index].native_presentation
+        if native:
+            return native.value()[].to_json.call((key,))
         var view = self._nodes[][self._index].source_view
         if not view or not view.value()[].to_json:
             raise Error("Source value has no selected toJSON operation")
         return view.value()[].to_json.value().call((key,))
 
     def _aggregate_length(self) -> Int:
+        if self.is_byte_view():
+            return self._nodes[][self._index].byte_view.value().length
         var view = self._nodes[][self._index].source_view
         return view.value()[].length.call(()) if view else len(self._nodes[][self._index].children)
 
     def _aggregate_key(self, index: Int) -> JsString:
+        if self.is_byte_view():
+            return JsString(String(index))
         var view = self._nodes[][self._index].source_view
         return view.value()[].key.value().call((index,)) if view else self._nodes[][self._index].keys[index]
 
     def _aggregate_value(self, index: Int) -> Self:
+        if self.is_byte_view():
+            var bytes = self._nodes[][self._index].byte_view.value()
+            return Self(Float64(bytes.storage[][bytes.offset + index]))
         if self.is_array() and not self._aggregate_has(index):
             return Self()
         var view = self._nodes[][self._index].source_view
@@ -362,6 +415,17 @@ def js_value_to_string(value: JsValue) -> JsString:
             + description.value()
             + JsString(")") if description else JsString("Symbol()")
         )
+    if value.is_byte_view():
+        var presentation = value._nodes[][value._index].native_presentation
+        if presentation:
+            return presentation.value()[].to_string.call(())
+        var text = String()
+        var bytes = value._nodes[][value._index].byte_view.value()
+        for index in range(bytes.length):
+            if index:
+                text += ","
+            text += String(bytes.storage[][bytes.offset + index])
+        return JsString(text)
     if value.is_object():
         return JsString("[object Object]")
     return _array_to_string(value)

@@ -46,10 +46,10 @@ def main() raises:
     bad_root[8] = 255
     rejects(bad_root^)
     var bad_kind = bytes.copy()
-    bad_kind[12] = 255
+    bad_kind[16] = 255
     rejects(bad_kind^)
     var bad_reference = bytes.copy()
-    bad_reference[17] = 255
+    bad_reference[21] = 255
     rejects(bad_reference^)
     var rejected = False
     try:

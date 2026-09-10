@@ -100,6 +100,9 @@ from .intl.strings import (
     string_to_locale_upper_case,
 )
 from .value import (
+    JsByteView,
+    js_value_from_byte_view,
+    js_value_from_native_bytes,
     JsValue,
     js_value_from_bool,
     js_value_from_null,

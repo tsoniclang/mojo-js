@@ -83,6 +83,20 @@ def _inspect(value: JsValue, depth: Int, array_limit: Int, mut active: List[JsVa
     var node = value._node_index()
     if value.is_symbol():
         return String(storage[][node].symbol_value.value())
+    if value.is_byte_view():
+        var presentation = storage[][node].native_presentation
+        if presentation:
+            return presentation.value()[].inspect.call((array_limit,))
+        var view = storage[][node].byte_view.value()
+        var output = "Uint8Array(" + String(view.length) + ") ["
+        var limit = min(view.length, array_limit)
+        for index in range(limit):
+            output += " " if index == 0 else ", "
+            output += String(view.storage[][view.offset + index])
+        if limit < view.length:
+            output += ", " if limit else " "
+            output += "... " + String(view.length - limit) + " more items"
+        return output + (" ]" if view.length else "]")
     for ancestor in active:
         if ancestor.same_identity(value):
             return "[Circular]"

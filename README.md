@@ -21,6 +21,20 @@ constructors, structured cloning and tagged callback decoding. Representation
 does not depend on those consumers. The `value` entrypoint preserves imports
 used by the JSON, collection, RegExp and Node runtimes.
 
+Closed values can also retain unsigned-byte views. Backing storage, subrange and
+object identity remain distinct; copying a view is not copying its bytes.
+An owning provider may supply an exact nominal brand and selected presentation
+callbacks. This does not add provider names or native-object reflection to JS.
+For example, Node supplies Buffer's brand and JSON presentation; the JS runtime
+owns the unsigned-byte data representation only.
+
+Structured cloning preserves shared backing between cloned views but never
+shares that backing with the source. It strips producer-specific presentation
+and returns plain unsigned-byte views. The strict version-3 transport records
+each backing store once and validates view bounds before exposing a result;
+older transport versions reject. Byte storage/transport is capped at 16 MiB.
+These additions are written but unverified in the current coding-only phase.
+
 `date/` separates timestamp arithmetic, ISO/display parsing, ICU timezone
 queries, formatting and the mutable Date value. UTC arithmetic does not consult
 the OS. Local operations use the host timezone and the pinned ICU transition

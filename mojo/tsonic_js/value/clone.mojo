@@ -1,7 +1,9 @@
 from std.collections import Dict, List
+from std.memory import ArcPointer
 from ..string import JsString
 from .model import JsValue
 from .builder import _JsValueBuilder
+from .byte_view import JsByteView
 
 
 @fieldwise_init
@@ -17,6 +19,8 @@ struct _Clone:
     var nodes: Dict[Tuple[UInt, Int], Int]
     var retained: List[JsValue]
     var pending: List[_PendingClone]
+    var byte_storages: Dict[UInt, ArcPointer[List[UInt8]]]
+    var copied_bytes: Int
 
     def __init__(out self):
         self.builder = _JsValueBuilder()
@@ -24,6 +28,8 @@ struct _Clone:
         self.nodes = Dict[Tuple[UInt, Int], Int]()
         self.retained = List[JsValue]()
         self.pending = List[_PendingClone]()
+        self.byte_storages = Dict[UInt, ArcPointer[List[UInt8]]]()
+        self.copied_bytes = 0
 
     def reserve(mut self, value: JsValue) raises -> Int:
         if len(value._nodes[]) > 1048576 or value._index < 0 or value._index >= len(value._nodes[]):
@@ -44,6 +50,24 @@ struct _Clone:
             target = self.builder.append_string(value._string_value())
         elif value.is_symbol():
             raise Error("JavaScript symbols cannot be structured-cloned")
+        elif value.is_byte_view():
+            var source = value.byte_view()
+            var identity = value._identity_address()
+            if identity in self.identities:
+                target = self.identities[identity]
+                if not self.builder.value(target).is_byte_view():
+                    raise Error("One source allocation has conflicting aggregate kinds")
+                return target
+            var storage_identity = source.storage_identity()
+            if storage_identity not in self.byte_storages:
+                if len(source.storage[]) > 16777216 - self.copied_bytes:
+                    raise Error("Structured clone byte storage exceeds its byte limit")
+                self.copied_bytes += len(source.storage[])
+                self.byte_storages[storage_identity] = ArcPointer(source.storage[].copy())
+            target = self.builder.append_byte_view(JsByteView(
+                self.byte_storages[storage_identity], source.offset, source.length, ArcPointer(False),
+            ))
+            self.identities[identity] = target
         elif value.is_array() or value.is_object():
             if not value._nodes[][value._index].source_view and not value._nodes[][value._index].identity:
                 raise Error("JavaScript aggregate has no allocation identity")
