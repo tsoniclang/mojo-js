@@ -13,7 +13,7 @@ def _escaped_unit(value: UInt32) -> String:
         result += String(
             Codepoint(
                 unsafe_unchecked_codepoint=UInt32(
-                    digits[Int((value >> shift) & 15)]
+                    digits[Int((value >> UInt32(shift)) & 15)]
                 )
             )
         )

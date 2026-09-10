@@ -17,7 +17,7 @@ def main() raises:
         data('"de"'), data('{"numeric":true,"sensitivity":"base"}')
     )
     var retained_alias = german
-    assert_equal(german, retained_alias)
+    assert_true(german == retained_alias)
     assert_true(german.weak_identity().same(retained_alias.weak_identity()))
     assert_equal(german.compare("ä", "a"), 0.0)
     for _ in range(64):

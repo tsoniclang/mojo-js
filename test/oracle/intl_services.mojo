@@ -4,7 +4,7 @@ from tsonic_js import (
     IntlResolvedNumberFormatOptions, JsArray, JsString, JsValue,
     js_value_from_array_values, js_value_from_object_entries,
 )
-from locale_inputs import field, number_input
+from locale_inputs import field, number_input, unsigned_input
 
 
 def record_value(names: String, var values: List[JsValue]) raises -> JsValue:
@@ -16,7 +16,7 @@ def record_value(names: String, var values: List[JsValue]) raises -> JsValue:
 
 def parts_value(parts: JsArray[IntlFormatPart]) raises -> JsValue:
     var values = List[JsValue]()
-    for part in parts:
+    for part in parts.iter_values():
         var fields = List[JsValue]()
         fields.append(JsValue(JsString(part.get_type())))
         fields.append(JsValue(JsString(part.get_value())))
@@ -73,7 +73,7 @@ def number_options_value(options: IntlResolvedNumberFormatOptions) raises -> JsV
     return js_value_from_object_entries(names^, values^)
 
 
-def number_service[Value: Movable](formatter: IntlNumberFormat, value: Value, operation: String) raises -> JsValue:
+def number_service[dtype: DType](formatter: IntlNumberFormat, value: Scalar[dtype], operation: String) raises -> JsValue:
     if operation == "numberParts":
         return parts_value(formatter.format_to_parts(value))
     return JsValue(JsString(formatter.format(value)))
@@ -91,8 +91,8 @@ def evaluate_service(record: JsValue, operation: String) raises -> JsValue:
         if not kind.is_undefined() and kind.string_value().to_native_strict() == "integer":
             var decimal = input.string_value().to_native_strict()
             if decimal.startswith("-"):
-                return number_service(formatter, Int(decimal), operation)
-            return number_service(formatter, UInt(decimal), operation)
+                return number_service(formatter, Int64(Int(decimal)), operation)
+            return number_service(formatter, UInt64(unsigned_input(decimal)), operation)
         return number_service(formatter, number_input(input), operation)
     if operation == "dateFormat" or operation == "dateParts" or operation == "dateResolvedBase":
         var formatter = IntlDateTimeFormat(locales, options)

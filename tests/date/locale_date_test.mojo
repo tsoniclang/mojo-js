@@ -58,15 +58,13 @@ def main() raises:
         ),
         "January 1, 1970",
     )
-    assert_true(len(date_to_locale_string(epoch)) > 0)
+    assert_true(date_to_locale_string(epoch).byte_length() > 0)
     assert_true(
-        len(
-            date_to_locale_time_string(
-                epoch,
-                value('"ja-JP"'),
-                value('{"timeZone":"UTC","hour12":true}'),
-            )
-        )
+        date_to_locale_time_string(
+            epoch,
+            value('"ja-JP"'),
+            value('{"timeZone":"UTC","hour12":true}'),
+        ).byte_length()
         > 0
     )
     var invalid = date_new(invalid_time())

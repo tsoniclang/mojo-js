@@ -1,5 +1,8 @@
 from std.ffi import c_int, external_call
 from std.memory import ArcPointer
+from std.utils import Variant
+from tsonic_runtime import Undefined
+from ..date.model import JsDate
 from tsonic_runtime import WeakReferenceIdentity
 from ..array import JsArray
 from ..date.factories import date_now
@@ -64,17 +67,75 @@ struct IntlDateTimeFormat(Equatable, ImplicitlyCopyable):
         var result = self._result(date_now(), False)
         return JsString(code_units=result.units()).to_native_strict()
 
-    def format[Value: Movable](self, value: Value) raises -> String:
-        var result = self._result(date_value(value), False)
-        return JsString(code_units=result.units()).to_native_strict()
-
     def format_to_parts(self) raises -> JsArray[IntlFormatPart]:
         var result = self._result(date_now(), True)
         return formatted_parts(result)
 
+    def format[dtype: DType](self, value: Scalar[dtype]) raises -> String:
+        var result = self._result(date_value(value), False)
+        return JsString(code_units=result.units()).to_native_strict()
+
     def format_to_parts[
-        Value: Movable
-    ](self, value: Value) raises -> JsArray[IntlFormatPart]:
+        dtype: DType
+    ](self, value: Scalar[dtype]) raises -> JsArray[IntlFormatPart]:
+        var result = self._result(date_value(value), True)
+        return formatted_parts(result)
+
+    def format(self, value: Int) raises -> String:
+        var result = self._result(date_value(value), False)
+        return JsString(code_units=result.units()).to_native_strict()
+
+    def format_to_parts(self, value: Int) raises -> JsArray[IntlFormatPart]:
+        var result = self._result(date_value(value), True)
+        return formatted_parts(result)
+
+    def format(self, value: UInt) raises -> String:
+        var result = self._result(date_value(value), False)
+        return JsString(code_units=result.units()).to_native_strict()
+
+    def format_to_parts(self, value: UInt) raises -> JsArray[IntlFormatPart]:
+        var result = self._result(date_value(value), True)
+        return formatted_parts(result)
+
+    def format(self, value: JsDate) raises -> String:
+        var result = self._result(date_value(value), False)
+        return JsString(code_units=result.units()).to_native_strict()
+
+    def format_to_parts(self, value: JsDate) raises -> JsArray[IntlFormatPart]:
+        var result = self._result(date_value(value), True)
+        return formatted_parts(result)
+
+    def format(self, value: Undefined) raises -> String:
+        var result = self._result(date_value(value), False)
+        return JsString(code_units=result.units()).to_native_strict()
+
+    def format_to_parts(
+        self, value: Undefined
+    ) raises -> JsArray[IntlFormatPart]:
+        var result = self._result(date_value(value), True)
+        return formatted_parts(result)
+
+    def format[
+        Value: Copyable & Deinitable
+    ](self, value: Optional[Value]) raises -> String:
+        var result = self._result(date_value(value), False)
+        return JsString(code_units=result.units()).to_native_strict()
+
+    def format_to_parts[
+        Value: Copyable & Deinitable
+    ](self, value: Optional[Value]) raises -> JsArray[IntlFormatPart]:
+        var result = self._result(date_value(value), True)
+        return formatted_parts(result)
+
+    def format[
+        *Members: Copyable & Deinitable
+    ](self, value: Variant[*Members]) raises -> String:
+        var result = self._result(date_value(value), False)
+        return JsString(code_units=result.units()).to_native_strict()
+
+    def format_to_parts[
+        *Members: Copyable & Deinitable
+    ](self, value: Variant[*Members]) raises -> JsArray[IntlFormatPart]:
         var result = self._result(date_value(value), True)
         return formatted_parts(result)
 

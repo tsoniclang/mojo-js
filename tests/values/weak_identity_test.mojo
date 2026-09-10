@@ -55,12 +55,12 @@ struct ProjectionEnvironment:
 
 
 def released_aggregate() raises -> JsValueWeakIdentity:
-    var value = js_value_from_array_values(List[JsValue](JsValue(1.0)))
+    var value = js_value_from_array_values([JsValue(1.0)])
     var identity = JsValueWeakIdentity(value)
     assert_true(identity.is_alive())
     assert_true(identity.matches(value))
     assert_false(identity.matches(js_value_structured_clone(value)))
-    var enclosing = js_value_from_array_values(List[JsValue](value))
+    var enclosing = js_value_from_array_values([value])
     assert_true(identity.matches(enclosing.array_at(0)))
     return identity
 
@@ -93,11 +93,7 @@ def released_projection(destroyed: Location[Int]) raises -> JsValueWeakIdentity:
 def main() raises:
     var aggregate = released_aggregate()
     assert_false(aggregate.is_alive())
-    assert_false(
-        aggregate.matches(
-            js_value_from_array_values(List[JsValue](JsValue(1.0)))
-        )
-    )
+    assert_false(aggregate.matches(js_value_from_array_values([JsValue(1.0)])))
     var destroyed = Location(0)
     var projection = released_projection(destroyed)
     assert_equal(destroyed.read(), 1)

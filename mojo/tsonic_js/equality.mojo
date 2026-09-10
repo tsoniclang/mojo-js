@@ -1,4 +1,5 @@
 from std.math import copysign
+from std.builtin.rebind import rebind_var
 
 
 def _same_float_value(left: Float64, right: Float64) -> Bool:
@@ -30,11 +31,11 @@ def same_value_zero[T: Equatable](left: T, right: T) -> Bool:
 def canonical_collection_key[T: Copyable & Deinitable](value: T) -> T:
     comptime if T == Float64:
         if rebind[Float64](value) == 0:
-            return rebind[T](Float64(0))
+            return rebind_var[T](Float64(0))
     elif T == Float32:
         if rebind[Float32](value) == 0:
-            return rebind[T](Float32(0))
+            return rebind_var[T](Float32(0))
     elif T == Float16:
         if rebind[Float16](value) == 0:
-            return rebind[T](Float16(0))
+            return rebind_var[T](Float16(0))
     return value.copy()

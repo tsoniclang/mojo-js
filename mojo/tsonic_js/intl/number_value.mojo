@@ -2,10 +2,12 @@ from std.ffi import c_int, external_call
 from .native import IntlResult
 
 
-def _result(
+def _result[
+    origin: Origin
+](
     owner: IntlResult,
     value: Float64,
-    decimal: OptionalPointer[UInt8, ImmUntrackedOrigin],
+    decimal: OptionalPointer[Int8, origin],
     parts: Bool,
 ) raises -> IntlResult:
     var result = IntlResult(
@@ -28,7 +30,7 @@ def number_result[
         return _result(
             owner,
             Float64(value),
-            OptionalPointer[UInt8, ImmUntrackedOrigin](),
+            OptionalPointer[Int8, ImmUntrackedOrigin](),
             parts,
         )
 

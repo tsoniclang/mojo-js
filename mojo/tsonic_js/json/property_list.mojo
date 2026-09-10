@@ -23,4 +23,4 @@ def json_property_list(value: JsValue) raises -> List[JsString]:
         if key not in seen:
             seen.add(key)
             result.append(key)
-    return result
+    return result^

@@ -26,7 +26,7 @@ def main() raises:
     var options = data('{"timeZone":"UTC"}')
     var formatter = IntlDateTimeFormat(data('"en-US"'), options)
     var retained_alias = formatter
-    assert_equal(retained_alias, formatter)
+    assert_true(retained_alias == formatter)
     assert_true(retained_alias.weak_identity().same(formatter.weak_identity()))
     assert_equal(formatter.format(0.0), "1/1/1970")
     assert_equal(formatter.format(date_new(0.0)), "1/1/1970")
@@ -34,14 +34,14 @@ def main() raises:
     assert_equal(
         formatter.format(Variant[Float64, JsDate](date_new(0.0))), "1/1/1970"
     )
-    assert_true(len(formatter.format(Undefined())) > 0)
-    assert_true(len(formatter.format(Optional[Float64]())) > 0)
-    assert_true(len(formatter.format()) > 0)
+    assert_true(formatter.format(Undefined()).byte_length() > 0)
+    assert_true(formatter.format(Optional[Float64]()).byte_length() > 0)
+    assert_true(formatter.format().byte_length() > 0)
     for _ in range(32):
         assert_equal(retained_alias.format(0.5), "1/1/1970")
     var parts = formatter.format_to_parts(0.0)
     var text = String()
-    for part in parts:
+    for part in parts.iter_values():
         text += part.get_value()
     assert_equal(text, formatter.format(0.0))
     assert_equal(parts[0].get_type(), "month")
@@ -83,7 +83,7 @@ def main() raises:
     var styles = IntlDateTimeFormat(
         data('"en"'), data('{"timeStyle":"short","timeZone":"UTC"}')
     )
-    assert_true(len(styles.format(0.0)) > 0)
+    assert_true(styles.format(0.0).byte_length() > 0)
     var invalid = False
     try:
         _ = formatter.format(date_new(invalid_time()))

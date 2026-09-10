@@ -26,7 +26,7 @@ def main() raises:
         inspect_value(builder.value(array), 2, 1), "[ 1, ... 1 more item ]"
     )
     assert_equal(quote_inspected_string(JsString("😀\n'\\")), "'😀\\n\\'\\\\'")
-    var lone = JsString(code_units=List[UInt16](0xD800))
+    var lone = JsString(code_units=[0xD800])
     assert_equal(quote_inspected_string(lone), "'\\ud800'")
     var cycle = builder.append_array(List[Int]())
     var value = builder.value(cycle)

@@ -17,13 +17,13 @@ def data(text: String) raises -> JsValue:
 
 def joined(parts: JsArray[IntlFormatPart]) raises -> String:
     var result = String()
-    for part in parts:
+    for part in parts.iter_values():
         result += part.get_value()
     return result^
 
 
 def has_type(parts: JsArray[IntlFormatPart], type: String) raises -> Bool:
-    for part in parts:
+    for part in parts.iter_values():
         if part.get_type() == type:
             return True
     return False
@@ -37,7 +37,7 @@ def released_owner() raises -> WeakReferenceIdentity:
 def main() raises:
     var formatter = IntlNumberFormat(data('"en-US"'))
     var retained_alias = formatter
-    assert_equal(retained_alias, formatter)
+    assert_true(retained_alias == formatter)
     assert_true(retained_alias.weak_identity().same(formatter.weak_identity()))
     assert_equal(formatter.format(1234.5), "1,234.5")
     assert_equal(

@@ -34,16 +34,18 @@ def _increment(value: Int, fraction: Int) -> String:
     var digits = String(value)
     if fraction == 0:
         return "precision-increment/" + digits
-    if len(digits) <= fraction:
+    if digits.byte_length() <= fraction:
         return (
-            "precision-increment/0." + "0" * (fraction - len(digits)) + digits
+            "precision-increment/0."
+            + "0" * (fraction - digits.byte_length())
+            + digits
         )
-    var split = len(digits) - fraction
+    var split = digits.byte_length() - fraction
     return (
         "precision-increment/"
-        + String(digits[:split])
+        + String(digits[byte=:split])
         + "."
-        + String(digits[split:])
+        + String(digits[byte=split:])
     )
 
 

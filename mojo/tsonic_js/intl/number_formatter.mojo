@@ -47,13 +47,29 @@ struct IntlNumberFormat(Equatable, ImplicitlyCopyable):
     def weak_identity(self) -> WeakReferenceIdentity:
         return WeakReferenceIdentity(self._owner)
 
-    def format[Value: Movable](self, value: Value) raises -> String:
+    def format[dtype: DType](self, value: Scalar[dtype]) raises -> String:
         var result = number_result(self._owner[].native, value, False)
         return JsString(code_units=result.units()).to_native_strict()
 
     def format_to_parts[
-        Value: Movable
-    ](self, value: Value) raises -> JsArray[IntlFormatPart]:
+        dtype: DType
+    ](self, value: Scalar[dtype]) raises -> JsArray[IntlFormatPart]:
+        var result = number_result(self._owner[].native, value, True)
+        return formatted_parts(result)
+
+    def format(self, value: Int) raises -> String:
+        var result = number_result(self._owner[].native, value, False)
+        return JsString(code_units=result.units()).to_native_strict()
+
+    def format_to_parts(self, value: Int) raises -> JsArray[IntlFormatPart]:
+        var result = number_result(self._owner[].native, value, True)
+        return formatted_parts(result)
+
+    def format(self, value: UInt) raises -> String:
+        var result = number_result(self._owner[].native, value, False)
+        return JsString(code_units=result.units()).to_native_strict()
+
+    def format_to_parts(self, value: UInt) raises -> JsArray[IntlFormatPart]:
         var result = number_result(self._owner[].native, value, True)
         return formatted_parts(result)
 

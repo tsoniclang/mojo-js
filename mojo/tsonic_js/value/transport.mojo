@@ -33,7 +33,7 @@ struct _Writer:
         if len(self.bytes) > _BYTE_LIMIT - width:
             raise Error("Structured clone transport exceeds its byte limit")
         for index in range(width):
-            self.bytes.append(UInt8((value >> (index * 8)) & 255))
+            self.bytes.append(UInt8((value >> UInt64(index * 8)) & 255))
 
     def string(mut self, value: JsString) raises:
         self.integer(UInt64(len(value)), 4)
@@ -56,7 +56,9 @@ struct _Reader:
             raise Error("Truncated structured clone transport")
         var result = UInt64(0)
         for index in range(width):
-            result |= UInt64(self.bytes[self.offset + index]) << (index * 8)
+            result |= UInt64(self.bytes[self.offset + index]) << UInt64(
+                index * 8
+            )
         self.offset += width
         return result
 

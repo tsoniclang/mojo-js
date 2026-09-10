@@ -21,8 +21,8 @@ struct JsIterator[T: AnyType](
 
     var _read: Callable[Tuple[], Optional[Self.Element]]
 
-    def __init__(out self, read: Callable[Tuple[], Optional[Self.Element]]):
-        self._read = read
+    def __init__(out self, reader: Callable[Tuple[], Optional[Self.Element]]):
+        self._read = reader
 
     def __eq__(self, other: Self) -> Bool:
         return self._read.same(other._read)
@@ -64,7 +64,7 @@ struct JsIterator[T: AnyType](
 struct _IteratorEnvironment[
     T: Copyable & Deinitable,
     State: Movable & Deinitable,
-    read: def(mut State) thin -> Optional[T],
+    reader: def(mut State) thin -> Optional[T],
 ]:
     var source: Self.State
     var exhausted: Bool
@@ -76,7 +76,7 @@ struct _IteratorEnvironment[
         var pointer = context.unsafe_bitcast[Self]()
         if pointer[].exhausted:
             return None
-        var result = Self.read(pointer[].source)
+        var result = Self.reader(pointer[].source)
         if not result:
             pointer[].exhausted = True
         return result^
@@ -89,9 +89,9 @@ struct _IteratorEnvironment[
 def make_iterator[
     T: Copyable & Deinitable,
     State: Movable & Deinitable,
-    read: def(mut State) thin -> Optional[T],
+    reader: def(mut State) thin -> Optional[T],
 ](var state: State) -> JsIterator[T]:
-    comptime Environment = _IteratorEnvironment[T, State, read]
+    comptime Environment = _IteratorEnvironment[T, State, reader]
     var environment = allocate_callable_environment(
         Environment(state^, False), Environment.destroy
     )

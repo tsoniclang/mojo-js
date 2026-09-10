@@ -21,13 +21,13 @@ def main() raises:
     var builder = _JsValueBuilder()
     var root = builder.append_array(List[Int]())
     var text = builder.append_string(
-        JsString(code_units=List[UInt16](0x61, 0, 0xD800, 0xDC00, 0xDFFF))
+        JsString(code_units=[0x61, 0, 0xD800, 0xDC00, 0xDFFF])
     )
     var negative_zero = builder.append_number(-0.0)
     var nan = builder.append_number(Float64(FloatLiteral.nan))
     var undefined = builder.append_undefined()
     builder.set_aggregate_children(
-        root, List[Int](root, root, text, negative_zero, nan, undefined)
+        root, [root, root, text, negative_zero, nan, undefined]
     )
     var source = builder.value(root)
     var bytes = encode_structured_clone(source)

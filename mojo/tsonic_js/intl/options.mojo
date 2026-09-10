@@ -42,7 +42,7 @@ def boolean_option(options: JsValue, name: String) raises -> Int32:
 
 
 def validate_unicode_type(value: String) raises:
-    if len(value) == 0:
+    if value.byte_length() == 0:
         raise Error("Unicode locale type must be non-empty")
     for part in value.split("-"):
         var bytes = String(part).as_bytes()

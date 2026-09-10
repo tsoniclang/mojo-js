@@ -11,8 +11,8 @@ from tsonic_js import (
     json_stringify,
     object_keys,
     object_is,
-    inspect_value,
 )
+from tsonic_js.inspection import inspect_value
 from tsonic_js.value import encode_structured_clone, decode_structured_clone
 
 
@@ -26,7 +26,8 @@ def rejected(var bytes: List[UInt8]) raises:
 
 
 def main() raises:
-    var storage = ArcPointer(List[UInt8](1, 2, 3, 4))
+    var bytes: List[UInt8] = [1, 2, 3, 4]
+    var storage = ArcPointer(bytes^)
     var view = JsByteView(storage, 0, 3, ArcPointer(False))
     var source = js_value_from_byte_view(view)
     var retained_alias = js_value_from_byte_view(view)

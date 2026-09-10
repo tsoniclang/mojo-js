@@ -6,9 +6,11 @@ from .native import IntlResult
 from .number_options import NumberOptions
 
 
-def _present(
+def _present[
+    origin: Origin
+](
     value: Float64,
-    decimal: OptionalPointer[UInt8, ImmUntrackedOrigin],
+    decimal: OptionalPointer[Int8, origin],
     locales: JsValue,
     options: JsValue,
 ) raises -> String:
@@ -45,7 +47,7 @@ def number_to_locale_string[
     else:
         return _present(
             Float64(value),
-            OptionalPointer[UInt8, ImmUntrackedOrigin](),
+            OptionalPointer[Int8, ImmUntrackedOrigin](),
             locales,
             options,
         )
