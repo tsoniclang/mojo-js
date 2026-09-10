@@ -16,6 +16,20 @@ static int32_t adapt_hours(UChar *skeleton, int32_t length, UChar hour) {
     return output;
 }
 
+static UChar pattern_hour(const UChar *pattern, int32_t length) {
+    int quoted = 0;
+    for (int32_t index = 0; index < length; ++index) {
+        UChar symbol = pattern[index];
+        if (symbol == '\'') {
+            if (index + 1 < length && pattern[index + 1] == '\'') ++index;
+            else quoted = !quoted;
+        } else if (!quoted && (symbol == 'h' || symbol == 'H' || symbol == 'K' || symbol == 'k')) {
+            return symbol;
+        }
+    }
+    return 0;
+}
+
 UDateFormat *tsonic_intl_open_date_format(const char *locale, const UChar *zone,
     int32_t zone_length, const char *components, int date_style, int time_style,
     int hour12, const char *hour_cycle, int basic, UErrorCode *status) {
@@ -41,6 +55,13 @@ UDateFormat *tsonic_intl_open_date_format(const char *locale, const UChar *zone,
         }
         UChar original[2048];
         int32_t length = udat_toPattern(format, 0, original, 2048, status);
+        if (U_SUCCESS(*status)) {
+            UChar current_hour = pattern_hour(original, length);
+            if (current_hour == 0 || current_hour == hour) {
+                udatpg_close(generator);
+                return format;
+            }
+        }
         if (U_SUCCESS(*status)) skeleton_length = udatpg_getSkeleton(generator, original, length, skeleton, 256, status);
         udat_close(format);
         format = NULL;

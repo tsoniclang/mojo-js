@@ -77,7 +77,8 @@ def encode_structured_clone(value: JsValue) raises -> List[UInt8]:
     var storage = clone._storage()
     var buffers = List[ArcPointer[List[UInt8]]]()
     var buffer_indices = Dict[UInt, Int]()
-    for node in storage[]:
+    for node_index in range(len(storage[])):
+        ref node = storage[][node_index]
         if node.kind == _BYTE_VIEW:
             var view = node.byte_view.value()
             var identity = view.storage_identity()
@@ -93,7 +94,8 @@ def encode_structured_clone(value: JsValue) raises -> List[UInt8]:
         writer.integer(UInt64(len(buffer[])), 4)
         for byte in buffer[]:
             writer.integer(UInt64(byte), 1)
-    for node in storage[]:
+    for node_index in range(len(storage[])):
+        ref node = storage[][node_index]
         writer.integer(UInt64(node.kind), 1)
         if node.kind == _BOOL:
             writer.integer(UInt64(node.bool_value), 1)
@@ -122,7 +124,9 @@ def encode_structured_clone(value: JsValue) raises -> List[UInt8]:
             raise Error(
                 "Value has no structured clone transport representation"
             )
-    return writer^.bytes
+    var bytes = List[UInt8]()
+    swap(bytes, writer.bytes)
+    return bytes^
 
 
 def decode_structured_clone(var bytes: List[UInt8]) raises -> JsValue:

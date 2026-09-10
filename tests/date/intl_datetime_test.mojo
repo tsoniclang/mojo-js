@@ -22,6 +22,14 @@ def released_owner() raises -> WeakReferenceIdentity:
     return formatter.weak_identity()
 
 
+def check_numeric[dtype: DType](formatter: IntlDateTimeFormat) raises:
+    var value = Scalar[dtype](0)
+    assert_equal(formatter.format(Optional[Scalar[dtype]](value)), "1/1/1970")
+    assert_equal(
+        formatter.format(Variant[Scalar[dtype], JsDate](value)), "1/1/1970"
+    )
+
+
 def main() raises:
     var options = data('{"timeZone":"UTC"}')
     var formatter = IntlDateTimeFormat(data('"en-US"'), options)
@@ -31,6 +39,19 @@ def main() raises:
     assert_equal(formatter.format(0.0), "1/1/1970")
     assert_equal(formatter.format(date_new(0.0)), "1/1/1970")
     assert_equal(formatter.format(Variant[JsDate, Float64](0.0)), "1/1/1970")
+    check_numeric[DType.float16](formatter)
+    check_numeric[DType.float32](formatter)
+    check_numeric[DType.float64](formatter)
+    check_numeric[DType.int8](formatter)
+    check_numeric[DType.int16](formatter)
+    check_numeric[DType.int32](formatter)
+    check_numeric[DType.int64](formatter)
+    check_numeric[DType.int128](formatter)
+    check_numeric[DType.uint8](formatter)
+    check_numeric[DType.uint16](formatter)
+    check_numeric[DType.uint32](formatter)
+    check_numeric[DType.uint64](formatter)
+    check_numeric[DType.uint128](formatter)
     assert_equal(
         formatter.format(Variant[Float64, JsDate](date_new(0.0))), "1/1/1970"
     )
@@ -84,6 +105,24 @@ def main() raises:
         data('"en"'), data('{"timeStyle":"short","timeZone":"UTC"}')
     )
     assert_true(styles.format(0.0).byte_length() > 0)
+    for locale in ["ja-JP", "en-US", "de-DE"]:
+        for style in ["full", "long", "medium", "short"]:
+            var base = '{"dateStyle":"' + style + '","timeZone":"UTC"'
+            var localized = data('"' + locale + '"')
+            var baseline = IntlDateTimeFormat(localized, data(base + "}"))
+            for clock in [
+                '"hour12":true',
+                '"hour12":false',
+                '"hourCycle":"h11"',
+                '"hourCycle":"h24"',
+            ]:
+                var selected = IntlDateTimeFormat(
+                    localized, data(base + "," + clock + "}")
+                )
+                assert_equal(
+                    selected.format(1710064800123.0),
+                    baseline.format(1710064800123.0),
+                )
     var invalid = False
     try:
         _ = formatter.format(date_new(invalid_time()))
