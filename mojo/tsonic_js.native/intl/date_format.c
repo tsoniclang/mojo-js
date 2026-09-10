@@ -1,5 +1,6 @@
 #include "date_model.h"
 #include <stdlib.h>
+#include <string.h>
 #include <unicode/ucal.h>
 #include <unicode/uloc.h>
 #include <unicode/ustring.h>
