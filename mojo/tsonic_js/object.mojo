@@ -1,7 +1,7 @@
 from std.collections import List
-from std.memory import bitcast
 
 from .array import JsArray
+from .equality import same_value
 from .string import JsString
 from .value import JsValue, js_value_from_string
 
@@ -16,15 +16,7 @@ def object_is(left: JsValue, right: JsValue) -> Bool:
     if left.is_number():
         if not right.is_number():
             return False
-        var left_number = left._number_value()
-        var right_number = right._number_value()
-        if left_number != left_number:
-            return right_number != right_number
-        if left_number == 0 and right_number == 0:
-            return bitcast[.uint64](left_number) == bitcast[.uint64](
-                right_number
-            )
-        return left_number == right_number
+        return same_value(left._number_value(), right._number_value())
     if left.is_string():
         if not right.is_string():
             return False
