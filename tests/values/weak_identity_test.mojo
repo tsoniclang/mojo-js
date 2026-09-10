@@ -49,7 +49,7 @@ def released_projection(destroyed: Location[Int]) raises -> JsValueWeakIdentity:
     var owner = ArcPointer(False)
     var environment = allocate_callable_environment(ProjectionEnvironment(owner, destroyed), ProjectionEnvironment.destroy)
     var project = RaisingCallable[Tuple[String], JsValue](environment, ProjectionEnvironment.invoke)
-    var value = js_value_from_source_object(WeakReferenceIdentity(owner),
+    var value = js_value_from_source_object(WeakReferenceIdentity(owner), "",
         Callable[Tuple[], Int](environment, ProjectionEnvironment.length),
         Callable[Tuple[Int], JsString](environment, ProjectionEnvironment.key),
         Callable[Tuple[Int], JsValue](environment, ProjectionEnvironment.value), project)

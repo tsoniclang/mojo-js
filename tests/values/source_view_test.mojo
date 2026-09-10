@@ -55,7 +55,7 @@ struct SourceAdapter:
         return JsValue(Float64(owner[].count))
 
 
-def source_view(owner: ArcPointer[SourceState], selected_json: Bool = False, array: Bool = False) -> JsValue:
+def source_view(owner: ArcPointer[SourceState], selected_json: Bool = False, array: Bool = False, prototype_identity: String = "") -> JsValue:
     var environment = allocate_callable_environment(SourceAdapter(owner, array), destroy_callable_environment[SourceAdapter])
     var length = Callable[Tuple[], Int](environment, SourceAdapter.length)
     var value = Callable[Tuple[Int], JsValue](environment, SourceAdapter.value)
@@ -66,7 +66,7 @@ def source_view(owner: ArcPointer[SourceState], selected_json: Bool = False, arr
     var projection = Optional[RaisingCallable[Tuple[String], JsValue, Error]]()
     if selected_json:
         projection = RaisingCallable[Tuple[String], JsValue, Error](environment, SourceAdapter.project)
-    return js_value_from_source_object(WeakReferenceIdentity(owner), length, key, value, projection)
+    return js_value_from_source_object(WeakReferenceIdentity(owner), prototype_identity, length, key, value, projection)
 
 
 def weak_temporary(owner: ArcPointer[SourceState]) -> JsValueWeakIdentity:
@@ -81,6 +81,12 @@ def released() -> JsValueWeakIdentity:
 def main() raises:
     var owner = ArcPointer(SourceState(1, 0, 0, False, False))
     var view = source_view(owner, selected_json=True)
+    var class_view = source_view(owner, prototype_identity="proof.Source")
+    assert_true(class_view.same_prototype(source_view(owner, prototype_identity="proof.Source")))
+    assert_false(class_view.same_prototype(source_view(owner, prototype_identity="proof.Other")))
+    assert_false(class_view.same_prototype(view))
+    assert_true(view.same_prototype(js_value_structured_clone(class_view)))
+    owner[].reads = 0
     assert_equal(owner[].reads, 0)
     owner[].count = 2
     assert_equal(inspect_value(view), "{ count: 2 }")

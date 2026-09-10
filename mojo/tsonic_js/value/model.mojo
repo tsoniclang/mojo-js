@@ -45,6 +45,7 @@ struct _NativeValuePresentation:
 @fieldwise_init
 struct _SourceValueView:
     var identity: WeakReferenceIdentity
+    var prototype_identity: String
     var length: Callable[Tuple[], Int]
     var key: Optional[Callable[Tuple[Int], JsString]]
     var has: Optional[Callable[Tuple[Int], Bool]]
@@ -221,6 +222,21 @@ struct JsValue(ImplicitlyCopyable, Writable):
     def has_native_brand(self, brand: String) -> Bool:
         var presentation = self._nodes[][self._index].native_presentation
         return Bool(presentation) and presentation.value()[].brand == brand
+
+    def same_prototype(self, other: Self) -> Bool:
+        if self._kind() != other._kind():
+            return False
+        if self.is_byte_view():
+            var left = self._nodes[][self._index].native_presentation
+            var right = other._nodes[][other._index].native_presentation
+            if Bool(left) != Bool(right):
+                return False
+            return not left or left.value()[].brand == right.value()[].brand
+        var left = self._nodes[][self._index].source_view
+        var right = other._nodes[][other._index].source_view
+        var left_identity = left.value()[].prototype_identity if left else String()
+        var right_identity = right.value()[].prototype_identity if right else String()
+        return left_identity == right_identity
 
     def has_selected_to_json(self) -> Bool:
         if self._nodes[][self._index].native_presentation:

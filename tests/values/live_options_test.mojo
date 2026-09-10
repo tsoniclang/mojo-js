@@ -46,6 +46,7 @@ def options(owner: ArcPointer[OptionOwner]) -> JsValue:
     var context = allocate_callable_environment(OptionView(owner), OptionView.destroy)
     return js_value_from_source_object(
         WeakReferenceIdentity(owner),
+        "",
         Callable[Tuple[], Int](context, OptionView.length),
         Callable[Tuple[Int], JsString](context, OptionView.key),
         Callable[Tuple[Int], JsValue](context, OptionView.value),

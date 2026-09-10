@@ -45,6 +45,7 @@ def getter_value(reads: Location[Int]) -> JsValue:
     var environment = allocate_callable_environment(GetterView(owner), GetterView.destroy)
     return js_value_from_source_object(
         WeakReferenceIdentity(owner),
+        "",
         Callable[Tuple[], Int](environment, GetterView.length),
         Callable[Tuple[Int], JsString](environment, GetterView.key),
         Callable[Tuple[Int], JsValue](environment, GetterView.value),

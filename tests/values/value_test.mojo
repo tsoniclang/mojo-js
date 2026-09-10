@@ -112,6 +112,7 @@ def json_projection(calls: Location[Int]) -> JsValue:
     )
     return js_value_from_source_object(
         WeakReferenceIdentity(owner),
+        "",
         Callable[Tuple[], Int](environment, JsonProjectionEnvironment.length),
         Callable[Tuple[Int], JsString](environment, JsonProjectionEnvironment.key),
         Callable[Tuple[Int], JsValue](environment, JsonProjectionEnvironment.value),

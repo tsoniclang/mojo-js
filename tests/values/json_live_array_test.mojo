@@ -71,6 +71,7 @@ def main() raises:
     var item_environment = allocate_callable_environment(ItemView(owner, item_owner), ItemView.destroy)
     var item = js_value_from_source_object(
         WeakReferenceIdentity(item_owner),
+        "",
         Callable[Tuple[], Int](item_environment, ItemView.object_length),
         Callable[Tuple[Int], JsString](item_environment, ItemView.object_key),
         Callable[Tuple[Int], JsValue](item_environment, ItemView.object_value),
