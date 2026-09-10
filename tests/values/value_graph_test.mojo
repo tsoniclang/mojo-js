@@ -64,5 +64,8 @@ def main() raises:
     try:
         _ = js_value_structured_clone(invalid_builder.value(invalid))
     except error:
-        rejected = String(error).find("invalid reference") >= 0
+        rejected = (
+            String(error)
+            == "JavaScript value graph contains an invalid node reference"
+        )
     assert_true(rejected)

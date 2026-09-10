@@ -1,3 +1,4 @@
+from std.builtin.rebind import downcast, rebind_var
 from std.collections import List
 from std.memory import ArcPointer
 
@@ -19,10 +20,13 @@ struct _CollectionData[T: AnyType](
 
 
 struct CollectionStorage[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
-    var _data: ArcPointer[_CollectionData[Self.T]]
+    comptime Data = downcast[_CollectionData[Self.T], Movable & Deinitable]
+    var _data: ArcPointer[Self.Data]
 
     def __init__(out self) where conforms_to(Self.T, Copyable & Deinitable):
-        self._data = ArcPointer(_CollectionData[Self.T]())
+        self._data = ArcPointer(
+            rebind_var[Self.Data](_CollectionData[Self.T]())
+        )
 
     def __eq__(self, other: Self) -> Bool:
         return self._data is other._data

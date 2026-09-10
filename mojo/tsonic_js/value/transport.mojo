@@ -122,7 +122,7 @@ def encode_structured_clone(value: JsValue) raises -> List[UInt8]:
             raise Error(
                 "Value has no structured clone transport representation"
             )
-    return writer.bytes^
+    return writer^.bytes
 
 
 def decode_structured_clone(var bytes: List[UInt8]) raises -> JsValue:

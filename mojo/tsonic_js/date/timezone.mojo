@@ -38,7 +38,7 @@ def zone_name(milliseconds: Float64) raises -> String:
     )
     if status != 0:
         raise Error("Date timezone name lookup failed: " + String(status))
-    if length < 0 or length > len(output):
+    if length < 0 or Int(length) > len(output):
         raise Error("Date timezone name returned an invalid length")
     output.shrink(Int(length))
     return JsString(code_units=output^).to_native_strict()

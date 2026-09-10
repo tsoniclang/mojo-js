@@ -87,6 +87,7 @@ def released_projection(destroyed: Location[Int]) raises -> JsValueWeakIdentity:
     var identity = JsValueWeakIdentity(value)
     assert_true(identity.matches(value))
     assert_true(identity.is_alive())
+    assert_equal(value.object_length(), 0)
     return identity
 
 

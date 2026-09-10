@@ -136,24 +136,28 @@ struct JsMap[K: AnyType, V: AnyType](Equatable, ImplicitlyCopyable, Sized):
 
 
 def _map_key[
-    K: Copyable & Deinitable, V: Copyable & Deinitable
-](entry: _JsMapEntry[K, V]) -> K:
+    K: AnyType, V: AnyType
+](entry: _JsMapEntry[K, V]) -> K where conforms_to(K, Copyable & Deinitable):
     return entry.key.copy()
 
 
 def _map_value[
-    K: Copyable & Deinitable, V: Copyable & Deinitable
-](entry: _JsMapEntry[K, V]) -> V:
+    K: AnyType, V: AnyType
+](entry: _JsMapEntry[K, V]) -> V where conforms_to(V, Copyable & Deinitable):
     return entry.value.copy()
 
 
 def _map_entry[
-    K: Copyable & Deinitable, V: Copyable & Deinitable
-](entry: _JsMapEntry[K, V]) -> Tuple[K, V]:
+    K: AnyType, V: AnyType
+](entry: _JsMapEntry[K, V]) -> Tuple[K, V] where conforms_to(
+    K, Copyable & Deinitable
+) and conforms_to(V, Copyable & Deinitable):
     return (entry.key.copy(), entry.value.copy())
 
 
 def _map_matches[
-    K: Copyable & Deinitable & Equatable, V: Copyable & Deinitable
-](entry: _JsMapEntry[K, V], key: K) -> Bool:
+    K: AnyType, V: AnyType
+](entry: _JsMapEntry[K, V], key: K) -> Bool where conforms_to(
+    K, Copyable & Deinitable & Equatable
+):
     return same_value_zero(entry.key, key)

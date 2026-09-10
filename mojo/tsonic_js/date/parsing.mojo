@@ -165,7 +165,7 @@ def parse_display_date(value: String) -> Float64:
     ):
         return invalid_time()
     var offset = 0
-    var timezone = fields[5]
+    var timezone = String(fields[5])
     if utc:
         if timezone != "GMT":
             return invalid_time()

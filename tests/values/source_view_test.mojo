@@ -9,6 +9,7 @@ from tsonic_runtime import (
     allocate_callable_environment,
     destroy_callable_environment,
 )
+from tsonic_js.value import encode_structured_clone, decode_structured_clone
 from tsonic_js import (
     JsString,
     JsValue,
@@ -17,8 +18,6 @@ from tsonic_js import (
     js_value_from_source_object,
     js_value_structured_clone,
     json_stringify,
-    encode_structured_clone,
-    decode_structured_clone,
     object_keys,
 )
 from tsonic_js.inspection import inspect_value
