@@ -81,7 +81,9 @@ def _plain_key(value: JsString) -> Bool:
 
 
 def inspect_value(
-    value: JsValue, depth: Int = 2, array_limit: Int = 100,
+    value: JsValue,
+    depth: Int = 2,
+    array_limit: Int = 100,
     show_hidden: Bool = False,
 ) -> String:
     var active = List[JsValue]()
@@ -89,8 +91,11 @@ def inspect_value(
 
 
 def _inspect(
-    value: JsValue, depth: Int, array_limit: Int, show_hidden: Bool,
-    mut active: List[JsValue]
+    value: JsValue,
+    depth: Int,
+    array_limit: Int,
+    show_hidden: Bool,
+    mut active: List[JsValue],
 ) -> String:
     if value.is_undefined():
         return "undefined"
@@ -161,7 +166,11 @@ def _inspect(
             ) else quote_inspected_string(key)
             result += ": "
         result += _inspect(
-            value._aggregate_value(index), depth - 1, array_limit, show_hidden, active
+            value._aggregate_value(index),
+            depth - 1,
+            array_limit,
+            show_hidden,
+            active,
         )
         index += 1
     if limit != count:
