@@ -1,5 +1,5 @@
 from std import math
-from std.collections import List
+from std.collections import Array, List
 from std.memory import bitcast
 from tsonic_runtime.number_string import source_number_code_units
 
@@ -507,9 +507,8 @@ def number_parse_int(value: JsString, radix: Float64 = 0) -> Float64:
 def _number_prefix(value: String, integer_only: Bool) -> String:
     var text = value
     if not integer_only:
-        comptime prefixes = ("Infinity", "+Infinity", "-Infinity")
-        comptime for prefix_index in range(len(prefixes)):
-            var prefix = String(prefixes[prefix_index])
+        var prefixes: Array[String, 3] = ["Infinity", "+Infinity", "-Infinity"]
+        for prefix in prefixes:
             if text.startswith(prefix):
                 return String(prefix)
     var end = 0
