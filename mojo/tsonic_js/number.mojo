@@ -507,7 +507,9 @@ def number_parse_int(value: JsString, radix: Float64 = 0) -> Float64:
 def _number_prefix(value: String, integer_only: Bool) -> String:
     var text = value
     if not integer_only:
-        for prefix in ("Infinity", "+Infinity", "-Infinity"):
+        comptime prefixes = ("Infinity", "+Infinity", "-Infinity")
+        comptime for prefix_index in range(len(prefixes)):
+            var prefix = String(prefixes[prefix_index])
             if text.startswith(prefix):
                 return String(prefix)
     var end = 0
