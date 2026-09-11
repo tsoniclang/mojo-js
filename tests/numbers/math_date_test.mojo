@@ -13,6 +13,13 @@ def main() raises:
     assert_equal(math_ceil(1.1), 2)
     assert_equal(math_trunc(-1.9), -1)
     assert_equal(math_round(1.5), 2)
+    assert_equal(math_round(-1.5), -1)
+    assert_equal(math_round(0.49999999999999994), 0)
+    assert_equal(math_round(4503599627370497.0), 4503599627370497.0)
+    assert_equal(math_round(-4503599627370497.0), -4503599627370497.0)
+    assert_equal(
+        1.0 / math_round(-0.5), Float64(FloatLiteral.negative_infinity)
+    )
     assert_equal(math_min([3, 1, 2]), 1)
     assert_equal(math_max([3, 1, 2]), 3)
     assert_equal(math_pow(2, 3), 8)
