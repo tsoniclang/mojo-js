@@ -1,4 +1,5 @@
 from .array import JsArray
+from .array_location import array_location
 from .array_callbacks_predicates import *
 from .array_callbacks_reduce import *
 from .array_callbacks_sort import *
