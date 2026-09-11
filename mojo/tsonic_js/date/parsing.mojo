@@ -25,13 +25,11 @@ def parse_iso(value: String) raises -> Float64:
         return invalid_time()
     year *= sign
     position += year_width
-    var month = 1
-    var day = 1
     if position == length:
         return time_clip(from_components(Float64(year), 0, 1, 0, 0, 0, 0))
     if byte_at(value, position) != 45:
         return invalid_time()
-    month = digits(value, position + 1, 2)
+    var month = digits(value, position + 1, 2)
     position += 3
     if month < 1 or month > 12:
         return invalid_time()
@@ -41,7 +39,7 @@ def parse_iso(value: String) raises -> Float64:
         )
     if byte_at(value, position) != 45:
         return invalid_time()
-    day = digits(value, position + 1, 2)
+    var day = digits(value, position + 1, 2)
     position += 3
     if day < 1 or day > 31:
         return invalid_time()

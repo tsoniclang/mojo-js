@@ -49,7 +49,7 @@ struct IntlResult(Movable):
         if length != 0 and not source:
             raise Error("Internationalization result has no code-unit storage")
         for index in range(length):
-            result.append(source.value()[index])
+            result.append(source.value()[unsafe_offset=index])
         return result^
 
     def order(self) raises -> Float64:

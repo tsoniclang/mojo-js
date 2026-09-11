@@ -12,6 +12,8 @@ struct _NumberResolvedOptions:
     var numbering_system: String
     var options: NumberOptions
     var grouping: Variant[Bool, String]
+    var unit: Optional[String]
+    var unit_display: Optional[String]
 
 
 def _text(owner: IntlResult, field: Int) raises -> String:
@@ -33,7 +35,7 @@ struct IntlResolvedNumberFormatOptions(Equatable, ImplicitlyCopyable):
             grouping = Variant[Bool, String](options.grouping.value())
         self._state = ArcPointer(
             _NumberResolvedOptions(
-                _text(owner, 0), _text(owner, 1), options, grouping^
+                _text(owner, 0), _text(owner, 1), options, grouping^, None, None
             )
         )
 
@@ -84,6 +86,18 @@ struct IntlResolvedNumberFormatOptions(Equatable, ImplicitlyCopyable):
 
     def set_use_grouping(self, var value: Variant[Bool, String]):
         self._state[].grouping = value^
+
+    def get_unit(self) -> Optional[String]:
+        return self._state[].unit
+
+    def set_unit(self, value: Optional[String]):
+        self._state[].unit = value
+
+    def get_unit_display(self) -> Optional[String]:
+        return self._state[].unit_display
+
+    def set_unit_display(self, value: Optional[String]):
+        self._state[].unit_display = value
 
     def get_minimum_integer_digits(self) -> Float64:
         return self._state[].options.precision.minimum_integer

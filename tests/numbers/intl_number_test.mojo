@@ -102,6 +102,13 @@ def main() raises:
     assert_equal(resolved.get_maximum_fraction_digits().value(), 3.0)
     assert_equal(resolved.get_use_grouping()[String], "auto")
     var saved = resolved
+    assert_false(Bool(resolved.get_unit()))
+    assert_false(Bool(resolved.get_unit_display()))
+    saved.set_unit("meter")
+    saved.set_unit_display("long")
+    assert_equal(resolved.get_unit().value(), "meter")
+    assert_equal(resolved.get_unit_display().value(), "long")
+    assert_false(Bool(formatter.resolved_options().get_unit()))
     saved.set_minimum_fraction_digits(None)
     saved.set_use_grouping(Variant[Bool, String](True))
     assert_false(Bool(resolved.get_minimum_fraction_digits()))

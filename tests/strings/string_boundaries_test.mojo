@@ -8,6 +8,7 @@ from tsonic_js import (
     native_string_get_index,
     native_string_pad_end,
     native_string_pad_start,
+    native_string_repeat,
     native_string_slice,
     native_string_substr,
     native_string_substring,
@@ -89,6 +90,15 @@ def main() raises:
     with assert_raises(contains="unpaired UTF-16"):
         _ = native_string_from_code_point([0xD800])
     assert_equal(JsString().repeat(1e100).to_native_strict(), "")
+    assert_equal(native_string_repeat("😀x", 2.9), "😀x😀x")
+    for count in [Float64(0), -0.9, nan]:
+        assert_equal(native_string_repeat("😀x", count), "")
+    assert_equal(native_string_repeat("", 1e100), "")
+    for count in [Float64(-1), positive, negative]:
+        with assert_raises(contains="repeat count"):
+            _ = native_string_repeat("", count)
+        with assert_raises(contains="repeat count"):
+            _ = native_string_repeat("😀x", count)
     assert_equal(JsString("x").repeat(-0.9).to_native_strict(), "")
     assert_equal(
         source.pad_start(positive, JsString()).to_native_strict(), "aba😀"
