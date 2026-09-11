@@ -46,6 +46,18 @@ def json_stringify(value: JsValue) raises -> Optional[JsString]:
     return Optional[JsString](writer.finish())
 
 
+def json_stringify_for_inspection(value: JsValue) raises -> JsString:
+    var writer = _JsonWriter()
+    try:
+        if not writer.write_property(JsString(), value, 0):
+            return JsString("undefined")
+        return writer.finish()
+    except error:
+        if writer.circular:
+            return JsString("[Circular]")
+        raise error
+
+
 def json_stringify_with_space_number(
     value: JsValue, space: Float64
 ) raises -> Optional[JsString]:

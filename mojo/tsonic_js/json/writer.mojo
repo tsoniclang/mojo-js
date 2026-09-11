@@ -12,6 +12,7 @@ from .characters import _hex_unit
 struct _JsonWriter:
     var _units: ArcPointer[List[UInt16]]
     var _active: List[JsValue]
+    var circular: Bool
     var _indent: JsString
     var _property_list: Optional[List[JsString]]
     var _replacer: Optional[
@@ -21,6 +22,7 @@ struct _JsonWriter:
     def __init__(out self):
         self._units = ArcPointer(List[UInt16]())
         self._active = List[JsValue]()
+        self.circular = False
         self._indent = JsString()
         self._replacer = None
         self._property_list = None
@@ -28,6 +30,7 @@ struct _JsonWriter:
     def __init__(out self, indent: JsString):
         self._units = ArcPointer(List[UInt16]())
         self._active = List[JsValue]()
+        self.circular = False
         self._indent = indent
         self._replacer = None
         self._property_list = None
@@ -38,6 +41,7 @@ struct _JsonWriter:
     ):
         self._units = ArcPointer(List[UInt16]())
         self._active = List[JsValue]()
+        self.circular = False
         self._indent = JsString()
         self._replacer = Optional[
             RaisingCallable[Tuple[String, JsValue], JsValue, Error]
@@ -51,6 +55,7 @@ struct _JsonWriter:
     ):
         self._units = ArcPointer(List[UInt16]())
         self._active = List[JsValue]()
+        self.circular = False
         self._indent = indent
         self._replacer = Optional[
             RaisingCallable[Tuple[String, JsValue], JsValue, Error]
@@ -166,6 +171,7 @@ struct _JsonWriter:
     def _enter(mut self, value: JsValue) raises:
         for active in self._active:
             if active.same_identity(value):
+                self.circular = True
                 raise Error("cyclic JavaScript value cannot be serialized")
         self._active.append(value)
 

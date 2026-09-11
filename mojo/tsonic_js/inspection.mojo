@@ -81,14 +81,16 @@ def _plain_key(value: JsString) -> Bool:
 
 
 def inspect_value(
-    value: JsValue, depth: Int = 2, array_limit: Int = 100
+    value: JsValue, depth: Int = 2, array_limit: Int = 100,
+    show_hidden: Bool = False,
 ) -> String:
     var active = List[JsValue]()
-    return _inspect(value, depth, max(0, array_limit), active)
+    return _inspect(value, depth, max(0, array_limit), show_hidden, active)
 
 
 def _inspect(
-    value: JsValue, depth: Int, array_limit: Int, mut active: List[JsValue]
+    value: JsValue, depth: Int, array_limit: Int, show_hidden: Bool,
+    mut active: List[JsValue]
 ) -> String:
     if value.is_undefined():
         return "undefined"
@@ -131,6 +133,8 @@ def _inspect(
         return "[Array]" if array else "[Object]"
     var count = value._aggregate_length()
     if count == 0:
+        if array and show_hidden:
+            return "[ [length]: 0 ]"
         return "[]" if array else "{}"
     active.append(value)
     var result = String("[ " if array else "{ ")
@@ -157,7 +161,7 @@ def _inspect(
             ) else quote_inspected_string(key)
             result += ": "
         result += _inspect(
-            value._aggregate_value(index), depth - 1, array_limit, active
+            value._aggregate_value(index), depth - 1, array_limit, show_hidden, active
         )
         index += 1
     if limit != count:
@@ -170,4 +174,6 @@ def _inspect(
             + (" more item" if remaining == 1 else " more items")
         )
     _ = active.pop()
+    if array and show_hidden:
+        result += ", [length]: " + String(count)
     return result + (" ]" if array else " }")
