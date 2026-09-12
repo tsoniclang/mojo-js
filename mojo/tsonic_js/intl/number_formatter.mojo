@@ -1,4 +1,4 @@
-from std.ffi import external_call
+from std.ffi import c_int, external_call
 from std.memory import ArcPointer
 from tsonic_runtime import WeakReferenceIdentity
 from ..array import JsArray
@@ -36,6 +36,7 @@ struct IntlNumberFormat(Equatable, ImplicitlyCopyable):
                 locale.as_c_string_slice().ptr(),
                 settings.numbering.as_c_string_slice().ptr(),
                 settings.skeleton.as_c_string_slice().ptr(),
+                c_int(settings.style == "unit"),
             )
         )
         native.check()

@@ -35,7 +35,12 @@ struct IntlResolvedNumberFormatOptions(Equatable, ImplicitlyCopyable):
             grouping = Variant[Bool, String](options.grouping.value())
         self._state = ArcPointer(
             _NumberResolvedOptions(
-                _text(owner, 0), _text(owner, 1), options, grouping^, None, None
+                _text(owner, 0),
+                _text(owner, 1),
+                options,
+                grouping^,
+                options.unit,
+                options.unit_display,
             )
         )
 

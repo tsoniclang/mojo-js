@@ -2,6 +2,7 @@ from std.ffi import c_int, external_call
 from ..value import JsValue, js_truthy
 from .options import option_value, option_string, unicode_type_option
 from .number_precision import NumberPrecision, number_choice, number_precision
+from .number_unit import number_unit, number_unit_skeleton
 
 
 def _currency(options: JsValue) raises -> String:
@@ -65,6 +66,8 @@ struct NumberOptions(ImplicitlyCopyable):
     var currency: Optional[String]
     var currency_display: Optional[String]
     var currency_sign: Optional[String]
+    var unit: Optional[String]
+    var unit_display: Optional[String]
     var notation: String
     var compact_display: Optional[String]
     var grouping: Optional[String]
@@ -77,7 +80,7 @@ struct NumberOptions(ImplicitlyCopyable):
         )
         self.numbering = unicode_type_option(options, "numberingSystem")
         var style = number_choice(
-            options, "style", "decimal", "decimal|percent|currency"
+            options, "style", "decimal", "decimal|percent|currency|unit"
         )
         var currency = _currency(options)
         var currency_display = number_choice(
@@ -88,6 +91,10 @@ struct NumberOptions(ImplicitlyCopyable):
         )
         var currency_sign = number_choice(
             options, "currencySign", "standard", "standard|accounting"
+        )
+        var unit = number_unit(options, style == "unit")
+        var unit_display = number_choice(
+            options, "unitDisplay", "short", "short|long|narrow"
         )
         var notation = number_choice(
             options,
@@ -100,6 +107,8 @@ struct NumberOptions(ImplicitlyCopyable):
         self.currency = None
         self.currency_display = None
         self.currency_sign = None
+        self.unit = None
+        self.unit_display = None
         var minimum_fraction = 0
         var maximum_fraction = 3
         self.skeleton = String()
@@ -132,6 +141,10 @@ struct NumberOptions(ImplicitlyCopyable):
         elif style == "percent":
             maximum_fraction = 0
             self.skeleton = String("percent scale/100 ")
+        elif style == "unit":
+            self.unit = unit
+            self.unit_display = unit_display
+            self.skeleton = number_unit_skeleton(unit.value(), unit_display)
         self.precision = number_precision(
             options, notation == "compact", minimum_fraction, maximum_fraction
         )

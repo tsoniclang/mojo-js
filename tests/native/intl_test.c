@@ -226,7 +226,7 @@ static void number_contracts(void) {
 }
 
 static void number_instance_contracts(void) {
-    TsonicIntlResult *owner = tsonic_js_intl_number_formatter_open("en_US", "", ".###");
+    TsonicIntlResult *owner = tsonic_js_intl_number_formatter_open("en_US", "", ".###", 0);
     assert(owner != NULL && !tsonic_js_intl_failed(owner));
     assert(strcmp(tsonic_js_intl_number_formatter_text(owner, 0), "en-US") == 0);
     assert(strcmp(tsonic_js_intl_number_formatter_text(owner, 1), "latn") == 0);
@@ -258,7 +258,7 @@ static void number_instance_contracts(void) {
     assert(tsonic_js_intl_failed(invalid));
     tsonic_js_intl_free(invalid);
     tsonic_js_intl_free(owner);
-    owner = tsonic_js_intl_number_formatter_open("en@numbers=arab", "latn", ".###");
+    owner = tsonic_js_intl_number_formatter_open("en@numbers=arab", "latn", ".###", 0);
     assert(owner != NULL && !tsonic_js_intl_failed(owner));
     assert(strcmp(tsonic_js_intl_number_formatter_text(owner, 0), "en") == 0);
     assert(strcmp(tsonic_js_intl_number_formatter_text(owner, 1), "latn") == 0);

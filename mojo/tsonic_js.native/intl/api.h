@@ -15,7 +15,7 @@ int tsonic_js_intl_currency_digits(const char *currency);
 TsonicIntlResult *tsonic_js_intl_number(double value, const char *decimal,
     const char *locale, const char *numbering, const char *skeleton);
 TsonicIntlResult *tsonic_js_intl_number_formatter_open(const char *locale,
-    const char *numbering, const char *skeleton);
+    const char *numbering, const char *skeleton, int unit_style);
 TsonicIntlResult *tsonic_js_intl_number_formatter_format(const TsonicIntlResult *owner,
     double value, const char *decimal, int parts);
 const char *tsonic_js_intl_number_formatter_text(const TsonicIntlResult *owner, int field);

@@ -108,6 +108,13 @@ const numberOptions = [
   { notation: "compact" }, { notation: "compact", compactDisplay: "long" },
   { numberingSystem: "arab" }, { numberingSystem: "ARAB" }, { numberingSystem: "mathsans" },
   { numberingSystem: "bogus" },
+  { style: "unit", unit: "meter" },
+  { style: "unit", unit: "liter", unitDisplay: "long" },
+  { style: "unit", unit: "kilometer-per-hour", unitDisplay: "narrow" },
+  { style: "unit", unit: "percent" },
+  { style: "unit", unit: "meter", notation: "compact" },
+  { style: "unit", unit: "meter", signDisplay: "always", useGrouping: false, maximumFractionDigits: 1 },
+  { unit: "meter", unitDisplay: "long" },
 ];
 for (const signDisplay of ["auto", "always", "never", "exceptZero", "negative"]) numberOptions.push({ signDisplay });
 for (const roundingMode of ["ceil", "floor", "expand", "trunc", "halfCeil", "halfFloor", "halfExpand", "halfTrunc", "halfEven"]) {
@@ -134,6 +141,26 @@ for (const selected of [null, { style: "currency" }, { currency: "US" }, { curre
 }
 for (const locale of [null, "invalid_tag", ["en-US", "invalid_tag"]]) {
   cases.push({ operation: "number", value: 42, locales: locale });
+}
+for (const unit of Intl.supportedValuesOf("unit")) {
+  for (const unitDisplay of ["short", "long", "narrow"]) {
+    for (const operation of ["number", "numberFormat", "numberParts", "numberResolved"]) {
+      cases.push({ operation, value: 2.5, locales: "en-US", options: { style: "unit", unit, unitDisplay } });
+    }
+  }
+  cases.push({ operation: "numberParts", value: 1, locales: "de-DE", options: { style: "unit", unit: `${unit}-per-second`, unitDisplay: "long" } });
+}
+for (const selected of [
+  { style: "unit" }, { style: "unit", unit: null }, { style: "unit", unit: "" },
+  { style: "unit", unit: "Meter" }, { style: "unit", unit: "meter-per-" },
+  { style: "unit", unit: "-per-second" }, { style: "unit", unit: "meter-per-second-per-hour" },
+  { style: "unit", unit: "meter group-off" }, { style: "unit", unit: "meter\0" },
+  { style: "unit", unit: "meter|mile" }, { style: "unit", unit: "length-meter" },
+  { style: "unit", unit: "meter", unitDisplay: "wide" }, { unit: "bogus" }, { unitDisplay: "" },
+]) {
+  for (const operation of ["number", "numberFormat", "numberResolved"]) {
+    cases.push({ operation, value: 3, locales: "en-US", options: selected });
+  }
 }
 for (const locale of ["en-US", "de-DE", "ar-EG", "ja-JP", "en-US-u-nu-arab"]) {
   for (const selected of numberOptions) {

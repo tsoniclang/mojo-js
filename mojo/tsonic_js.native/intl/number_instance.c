@@ -21,9 +21,9 @@ static void close_number(void *resource) {
 }
 
 TsonicIntlResult *tsonic_js_intl_number_formatter_open(const char *locale,
-    const char *numbering, const char *skeleton) {
+    const char *numbering, const char *skeleton, int unit_style) {
     if (!bounded_ascii(locale, TSONIC_INTL_MAX_LOCALE) || !bounded_ascii(numbering, 128) ||
-        !bounded_ascii(skeleton, 1024)) return tsonic_intl_failure("Invalid localized number contract");
+        !bounded_ascii(skeleton, 1024) || (unit_style != 0 && unit_style != 1)) return tsonic_intl_failure("Invalid localized number contract");
     UErrorCode status = U_ZERO_ERROR;
     char selected[TSONIC_INTL_MAX_LOCALE + 1], resolved[TSONIC_INTL_MAX_LOCALE + 1];
     if (!tsonic_intl_match_locale(locale, unum_countAvailable(), unum_getAvailable,
@@ -56,6 +56,7 @@ TsonicIntlResult *tsonic_js_intl_number_formatter_open(const char *locale,
         return NULL;
     }
     owner->format = formatter;
+    owner->unit_style = unit_style;
     result->resource = owner;
     result->free_resource = close_number;
     const char *name = unumsys_getName(system);
@@ -75,7 +76,8 @@ TsonicIntlResult *tsonic_js_intl_number_formatter_format(const TsonicIntlResult 
     double value, const char *decimal, int parts) {
     if (result == NULL || result->failed || result->resource == NULL || result->free_resource != close_number ||
         (parts != 0 && parts != 1)) return tsonic_intl_failure("Invalid retained number formatting operation");
-    return tsonic_intl_format_number(((TsonicNumberFormat *)result->resource)->format, value, decimal, parts);
+    const TsonicNumberFormat *owner = result->resource;
+    return tsonic_intl_format_number(owner->format, value, decimal, parts, owner->unit_style);
 }
 
 const char *tsonic_js_intl_number_formatter_text(const TsonicIntlResult *result, int field) {
@@ -90,7 +92,7 @@ const char *tsonic_js_intl_number_formatter_text(const TsonicIntlResult *result,
 
 TsonicIntlResult *tsonic_js_intl_number(double value, const char *decimal,
     const char *locale, const char *numbering, const char *skeleton) {
-    TsonicIntlResult *owner = tsonic_js_intl_number_formatter_open(locale, numbering, skeleton);
+    TsonicIntlResult *owner = tsonic_js_intl_number_formatter_open(locale, numbering, skeleton, 0);
     if (owner == NULL || owner->failed) return owner;
     TsonicIntlResult *result = tsonic_js_intl_number_formatter_format(owner, value, decimal, 0);
     tsonic_js_intl_free(owner);
