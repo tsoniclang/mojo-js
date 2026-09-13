@@ -24,9 +24,9 @@ def _present[
         ](
             value,
             decimal,
-            locale.as_c_string_slice().unsafe_ptr(),
-            settings.numbering.as_c_string_slice().unsafe_ptr(),
-            settings.skeleton.as_c_string_slice().unsafe_ptr(),
+            locale.as_c_string_slice().ptr(),
+            settings.numbering.as_c_string_slice().ptr(),
+            settings.skeleton.as_c_string_slice().ptr(),
         )
     )
     return JsString(code_units=result.units()).to_native_strict()
@@ -42,7 +42,7 @@ def number_to_locale_string[
     comptime if dtype.is_integral():
         var decimal = String(value)
         return _present(
-            0.0, decimal.as_c_string_slice().unsafe_ptr(), locales, options
+            0.0, decimal.as_c_string_slice().ptr(), locales, options
         )
     else:
         return _present(
@@ -57,15 +57,11 @@ def number_to_locale_string(
     value: Int, locales: JsValue = JsValue(), options: JsValue = JsValue()
 ) raises -> String:
     var decimal = String(value)
-    return _present(
-        0.0, decimal.as_c_string_slice().unsafe_ptr(), locales, options
-    )
+    return _present(0.0, decimal.as_c_string_slice().ptr(), locales, options)
 
 
 def number_to_locale_string(
     value: UInt, locales: JsValue = JsValue(), options: JsValue = JsValue()
 ) raises -> String:
     var decimal = String(value)
-    return _present(
-        0.0, decimal.as_c_string_slice().unsafe_ptr(), locales, options
-    )
+    return _present(0.0, decimal.as_c_string_slice().ptr(), locales, options)

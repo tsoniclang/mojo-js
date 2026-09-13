@@ -31,16 +31,16 @@ struct IntlDateTimeFormat(Equatable, ImplicitlyCopyable):
                 "tsonic_js_intl_datetime_open",
                 OptionalPointer[NoneType, MutUntrackedOrigin],
             ](
-                locale.as_c_string_slice().unsafe_ptr(),
-                settings.zone.as_c_string_slice().unsafe_ptr(),
+                locale.as_c_string_slice().ptr(),
+                settings.zone.as_c_string_slice().ptr(),
                 c_int(settings.has_zone),
-                settings.calendar.as_c_string_slice().unsafe_ptr(),
-                settings.numbering.as_c_string_slice().unsafe_ptr(),
-                settings.skeleton.as_c_string_slice().unsafe_ptr(),
+                settings.calendar.as_c_string_slice().ptr(),
+                settings.numbering.as_c_string_slice().ptr(),
+                settings.skeleton.as_c_string_slice().ptr(),
                 settings.date_style,
                 settings.time_style,
                 settings.hour12,
-                settings.hour_cycle.as_c_string_slice().unsafe_ptr(),
+                settings.hour_cycle.as_c_string_slice().ptr(),
                 c_int(settings.basic),
             )
         )

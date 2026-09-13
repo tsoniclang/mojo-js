@@ -463,7 +463,7 @@ struct JsValue(ImplicitlyCopyable, Writable):
         if view:
             return view.value()[].identity.address
         var identity = self._nodes[][self._index].identity
-        return UInt(Int(identity.value().unsafe_ptr()))
+        return UInt(Int(identity.value().ptr()))
 
     def _weak_identity(self) -> WeakReferenceIdentity:
         var view = self._nodes[][self._index].source_view

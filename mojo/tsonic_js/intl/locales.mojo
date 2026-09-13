@@ -10,7 +10,7 @@ def canonical_locale(value: String) raises -> String:
         external_call[
             "tsonic_js_intl_locale",
             OptionalPointer[NoneType, MutUntrackedOrigin],
-        ](text.as_c_string_slice().unsafe_ptr(), c_size_t(len(text.as_bytes())))
+        ](text.as_c_string_slice().ptr(), c_size_t(len(text.as_bytes())))
     )
     return result.text()
 
@@ -58,7 +58,7 @@ def collation_locale(requested: List[String]) raises -> String:
     for locale in requested:
         var candidate = String(locale)
         if external_call["tsonic_js_intl_collation_available", c_int](
-            candidate.as_c_string_slice().unsafe_ptr()
+            candidate.as_c_string_slice().ptr()
         ):
             return candidate^
     return default_locale()
@@ -68,7 +68,7 @@ def date_locale(requested: List[String]) raises -> String:
     for locale in requested:
         var candidate = String(locale)
         if external_call["tsonic_js_intl_date_available", c_int](
-            candidate.as_c_string_slice().unsafe_ptr()
+            candidate.as_c_string_slice().ptr()
         ):
             return candidate^
     return default_locale()
@@ -78,7 +78,7 @@ def number_locale(requested: List[String]) raises -> String:
     for locale in requested:
         var candidate = String(locale)
         if external_call["tsonic_js_intl_number_available", c_int](
-            candidate.as_c_string_slice().unsafe_ptr()
+            candidate.as_c_string_slice().ptr()
         ):
             return candidate^
     return default_locale()

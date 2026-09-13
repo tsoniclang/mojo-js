@@ -31,7 +31,7 @@ struct JsByteView(ImplicitlyCopyable):
         self.storage[][self.offset + index] = value
 
     def storage_identity(self) -> UInt:
-        return UInt(Int(self.storage.unsafe_ptr()))
+        return UInt(Int(self.storage.ptr()))
 
     def weak_identity(self) -> WeakReferenceIdentity:
         return WeakReferenceIdentity(self.identity)

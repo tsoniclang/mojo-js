@@ -35,7 +35,7 @@ def decode_uri_component(value: JsString) raises -> JsString:
 
 def encode_uri_component_native(source: String) raises -> String:
     comptime digits = "0123456789ABCDEF"
-    var result = String(capacity=source.byte_length() * 3)
+    var result = String(capacity_bytes=source.byte_length() * 3)
     for index in range(source.byte_length()):
         var byte = UInt8(source.as_bytes()[index])
         if _is_component_byte(byte):

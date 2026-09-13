@@ -1,11 +1,6 @@
 from std.collections import List
 from std.memory import ArcPointer
-from tsonic_runtime import (
-    BigInt,
-    Callable,
-    RaisingCallable,
-    WeakReferenceIdentity,
-)
+from tsonic_runtime import BigInt, Callable, RaisingCallable, WeakReferenceIdentity
 from ..string import JsString
 from ..symbol import JsSymbol
 from .model import (

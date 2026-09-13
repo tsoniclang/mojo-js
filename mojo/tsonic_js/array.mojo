@@ -14,8 +14,7 @@ from .array_values import (
 
 
 struct JsArray[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
-    comptime Slot = downcast[Optional[Self.T], Movable & Deinitable]
-    comptime Storage = downcast[List[Self.Slot], Movable & Deinitable]
+    comptime Storage = downcast[List[Optional[Self.T]], Movable & Deinitable]
     var _elements: ArcPointer[Self.Storage]
 
     def __init__(out self) where conforms_to(Self.T, Copyable & Deinitable):

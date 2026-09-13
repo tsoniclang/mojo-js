@@ -14,7 +14,7 @@ def convert_case_units(
         ](
             source.unsafe_ptr(),
             c_size_t(len(source)),
-            selected.as_c_string_slice().unsafe_ptr(),
+            selected.as_c_string_slice().ptr(),
             c_int(upper),
         )
     )

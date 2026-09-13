@@ -82,9 +82,7 @@ def empty_and_exhausted_iterators() raises:
 def signed_zero_and_nan() raises:
     var values = JsSet[Float64]()
     _ = values.add(-0.0)
-    assert_equal(
-        bitcast[DType.uint64](values.values().next_optional().value()), 0
-    )
+    assert_equal(bitcast[.uint64](values.values().next_optional().value()), 0)
     _ = values.add(Float64("nan"))
     _ = values.add(Float64("nan"))
     assert_equal(values.js_size(), 2)
