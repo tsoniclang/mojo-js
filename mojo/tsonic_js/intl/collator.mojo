@@ -23,8 +23,8 @@ struct IntlCollator(Equatable, ImplicitlyCopyable):
                 "tsonic_js_intl_collator_open",
                 OptionalPointer[NoneType, MutUntrackedOrigin],
             ](
-                locale.as_c_string_slice().ptr(),
-                settings.collation.as_c_string_slice().ptr(),
+                locale.as_c_string_slice().unsafe_ptr(),
+                settings.collation.as_c_string_slice().unsafe_ptr(),
                 c_int(settings.search),
                 settings.numeric,
                 settings.case_first,

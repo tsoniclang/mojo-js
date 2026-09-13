@@ -105,7 +105,7 @@ def _inspect(
         return "true" if value._bool_value() else "false"
     if value.is_number():
         var number = value._number_value()
-        return "-0" if number == 0 and bitcast[.uint64](
+        return "-0" if number == 0 and bitcast[DType.uint64](
             number
         ) != 0 else source_number_to_string(number)
     if value.is_bigint():

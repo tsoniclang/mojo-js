@@ -25,7 +25,9 @@ def number_result[
 ](owner: IntlResult, value: Scalar[dtype], parts: Bool) raises -> IntlResult:
     comptime if dtype.is_integral():
         var decimal = String(value)
-        return _result(owner, 0.0, decimal.as_c_string_slice().ptr(), parts)
+        return _result(
+            owner, 0.0, decimal.as_c_string_slice().unsafe_ptr(), parts
+        )
     else:
         return _result(
             owner,
@@ -39,11 +41,11 @@ def number_result(
     owner: IntlResult, value: Int, parts: Bool
 ) raises -> IntlResult:
     var decimal = String(value)
-    return _result(owner, 0.0, decimal.as_c_string_slice().ptr(), parts)
+    return _result(owner, 0.0, decimal.as_c_string_slice().unsafe_ptr(), parts)
 
 
 def number_result(
     owner: IntlResult, value: UInt, parts: Bool
 ) raises -> IntlResult:
     var decimal = String(value)
-    return _result(owner, 0.0, decimal.as_c_string_slice().ptr(), parts)
+    return _result(owner, 0.0, decimal.as_c_string_slice().unsafe_ptr(), parts)

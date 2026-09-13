@@ -42,13 +42,13 @@ struct CollectionStorage[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
 
     def project_at[
         U: Copyable & Deinitable,
-        project: def(imm Self.T) thin -> U,
+        project: def(Self.T) thin -> U,
     ](self, index: Int) -> U where conforms_to(Self.T, Copyable & Deinitable):
         return project(self._data[].slots[index].value())
 
     def find[
         Key: Copyable & Deinitable,
-        matches: def(imm Self.T, imm Key) thin -> Bool,
+        matches: def(Self.T, Key) thin -> Bool,
     ](self, key: Key) -> Int where conforms_to(Self.T, Copyable & Deinitable):
         for index in range(self.slot_count()):
             if self.present(index) and matches(
@@ -98,7 +98,7 @@ struct CollectionStorage[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
 
     def iterator[
         U: Copyable & Deinitable,
-        project: def(imm Self.T) thin -> U,
+        project: def(Self.T) thin -> U,
     ](self) -> JsIterator[U] where conforms_to(Self.T, Copyable & Deinitable):
         comptime Cursor = _CollectionCursor[Self.T, U, project]
         return make_iterator[U, Cursor, Cursor.read_next](Cursor(self))
@@ -107,7 +107,7 @@ struct CollectionStorage[T: AnyType](Equatable, ImplicitlyCopyable, Sized):
 struct _CollectionCursor[
     T: Copyable & Deinitable,
     U: Copyable & Deinitable,
-    project: def(imm T) thin -> U,
+    project: def(T) thin -> U,
 ](Movable):
     var storage: Optional[CollectionStorage[Self.T]]
     var index: Int

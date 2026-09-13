@@ -33,9 +33,9 @@ struct IntlNumberFormat(Equatable, ImplicitlyCopyable):
                 "tsonic_js_intl_number_formatter_open",
                 OptionalPointer[NoneType, MutUntrackedOrigin],
             ](
-                locale.as_c_string_slice().ptr(),
-                settings.numbering.as_c_string_slice().ptr(),
-                settings.skeleton.as_c_string_slice().ptr(),
+                locale.as_c_string_slice().unsafe_ptr(),
+                settings.numbering.as_c_string_slice().unsafe_ptr(),
+                settings.skeleton.as_c_string_slice().unsafe_ptr(),
                 c_int(settings.style == "unit"),
             )
         )

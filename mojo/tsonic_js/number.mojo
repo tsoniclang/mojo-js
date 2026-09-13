@@ -323,11 +323,11 @@ def _format_count(
 
 
 def _is_negative_nonzero(value: Float64) -> Bool:
-    return value != 0 and (bitcast[.uint64](value) >> 63) == 1
+    return value != 0 and (bitcast[DType.uint64](value) >> 63) == 1
 
 
 def _exact_decimal(value: Float64) -> _ExactDecimal:
-    var bits = bitcast[.uint64](value)
+    var bits = bitcast[DType.uint64](value)
     var raw_exponent = Int((bits >> 52) & 0x7FF)
     var mantissa = bits & 0x000FFFFFFFFFFFFF
     var binary_exponent = -1074

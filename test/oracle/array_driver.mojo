@@ -21,4 +21,4 @@ def main() raises:
             elif byte < Byte(48) or byte > Byte(57):
                 raise Error("Invalid hexadecimal digit")
             bits = (bits << 4) | digit
-        print(array_join_native(JsArray[Float64]([bitcast[.float64](bits)])))
+        print(array_join_native(JsArray[Float64]([bitcast[DType.float64](bits)])))

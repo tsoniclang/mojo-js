@@ -100,7 +100,7 @@ def encode_structured_clone(value: JsValue) raises -> List[UInt8]:
         if node.kind == _BOOL:
             writer.integer(UInt64(node.bool_value), 1)
         elif node.kind == _NUMBER:
-            writer.integer(bitcast[.uint64](node.number_value), 8)
+            writer.integer(bitcast[DType.uint64](node.number_value), 8)
         elif node.kind == _BIGINT:
             writer.string(node.string_value)
         elif node.kind == _STRING:
@@ -176,7 +176,7 @@ def decode_structured_clone(var bytes: List[UInt8]) raises -> JsValue:
                 raise Error("Structured clone transport has an invalid boolean")
             _ = builder.append_bool(value != 0)
         elif kind == _NUMBER:
-            _ = builder.append_number(bitcast[.float64](reader.integer(8)))
+            _ = builder.append_number(bitcast[DType.float64](reader.integer(8)))
         elif kind == _BIGINT:
             _ = builder.append_bigint(reader.string())
         elif kind == _STRING:

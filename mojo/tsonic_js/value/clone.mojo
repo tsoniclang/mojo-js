@@ -40,7 +40,7 @@ struct _Clone:
             raise Error(
                 "JavaScript value graph contains an invalid node reference"
             )
-        var key = (UInt(Int(value._nodes.ptr())), value._index)
+        var key = (UInt(Int(value._nodes.unsafe_ptr())), value._index)
         if key in self.nodes:
             return self.nodes[key]
         var target = 0

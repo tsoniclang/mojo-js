@@ -120,7 +120,7 @@ struct NumberOptions(ImplicitlyCopyable):
             self.currency_sign = currency_sign
             var digits = Int(
                 external_call["tsonic_js_intl_currency_digits", c_int](
-                    currency.as_c_string_slice().ptr()
+                    currency.as_c_string_slice().unsafe_ptr()
                 )
             )
             if digits < 0:
