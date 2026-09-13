@@ -1,7 +1,18 @@
 from std.collections import Dict, List
 from std.memory import ArcPointer, bitcast
 from ..string import JsString
-from .model import JsValue, _UNDEFINED, _NULL, _BOOL, _NUMBER, _STRING, _ARRAY, _OBJECT, _BYTE_VIEW
+from .model import (
+    JsValue,
+    _UNDEFINED,
+    _NULL,
+    _BOOL,
+    _NUMBER,
+    _STRING,
+    _ARRAY,
+    _OBJECT,
+    _BYTE_VIEW,
+    _BIGINT,
+)
 from .byte_view import JsByteView
 from .builder import _JsValueBuilder
 from .clone import js_value_structured_clone
@@ -9,7 +20,7 @@ from .clone import js_value_structured_clone
 
 comptime _BYTE_LIMIT = 16 * 1024 * 1024
 comptime _NODE_LIMIT = 1048576
-comptime _MAGIC = UInt32(0x3356474A)
+comptime _MAGIC = UInt32(0x3456474A)
 
 
 struct _Writer:
@@ -22,7 +33,7 @@ struct _Writer:
         if len(self.bytes) > _BYTE_LIMIT - width:
             raise Error("Structured clone transport exceeds its byte limit")
         for index in range(width):
-            self.bytes.append(UInt8((value >> (index * 8)) & 255))
+            self.bytes.append(UInt8((value >> UInt64(index * 8)) & 255))
 
     def string(mut self, value: JsString) raises:
         self.integer(UInt64(len(value)), 4)
@@ -45,7 +56,9 @@ struct _Reader:
             raise Error("Truncated structured clone transport")
         var result = UInt64(0)
         for index in range(width):
-            result |= UInt64(self.bytes[self.offset + index]) << (index * 8)
+            result |= UInt64(self.bytes[self.offset + index]) << UInt64(
+                index * 8
+            )
         self.offset += width
         return result
 
@@ -64,7 +77,8 @@ def encode_structured_clone(value: JsValue) raises -> List[UInt8]:
     var storage = clone._storage()
     var buffers = List[ArcPointer[List[UInt8]]]()
     var buffer_indices = Dict[UInt, Int]()
-    for node in storage[]:
+    for node_index in range(len(storage[])):
+        ref node = storage[][node_index]
         if node.kind == _BYTE_VIEW:
             var view = node.byte_view.value()
             var identity = view.storage_identity()
@@ -80,12 +94,15 @@ def encode_structured_clone(value: JsValue) raises -> List[UInt8]:
         writer.integer(UInt64(len(buffer[])), 4)
         for byte in buffer[]:
             writer.integer(UInt64(byte), 1)
-    for node in storage[]:
+    for node_index in range(len(storage[])):
+        ref node = storage[][node_index]
         writer.integer(UInt64(node.kind), 1)
         if node.kind == _BOOL:
             writer.integer(UInt64(node.bool_value), 1)
         elif node.kind == _NUMBER:
             writer.integer(bitcast[.uint64](node.number_value), 8)
+        elif node.kind == _BIGINT:
+            writer.string(node.string_value)
         elif node.kind == _STRING:
             writer.string(node.string_value)
         elif node.kind == _BYTE_VIEW:
@@ -98,10 +115,18 @@ def encode_structured_clone(value: JsValue) raises -> List[UInt8]:
             for index in range(len(node.children)):
                 if node.kind == _OBJECT:
                     writer.string(node.keys[index])
-                writer.integer(UInt64(0xFFFFFFFF) if node.children[index] == -1 else UInt64(node.children[index]), 4)
+                writer.integer(
+                    UInt64(0xFFFFFFFF) if node.children[index]
+                    == -1 else UInt64(node.children[index]),
+                    4,
+                )
         elif node.kind != _UNDEFINED and node.kind != _NULL:
-            raise Error("Value has no structured clone transport representation")
-    return writer.bytes^
+            raise Error(
+                "Value has no structured clone transport representation"
+            )
+    var bytes = List[UInt8]()
+    swap(bytes, writer.bytes)
+    return bytes^
 
 
 def decode_structured_clone(var bytes: List[UInt8]) raises -> JsValue:
@@ -110,11 +135,22 @@ def decode_structured_clone(var bytes: List[UInt8]) raises -> JsValue:
         raise Error("Structured clone transport version mismatch")
     var count = Int(reader.integer(4))
     var root = Int(reader.integer(4))
-    if count == 0 or count > _NODE_LIMIT or root >= count or count > len(reader.bytes) - reader.offset:
+    if (
+        count == 0
+        or count > _NODE_LIMIT
+        or root >= count
+        or count > len(reader.bytes) - reader.offset
+    ):
         raise Error("Structured clone transport has an invalid node inventory")
     var buffer_count = Int(reader.integer(4))
-    if buffer_count > count or buffer_count > (len(reader.bytes) - reader.offset) // 4:
-        raise Error("Structured clone transport has an invalid backing-storage inventory")
+    if (
+        buffer_count > count
+        or buffer_count > (len(reader.bytes) - reader.offset) // 4
+    ):
+        raise Error(
+            "Structured clone transport has an invalid backing-storage"
+            " inventory"
+        )
     var buffers = List[ArcPointer[List[UInt8]]]()
     for index in range(buffer_count):
         var length = Int(reader.integer(4))
@@ -141,6 +177,8 @@ def decode_structured_clone(var bytes: List[UInt8]) raises -> JsValue:
             _ = builder.append_bool(value != 0)
         elif kind == _NUMBER:
             _ = builder.append_number(bitcast[.float64](reader.integer(8)))
+        elif kind == _BIGINT:
+            _ = builder.append_bigint(reader.string())
         elif kind == _STRING:
             _ = builder.append_string(reader.string())
         elif kind == _BYTE_VIEW:
@@ -148,15 +186,25 @@ def decode_structured_clone(var bytes: List[UInt8]) raises -> JsValue:
             var offset = Int(reader.integer(4))
             var length = Int(reader.integer(4))
             if buffer_index >= len(buffers):
-                raise Error("Structured clone transport has an invalid byte-view storage reference")
-            var view = JsByteView(buffers[buffer_index], offset, length, ArcPointer(False))
+                raise Error(
+                    "Structured clone transport has an invalid byte-view"
+                    " storage reference"
+                )
+            var view = JsByteView(
+                buffers[buffer_index], offset, length, ArcPointer(False)
+            )
             view.validate()
             used_buffers[buffer_index] = True
             _ = builder.append_byte_view(view)
         elif kind == _ARRAY or kind == _OBJECT:
             var size = Int(reader.integer(4))
-            if size > 4194304 or size > (len(reader.bytes) - reader.offset) // 4:
-                raise Error("Structured clone transport has an invalid aggregate size")
+            if (
+                size > 4194304
+                or size > (len(reader.bytes) - reader.offset) // 4
+            ):
+                raise Error(
+                    "Structured clone transport has an invalid aggregate size"
+                )
             var children = List[Int](capacity=size)
             var keys = List[JsString](capacity=size if kind == _OBJECT else 0)
             for child_index in range(size):
@@ -167,7 +215,9 @@ def decode_structured_clone(var bytes: List[UInt8]) raises -> JsValue:
                     children.append(-1)
                     continue
                 if child >= count:
-                    raise Error("Structured clone transport has an invalid reference")
+                    raise Error(
+                        "Structured clone transport has an invalid reference"
+                    )
                 children.append(child)
             if kind == _ARRAY:
                 _ = builder.append_array(children^)
@@ -179,5 +229,7 @@ def decode_structured_clone(var bytes: List[UInt8]) raises -> JsValue:
         raise Error("Structured clone transport contains trailing bytes")
     for used in used_buffers:
         if not used:
-            raise Error("Structured clone transport contains unused backing storage")
+            raise Error(
+                "Structured clone transport contains unused backing storage"
+            )
     return builder.value(root)

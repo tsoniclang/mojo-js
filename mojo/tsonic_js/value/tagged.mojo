@@ -53,4 +53,3 @@ def _required_tagged_field(value: JsValue, name: String) raises -> JsValue:
     if not field:
         raise Error("JavaScript callback argument is missing field " + name)
     return field.value()
-

@@ -13,7 +13,7 @@ test("closed JavaScript values separate representation, construction and protoco
   const owners = new Map();
   for (const path of modules(root)) {
     const source = readFileSync(path, "utf8");
-    assert.ok(source.split("\n").length <= 600, path);
+    assert.ok(physicalLineCount(source) <= 600, path);
     for (const match of source.matchAll(/^(?:struct|def|comptime)\s+([A-Za-z_]\w*)/gmu)) {
       assert.ok(!owners.has(match[1]), match[1]);
       owners.set(match[1], path);
@@ -31,4 +31,16 @@ test("closed JavaScript values separate representation, construction and protoco
   assert.match(entrypoint, /_JsValueBuilder/u);
   assert.match(entrypoint, /_js_value_from_tagged_callback_argument/u);
   assertAcyclicImports(root);
+});
+
+function physicalLineCount(source) {
+  return source.length === 0 ? 0 : source.split("\n").length - Number(source.endsWith("\n"));
+}
+
+test("the file-size guard counts physical lines rather than a trailing split sentinel", () => {
+  for (const [source, expected] of [["", 0], ["line", 1], ["line\n", 1], ["line\r\n", 1], ["line\n\n", 2]]) {
+    assert.equal(physicalLineCount(source), expected);
+  }
+  assert.equal(physicalLineCount("line\n".repeat(600)), 600);
+  assert.equal(physicalLineCount("line\n".repeat(601)), 601);
 });

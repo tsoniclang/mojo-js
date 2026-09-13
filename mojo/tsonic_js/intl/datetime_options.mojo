@@ -14,7 +14,8 @@ struct _DateTimeOptions:
 
 def _text(owner: IntlResult, field: Int) raises -> String:
     var pointer = external_call[
-        "tsonic_js_intl_datetime_text", OptionalPointer[UInt8, ImmUntrackedOrigin],
+        "tsonic_js_intl_datetime_text",
+        OptionalPointer[UInt8, ImmUntrackedOrigin],
     ](owner.pointer.value(), c_int(field))
     if not pointer:
         raise Error("A retained date formatter has no resolved text field")
@@ -25,7 +26,14 @@ struct IntlResolvedDateTimeFormatOptions(Equatable, ImplicitlyCopyable):
     var _state: ArcPointer[_DateTimeOptions]
 
     def __init__(out self, owner: IntlResult) raises:
-        self._state = ArcPointer(_DateTimeOptions(_text(owner, 0), _text(owner, 1), _text(owner, 2), _text(owner, 3)))
+        self._state = ArcPointer(
+            _DateTimeOptions(
+                _text(owner, 0),
+                _text(owner, 1),
+                _text(owner, 2),
+                _text(owner, 3),
+            )
+        )
 
     def __eq__(self, other: Self) -> Bool:
         return self._state is other._state

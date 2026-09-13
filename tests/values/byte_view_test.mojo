@@ -1,7 +1,18 @@
 from std.collections import List
 from std.memory import ArcPointer
 from std.testing import assert_equal, assert_false, assert_true
-from tsonic_js import JsByteView, JsString, JsValue, js_value_from_byte_view, js_value_from_array_values, js_value_structured_clone, json_stringify, object_keys, object_is, inspect_value
+from tsonic_js import (
+    JsByteView,
+    JsString,
+    JsValue,
+    js_value_from_byte_view,
+    js_value_from_array_values,
+    js_value_structured_clone,
+    json_stringify,
+    object_keys,
+    object_is,
+)
+from tsonic_js.inspection import inspect_value
 from tsonic_js.value import encode_structured_clone, decode_structured_clone
 
 
@@ -15,28 +26,33 @@ def rejected(var bytes: List[UInt8]) raises:
 
 
 def main() raises:
-    var storage = ArcPointer(List[UInt8](1, 2, 3, 4))
+    var bytes: List[UInt8] = [1, 2, 3, 4]
+    var storage = ArcPointer(bytes^)
     var view = JsByteView(storage, 0, 3, ArcPointer(False))
     var source = js_value_from_byte_view(view)
-    var alias = js_value_from_byte_view(view)
-    var slice = js_value_from_byte_view(JsByteView(storage, 1, 2, ArcPointer(False)))
+    var retained_alias = js_value_from_byte_view(view)
+    var slice = js_value_from_byte_view(
+        JsByteView(storage, 1, 2, ArcPointer(False))
+    )
     assert_true(source.is_object())
     assert_false(source.is_array())
     assert_true(source.is_byte_view())
-    assert_true(object_is(source, alias))
+    assert_true(object_is(source, retained_alias))
     assert_false(object_is(source, slice))
     assert_equal(source.object_value(1).number_value(), 2)
     storage[][1] = 9
-    assert_equal(alias.object_value(1).number_value(), 9)
+    assert_equal(retained_alias.object_value(1).number_value(), 9)
     assert_equal(slice.object_value(0).number_value(), 9)
     assert_equal(source.property_get(JsString("length")).number_value(), 3)
     assert_equal(slice.property_get(JsString("byteOffset")).number_value(), 1)
     assert_equal(len(object_keys(source)), 3)
-    assert_equal(json_stringify(source).value().to_native_strict(), '{"0":1,"1":9,"2":3}')
+    assert_equal(
+        json_stringify(source).value().to_native_strict(), '{"0":1,"1":9,"2":3}'
+    )
     assert_equal(inspect_value(source), "Uint8Array(3) [ 1, 9, 3 ]")
     var values = List[JsValue]()
     values.append(source)
-    values.append(alias)
+    values.append(retained_alias)
     values.append(slice)
     var group = js_value_from_array_values(values^)
     var clone = js_value_structured_clone(group)
@@ -53,7 +69,10 @@ def main() raises:
     var wire = encode_structured_clone(clone)
     var decoded = decode_structured_clone(wire.copy())
     assert_true(decoded.array_at(0).same_identity(decoded.array_at(1)))
-    assert_equal(decoded.array_at(0).byte_view().storage_identity(), decoded.array_at(2).byte_view().storage_identity())
+    assert_equal(
+        decoded.array_at(0).byte_view().storage_identity(),
+        decoded.array_at(2).byte_view().storage_identity(),
+    )
     decoded.array_at(0).byte_view().set(1, 5)
     assert_equal(decoded.array_at(2).byte_view().get(0), 5)
     assert_equal(second.get(0), 7)

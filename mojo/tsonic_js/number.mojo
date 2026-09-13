@@ -1,5 +1,5 @@
 from std import math
-from std.collections import List
+from std.collections import Array, List
 from std.memory import bitcast
 from tsonic_runtime.number_string import source_number_code_units
 
@@ -459,7 +459,11 @@ def number_is_safe_integer(value: Float64) -> Bool:
 
 def number_parse_float(value: JsString) -> Float64:
     try:
-        var text = _number_prefix(value.to_native_strict(), False)
+        var text = _number_prefix(value.trim_start().to_native_strict(), False)
+        if text == "Infinity" or text == "+Infinity":
+            return Float64(FloatLiteral.infinity)
+        if text == "-Infinity":
+            return Float64(FloatLiteral.negative_infinity)
         return atof(text)
     except:
         return Float64(FloatLiteral.nan)
@@ -467,7 +471,7 @@ def number_parse_float(value: JsString) -> Float64:
 
 def number_parse_int(value: JsString, radix: Float64 = 0) -> Float64:
     try:
-        var text = String(value.to_native_strict().strip())
+        var text = value.trim_start().to_native_strict()
         if not text:
             return Float64(FloatLiteral.nan)
         var sign = 1
@@ -501,11 +505,17 @@ def number_parse_int(value: JsString, radix: Float64 = 0) -> Float64:
 
 
 def _number_prefix(value: String, integer_only: Bool) -> String:
-    var text = String(value.strip())
+    var text = value
+    if not integer_only:
+        var prefixes: Array[String, 3] = ["Infinity", "+Infinity", "-Infinity"]
+        for prefix in prefixes:
+            if text.startswith(prefix):
+                return String(prefix)
     var end = 0
     var saw_digit = False
     var saw_dot = False
     var saw_exponent = False
+    var exponent_start = -1
     while end < text.byte_length():
         var byte = UInt8(text.as_bytes()[end])
         if byte >= 48 and byte <= 57:
@@ -526,6 +536,7 @@ def _number_prefix(value: String, integer_only: Bool) -> String:
             and (byte == 69 or byte == 101)
         ):
             saw_exponent = True
+            exponent_start = end
             saw_digit = False
             end += 1
             if end < text.byte_length() and (
@@ -536,6 +547,8 @@ def _number_prefix(value: String, integer_only: Bool) -> String:
             continue
         break
     if not saw_digit:
+        if exponent_start >= 0:
+            return String(text[byte=0:exponent_start])
         return ""
     return String(text[byte=0:end])
 

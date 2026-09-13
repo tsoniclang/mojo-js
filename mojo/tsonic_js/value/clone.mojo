@@ -32,8 +32,14 @@ struct _Clone:
         self.copied_bytes = 0
 
     def reserve(mut self, value: JsValue) raises -> Int:
-        if len(value._nodes[]) > 1048576 or value._index < 0 or value._index >= len(value._nodes[]):
-            raise Error("JavaScript value graph contains an invalid node reference")
+        if (
+            len(value._nodes[]) > 1048576
+            or value._index < 0
+            or value._index >= len(value._nodes[])
+        ):
+            raise Error(
+                "JavaScript value graph contains an invalid node reference"
+            )
         var key = (UInt(Int(value._nodes.ptr())), value._index)
         if key in self.nodes:
             return self.nodes[key]
@@ -46,6 +52,8 @@ struct _Clone:
             target = self.builder.append_bool(value._bool_value())
         elif value.is_number():
             target = self.builder.append_number(value._number_value())
+        elif value.is_bigint():
+            target = self.builder.append_bigint(value._string_value())
         elif value.is_string():
             target = self.builder.append_string(value._string_value())
         elif value.is_symbol():
@@ -56,32 +64,57 @@ struct _Clone:
             if identity in self.identities:
                 target = self.identities[identity]
                 if not self.builder.value(target).is_byte_view():
-                    raise Error("One source allocation has conflicting aggregate kinds")
+                    raise Error(
+                        "One source allocation has conflicting aggregate kinds"
+                    )
                 return target
             var storage_identity = source.storage_identity()
             if storage_identity not in self.byte_storages:
                 if len(source.storage[]) > 16777216 - self.copied_bytes:
-                    raise Error("Structured clone byte storage exceeds its byte limit")
+                    raise Error(
+                        "Structured clone byte storage exceeds its byte limit"
+                    )
                 self.copied_bytes += len(source.storage[])
-                self.byte_storages[storage_identity] = ArcPointer(source.storage[].copy())
-            target = self.builder.append_byte_view(JsByteView(
-                self.byte_storages[storage_identity], source.offset, source.length, ArcPointer(False),
-            ))
+                self.byte_storages[storage_identity] = ArcPointer(
+                    source.storage[].copy()
+                )
+            target = self.builder.append_byte_view(
+                JsByteView(
+                    self.byte_storages[storage_identity],
+                    source.offset,
+                    source.length,
+                    ArcPointer(False),
+                )
+            )
             self.identities[identity] = target
         elif value.is_array() or value.is_object():
-            if not value._nodes[][value._index].source_view and not value._nodes[][value._index].identity:
+            if (
+                not value._nodes[][value._index].source_view
+                and not value._nodes[][value._index].identity
+            ):
                 raise Error("JavaScript aggregate has no allocation identity")
             var identity = value._identity_address()
             if identity in self.identities:
                 target = self.identities[identity]
                 if self.builder.value(target)._kind() != value._kind():
-                    raise Error("One source allocation has conflicting aggregate kinds")
+                    raise Error(
+                        "One source allocation has conflicting aggregate kinds"
+                    )
                 return target
-            if not value._nodes[][value._index].source_view and value.is_object() and (
-                len(value._nodes[][value._index].keys) != len(value._nodes[][value._index].children)
+            if (
+                not value._nodes[][value._index].source_view
+                and value.is_object()
+                and (
+                    len(value._nodes[][value._index].keys)
+                    != len(value._nodes[][value._index].children)
+                )
             ):
-                raise Error("JavaScript object keys and values have different lengths")
-            var length = value.array_length() if value.is_array() else value.object_length()
+                raise Error(
+                    "JavaScript object keys and values have different lengths"
+                )
+            var length = (
+                value.array_length() if value.is_array() else value.object_length()
+            )
             if length < 0 or length > 4194304:
                 raise Error("JavaScript value graph exceeds its edge budget")
             if value.is_array():
@@ -111,10 +144,16 @@ struct _Clone:
             edges += record.length
             var children = List[Int](capacity=record.length)
             for index in range(record.length):
-                if record.source.is_array() and not record.source.array_has(index):
+                if record.source.is_array() and not record.source.array_has(
+                    index
+                ):
                     children.append(-1)
                     continue
-                var child = record.source.array_at(index) if record.source.is_array() else record.source.object_value(index)
+                var child = record.source.array_at(
+                    index
+                ) if record.source.is_array() else record.source.object_value(
+                    index
+                )
                 children.append(self.reserve(child))
             self.builder.set_aggregate_children(record.target, children^)
         return self.builder.value(root)

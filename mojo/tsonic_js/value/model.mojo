@@ -33,6 +33,8 @@ comptime _SYMBOL = 7
 
 comptime _BYTE_VIEW = 8
 
+comptime _BIGINT = 9
+
 
 @fieldwise_init
 struct _NativeValuePresentation:
@@ -45,12 +47,15 @@ struct _NativeValuePresentation:
 @fieldwise_init
 struct _SourceValueView:
     var identity: WeakReferenceIdentity
+    var prototype_identity: String
     var length: Callable[Tuple[], Int]
     var key: Optional[Callable[Tuple[Int], JsString]]
     var has: Optional[Callable[Tuple[Int], Bool]]
     var value: Callable[Tuple[Int], JsValue]
     var to_json: Optional[RaisingCallable[Tuple[String], JsValue, Error]]
-    var property_reader: Optional[RaisingCallable[Tuple[JsString], JsValue, Error]]
+    var property_reader: Optional[
+        RaisingCallable[Tuple[JsString], JsValue, Error]
+    ]
 
 
 struct _JsValueNode(Movable):
@@ -122,11 +127,30 @@ struct _JsValueNode(Movable):
         self = Self(kind)
         self.source_view = Optional[ArcPointer[_SourceValueView]](view)
 
-    def __init__(out self, view: JsByteView, presentation: Optional[ArcPointer[_NativeValuePresentation]] = None):
+    def __init__(
+        out self,
+        view: JsByteView,
+        presentation: Optional[ArcPointer[_NativeValuePresentation]] = None,
+    ):
         self = Self(_BYTE_VIEW)
         self.byte_view = view
         self.native_presentation = presentation
         self.identity = view.identity
+
+
+def _require_bigint_digits(value: JsString) raises:
+    var length = len(value)
+    if length == 0:
+        raise Error("Bigint digits must be canonical signed decimal text")
+    var start = 1 if value.code_unit_at(0).value() == 45 else 0
+    if start == length:
+        raise Error("Bigint digits must be canonical signed decimal text")
+    if value.code_unit_at(start).value() == 48 and (start != 0 or length != 1):
+        raise Error("Bigint digits must be canonical signed decimal text")
+    for index in range(start, length):
+        var digit = value.code_unit_at(index).value()
+        if digit < 48 or digit > 57:
+            raise Error("Bigint digits must be canonical signed decimal text")
 
 
 struct JsValue(ImplicitlyCopyable, Writable):
@@ -184,8 +208,36 @@ struct JsValue(ImplicitlyCopyable, Writable):
     def undefined() -> Self:
         return Self()
 
+    @staticmethod
+    def bigint(value: JsString) raises -> Self:
+        _require_bigint_digits(value)
+        return Self._from_bigint_digits(value)
+
+    @staticmethod
+    def _from_bigint_digits(value: JsString) -> Self:
+        var node = _JsValueNode(value)
+        node.kind = _BIGINT
+        var nodes = List[_JsValueNode]()
+        nodes.append(node^)
+        return Self(ArcPointer(nodes^), 0)
+
     def is_undefined(self) -> Bool:
         return self._kind() == _UNDEFINED
+
+    def type_of(self) -> String:
+        if self.is_undefined():
+            return "undefined"
+        if self.is_bool():
+            return "boolean"
+        if self.is_number():
+            return "number"
+        if self.is_bigint():
+            return "bigint"
+        if self.is_string():
+            return "string"
+        if self.is_symbol():
+            return "symbol"
+        return "object"
 
     def is_null(self) -> Bool:
         return self._kind() == _NULL
@@ -195,6 +247,9 @@ struct JsValue(ImplicitlyCopyable, Writable):
 
     def is_number(self) -> Bool:
         return self._kind() == _NUMBER
+
+    def is_bigint(self) -> Bool:
+        return self._kind() == _BIGINT
 
     def is_string(self) -> Bool:
         return self._kind() == _STRING
@@ -222,6 +277,25 @@ struct JsValue(ImplicitlyCopyable, Writable):
         var presentation = self._nodes[][self._index].native_presentation
         return Bool(presentation) and presentation.value()[].brand == brand
 
+    def same_prototype(self, other: Self) -> Bool:
+        if self._kind() != other._kind():
+            return False
+        if self.is_byte_view():
+            var left = self._nodes[][self._index].native_presentation
+            var right = other._nodes[][other._index].native_presentation
+            if Bool(left) != Bool(right):
+                return False
+            return not left or left.value()[].brand == right.value()[].brand
+        var left = self._nodes[][self._index].source_view
+        var right = other._nodes[][other._index].source_view
+        var left_identity = (
+            left.value()[].prototype_identity if left else String()
+        )
+        var right_identity = (
+            right.value()[].prototype_identity if right else String()
+        )
+        return left_identity == right_identity
+
     def has_selected_to_json(self) -> Bool:
         if self._nodes[][self._index].native_presentation:
             return True
@@ -237,6 +311,11 @@ struct JsValue(ImplicitlyCopyable, Writable):
         if not self.is_number():
             raise Error("JavaScript value is not a number")
         return self._number_value()
+
+    def bigint_value(self) raises -> JsString:
+        if not self.is_bigint():
+            raise Error("JavaScript value is not a bigint")
+        return self._string_value()
 
     def string_value(self) raises -> JsString:
         if not self.is_string():
@@ -300,7 +379,9 @@ struct JsValue(ImplicitlyCopyable, Writable):
         var own = self.object_get(key)
         if own:
             return own.value()
-        if self.is_byte_view() and (key == JsString("length") or key == JsString("byteLength")):
+        if self.is_byte_view() and (
+            key == JsString("length") or key == JsString("byteLength")
+        ):
             return Self(Float64(self.byte_view().length))
         if self.is_byte_view() and key == JsString("byteOffset"):
             return Self(Float64(self.byte_view().offset))
@@ -341,13 +422,20 @@ struct JsValue(ImplicitlyCopyable, Writable):
         if self.is_byte_view():
             return self._nodes[][self._index].byte_view.value().length
         var view = self._nodes[][self._index].source_view
-        return view.value()[].length.call(()) if view else len(self._nodes[][self._index].children)
+        return view.value()[].length.call(()) if view else len(
+            self._nodes[][self._index].children
+        )
 
     def _aggregate_key(self, index: Int) -> JsString:
         if self.is_byte_view():
             return JsString(String(index))
         var view = self._nodes[][self._index].source_view
-        return view.value()[].key.value().call((index,)) if view else self._nodes[][self._index].keys[index]
+        return (
+            view.value()[]
+            .key.value()
+            .call((index,)) if view else self._nodes[][self._index]
+            .keys[index]
+        )
 
     def _aggregate_value(self, index: Int) -> Self:
         if self.is_byte_view():
@@ -356,11 +444,19 @@ struct JsValue(ImplicitlyCopyable, Writable):
         if self.is_array() and not self._aggregate_has(index):
             return Self()
         var view = self._nodes[][self._index].source_view
-        return view.value()[].value.call((index,)) if view else Self(self._nodes, self._nodes[][self._index].children[index])
+        return view.value()[].value.call((index,)) if view else Self(
+            self._nodes, self._nodes[][self._index].children[index]
+        )
 
     def _aggregate_has(self, index: Int) -> Bool:
         var view = self._nodes[][self._index].source_view
-        return view.value()[].has.value().call((index,)) if view else self._nodes[][self._index].children[index] != -1
+        return (
+            view.value()[]
+            .has.value()
+            .call((index,)) if view else self._nodes[][self._index]
+            .children[index]
+            != -1
+        )
 
     def _identity_address(self) -> UInt:
         var view = self._nodes[][self._index].source_view
@@ -404,6 +500,8 @@ def js_value_to_string(value: JsValue) -> JsString:
         return boolean_to_string(value._bool_value())
     if value.is_number():
         return number_to_string(value._number_value())
+    if value.is_bigint():
+        return value._string_value()
     if value.is_string():
         return value._string_value()
     if value.is_symbol():
@@ -471,6 +569,8 @@ def js_truthy(value: JsValue) -> Bool:
     if value.is_number():
         var number = value._number_value()
         return number != 0 and number == number
+    if value.is_bigint():
+        return value._string_value() != JsString("0")
     if value.is_string():
         return len(value._string_value()) != 0
     return True

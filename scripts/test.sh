@@ -3,6 +3,8 @@ set -euo pipefail
 
 PIXI_BIN="${PIXI_BIN:-pixi}"
 NATIVE_BUILD=".temp/native-tests"
+BUILD_TIMEOUT="${MOJO_TEST_BUILD_TIMEOUT:-180s}"
+RUN_TIMEOUT="${MOJO_TEST_RUN_TIMEOUT:-60s}"
 
 node --test test/architecture/*.test.mjs
 
@@ -21,32 +23,28 @@ link_arguments=(
   "${js_native_arguments[@]}"
 )
 
-"${PIXI_BIN}" run mojo build -j 2 -I mojo -I ../mojo-runtime/mojo \
-  "${link_arguments[@]}" test/oracle/regexp_driver.mojo -o "${NATIVE_BUILD}/regexp_oracle"
-node scripts/verify-regexp-oracle.mjs "${NATIVE_BUILD}/regexp_oracle"
-
-"${PIXI_BIN}" run mojo build -j 2 -I mojo -I ../mojo-runtime/mojo \
-  "${link_arguments[@]}" test/oracle/array_driver.mojo -o "${NATIVE_BUILD}/array_oracle"
-node scripts/verify-array-oracle.mjs "${NATIVE_BUILD}/array_oracle"
-
-"${PIXI_BIN}" run mojo build -j 2 -I mojo -I ../mojo-runtime/mojo \
-  "${link_arguments[@]}" test/oracle/console_driver.mojo -o "${NATIVE_BUILD}/console_oracle"
-node scripts/verify-console-oracle.mjs "${NATIVE_BUILD}/console_oracle"
-
-"${PIXI_BIN}" run mojo build -j 2 -I mojo -I ../mojo-runtime/mojo \
-  "${link_arguments[@]}" test/oracle/date_driver.mojo -o "${NATIVE_BUILD}/date_oracle"
-node scripts/verify-date-oracle.mjs "${NATIVE_BUILD}/date_oracle"
-
-"${PIXI_BIN}" run mojo build -j 2 -I mojo -I ../mojo-runtime/mojo \
-  "${link_arguments[@]}" test/oracle/locale_driver.mojo -o "${NATIVE_BUILD}/locale_oracle"
-node scripts/verify-locale-oracle.mjs "${NATIVE_BUILD}/locale_oracle"
-
-"${PIXI_BIN}" run bash -c 'exec "${CONDA_PREFIX:?}/bin/gcc" "$@"' -- -O2 -std=c11 \
-  tests/native/intl_test.c "${NATIVE_BUILD}"/intl/*.o \
-  -L"${CONDA_PREFIX}/lib" -licui18n -licuuc -licudata -o "${NATIVE_BUILD}/intl_native"
-"${NATIVE_BUILD}/intl_native"
-
 failed=0
+for oracle in regexp array console date locale; do
+  if timeout "$BUILD_TIMEOUT" "${PIXI_BIN}" run mojo build -j 2 -I mojo -I ../mojo-runtime/mojo \
+    "${link_arguments[@]}" "test/oracle/${oracle}_driver.mojo" -o "${NATIVE_BUILD}/${oracle}_oracle" && \
+    timeout "$RUN_TIMEOUT" node "scripts/verify-${oracle}-oracle.mjs" "${NATIVE_BUILD}/${oracle}_oracle"; then
+    printf 'PASS oracle/%s\n' "$oracle"
+  else
+    printf 'FAIL oracle/%s\n' "$oracle"
+    failed=1
+  fi
+done
+
+if timeout "$BUILD_TIMEOUT" "${PIXI_BIN}" run bash -c 'exec "${CONDA_PREFIX:?}/bin/gcc" "$@"' -- -O2 -std=c11 \
+  tests/native/intl_test.c "${NATIVE_BUILD}"/intl/*.o \
+  -L"${CONDA_PREFIX}/lib" -licui18n -licuuc -licudata -o "${NATIVE_BUILD}/intl_native" && \
+  timeout "$RUN_TIMEOUT" "${NATIVE_BUILD}/intl_native"; then
+  printf 'PASS tests/native/intl_test.c\n'
+else
+  printf 'FAIL tests/native/intl_test.c\n'
+  failed=1
+fi
+
 test_inventory="$(find tests -type f -name '*.mojo' -print)"
 if [[ -z "$test_inventory" ]]; then
   printf 'No native JavaScript proofs found\n' >&2
@@ -57,13 +55,13 @@ for test_file in "${test_files[@]}"; do
   test_name="${test_file#tests/}"
   test_name="${test_name%.mojo}"
   mkdir -p "$(dirname "${NATIVE_BUILD}/${test_name}")"
-  if "${PIXI_BIN}" run mojo build \
+  if timeout "$BUILD_TIMEOUT" "${PIXI_BIN}" run mojo build \
     -j 2 \
     -I mojo \
     -I ../mojo-runtime/mojo \
     "${link_arguments[@]}" \
     "${test_file}" \
-    -o "${NATIVE_BUILD}/${test_name}" && "${NATIVE_BUILD}/${test_name}"; then
+    -o "${NATIVE_BUILD}/${test_name}" && timeout "$RUN_TIMEOUT" "${NATIVE_BUILD}/${test_name}"; then
     printf 'PASS %s\n' "$test_file"
   else
     printf 'FAIL %s\n' "$test_file"

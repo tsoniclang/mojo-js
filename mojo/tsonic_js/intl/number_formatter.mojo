@@ -1,4 +1,4 @@
-from std.ffi import external_call
+from std.ffi import c_int, external_call
 from std.memory import ArcPointer
 from tsonic_runtime import WeakReferenceIdentity
 from ..array import JsArray
@@ -22,13 +22,23 @@ struct _NumberFormatOwner:
 struct IntlNumberFormat(Equatable, ImplicitlyCopyable):
     var _owner: ArcPointer[_NumberFormatOwner]
 
-    def __init__(out self, locales: JsValue = JsValue(), options: JsValue = JsValue()) raises:
+    def __init__(
+        out self, locales: JsValue = JsValue(), options: JsValue = JsValue()
+    ) raises:
         var requested = requested_locales(locales)
         var settings = NumberOptions(options)
         var locale = number_locale(requested)
-        var native = IntlResult(external_call[
-            "tsonic_js_intl_number_formatter_open", OptionalPointer[NoneType, MutUntrackedOrigin],
-        ](locale.as_c_string_slice().ptr(), settings.numbering.as_c_string_slice().ptr(), settings.skeleton.as_c_string_slice().ptr()))
+        var native = IntlResult(
+            external_call[
+                "tsonic_js_intl_number_formatter_open",
+                OptionalPointer[NoneType, MutUntrackedOrigin],
+            ](
+                locale.as_c_string_slice().ptr(),
+                settings.numbering.as_c_string_slice().ptr(),
+                settings.skeleton.as_c_string_slice().ptr(),
+                c_int(settings.style == "unit"),
+            )
+        )
         native.check()
         self._owner = ArcPointer(_NumberFormatOwner(native^, settings^))
 
@@ -38,17 +48,39 @@ struct IntlNumberFormat(Equatable, ImplicitlyCopyable):
     def weak_identity(self) -> WeakReferenceIdentity:
         return WeakReferenceIdentity(self._owner)
 
-    def format[Value: Movable](self, value: Value) raises -> String:
+    def format[dtype: DType](self, value: Scalar[dtype]) raises -> String:
         var result = number_result(self._owner[].native, value, False)
         return JsString(code_units=result.units()).to_native_strict()
 
-    def format_to_parts[Value: Movable](self, value: Value) raises -> JsArray[IntlFormatPart]:
+    def format_to_parts[
+        dtype: DType
+    ](self, value: Scalar[dtype]) raises -> JsArray[IntlFormatPart]:
+        var result = number_result(self._owner[].native, value, True)
+        return formatted_parts(result)
+
+    def format(self, value: Int) raises -> String:
+        var result = number_result(self._owner[].native, value, False)
+        return JsString(code_units=result.units()).to_native_strict()
+
+    def format_to_parts(self, value: Int) raises -> JsArray[IntlFormatPart]:
+        var result = number_result(self._owner[].native, value, True)
+        return formatted_parts(result)
+
+    def format(self, value: UInt) raises -> String:
+        var result = number_result(self._owner[].native, value, False)
+        return JsString(code_units=result.units()).to_native_strict()
+
+    def format_to_parts(self, value: UInt) raises -> JsArray[IntlFormatPart]:
         var result = number_result(self._owner[].native, value, True)
         return formatted_parts(result)
 
     def resolved_options(self) raises -> IntlResolvedNumberFormatOptions:
-        return IntlResolvedNumberFormatOptions(self._owner[].native, self._owner[].options)
+        return IntlResolvedNumberFormatOptions(
+            self._owner[].native, self._owner[].options
+        )
 
 
-def intl_number_format_new(locales: JsValue = JsValue(), options: JsValue = JsValue()) raises -> IntlNumberFormat:
+def intl_number_format_new(
+    locales: JsValue = JsValue(), options: JsValue = JsValue()
+) raises -> IntlNumberFormat:
     return IntlNumberFormat(locales, options)

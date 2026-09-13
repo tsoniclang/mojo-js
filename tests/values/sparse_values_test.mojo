@@ -1,11 +1,26 @@
 from std.collections import List
 from std.testing import assert_equal, assert_false, assert_true
-from tsonic_runtime import Callable, ErasedCallableContext, WeakReferenceIdentity, allocate_callable_environment, destroy_callable_environment
+from tsonic_runtime import (
+    Callable,
+    ErasedCallableContext,
+    WeakReferenceIdentity,
+    allocate_callable_environment,
+    destroy_callable_environment,
+)
+from tsonic_js.value import encode_structured_clone, decode_structured_clone
 from tsonic_js import (
-    JsArray, JsString, JsValue, js_value_from_array_values, js_value_from_source_array,
-    js_value_from_string, js_value_structured_clone, json_stringify,
-    encode_structured_clone, decode_structured_clone, object_keys, object_values,
-    object_entries, object_has_own,
+    JsArray,
+    JsString,
+    JsValue,
+    js_value_from_array_values,
+    js_value_from_source_array,
+    js_value_from_string,
+    js_value_structured_clone,
+    json_stringify,
+    object_keys,
+    object_values,
+    object_entries,
+    object_has_own,
 )
 from tsonic_js.inspection import inspect_value
 from tsonic_js.value.builder import _JsValueBuilder
@@ -24,12 +39,16 @@ struct SparseView:
         return context.unsafe_bitcast[Self]()[].source.has(arguments[0])
 
     @staticmethod
-    def value(context: ErasedCallableContext, var arguments: Tuple[Int]) -> JsValue:
+    def value(
+        context: ErasedCallableContext, var arguments: Tuple[Int]
+    ) -> JsValue:
         return context.unsafe_bitcast[Self]()[].source.get(arguments[0]).value()
 
 
 def view(source: JsArray[JsValue]) -> JsValue:
-    var environment = allocate_callable_environment(SparseView(source), destroy_callable_environment[SparseView])
+    var environment = allocate_callable_environment(
+        SparseView(source), destroy_callable_environment[SparseView]
+    )
     return js_value_from_source_array(
         source.weak_identity(),
         Callable[Tuple[], Int](environment, SparseView.length),
@@ -45,8 +64,12 @@ def assert_sparse(value: JsValue) raises:
     assert_true(value.array_has(1))
     assert_true(value.array_at(1).is_undefined())
     assert_false(value.array_has(2))
-    assert_equal(json_stringify(value).value().to_native_strict(), "[null,null,null]")
-    assert_equal(inspect_value(value), "[ <1 empty item>, undefined, <1 empty item> ]")
+    assert_equal(
+        json_stringify(value).value().to_native_strict(), "[null,null,null]"
+    )
+    assert_equal(
+        inspect_value(value), "[ <1 empty item>, undefined, <1 empty item> ]"
+    )
     var keys = object_keys(value)
     assert_equal(len(keys), 1)
     assert_equal(keys.get(0).value(), JsString("1"))
@@ -78,7 +101,15 @@ def main() raises:
     assert_sparse(cloned)
     var text = js_value_from_string(JsString("😀"))
     assert_equal(len(object_keys(text)), 2)
-    assert_equal(object_values(text).get(0).value().string_value().code_unit_at(0).value(), UInt16(0xD83D))
+    assert_equal(
+        object_values(text)
+        .get(0)
+        .value()
+        .string_value()
+        .code_unit_at(0)
+        .value(),
+        UInt16(0xD83D),
+    )
     assert_true(object_has_own(text, JsString("length")))
     assert_false(object_has_own(text, JsString("01")))
     assert_equal(len(object_keys(JsValue(Float64(3)))), 0)

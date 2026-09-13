@@ -39,10 +39,15 @@ def string_capacity(length: Float64) raises -> Int:
     return Int(length)
 
 
-def string_repeat_shape(length: Int, count: Float64) raises -> Tuple[Int, Int]:
+def string_repeat_count(count: Float64) raises -> Float64:
     var repetitions = source_number_to_integer_or_infinity(count)
     if repetitions < 0 or repetitions == Float64(FloatLiteral.infinity):
         raise Error("invalid JavaScript string repeat count")
+    return repetitions
+
+
+def string_repeat_shape(length: Int, count: Float64) raises -> Tuple[Int, Int]:
+    var repetitions = string_repeat_count(count)
     if repetitions == 0 or length == 0:
         return (0, 0)
     if repetitions * Float64(length) > SOURCE_MAX_SAFE_INTEGER:

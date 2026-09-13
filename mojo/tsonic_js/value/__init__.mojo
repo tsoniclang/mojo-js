@@ -23,6 +23,7 @@ from .factories import (
     js_value_from_native_bytes,
     js_value_from_bool,
     js_value_from_number,
+    js_value_from_bigint,
     js_value_from_string,
     js_value_from_symbol,
     js_value_from_null,

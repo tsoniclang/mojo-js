@@ -73,7 +73,9 @@ struct JsMap[K: AnyType, V: AnyType](Equatable, ImplicitlyCopyable, Sized):
             )
         else:
             self._entries.append(
-                _JsMapEntry[Self.K, Self.V](canonical_collection_key(key), value^)
+                _JsMapEntry[Self.K, Self.V](
+                    canonical_collection_key(key), value^
+                )
             )
         return self
 
@@ -133,25 +135,29 @@ struct JsMap[K: AnyType, V: AnyType](Equatable, ImplicitlyCopyable, Sized):
         return self._entries.find[Self.K, _map_matches[Self.K, Self.V]](key)
 
 
-def _map_key[K: Copyable & Deinitable, V: Copyable & Deinitable](
-    entry: _JsMapEntry[K, V]
-) -> K:
+def _map_key[
+    K: AnyType, V: AnyType
+](entry: _JsMapEntry[K, V]) -> K where conforms_to(K, Copyable & Deinitable):
     return entry.key.copy()
 
 
-def _map_value[K: Copyable & Deinitable, V: Copyable & Deinitable](
-    entry: _JsMapEntry[K, V]
-) -> V:
+def _map_value[
+    K: AnyType, V: AnyType
+](entry: _JsMapEntry[K, V]) -> V where conforms_to(V, Copyable & Deinitable):
     return entry.value.copy()
 
 
-def _map_entry[K: Copyable & Deinitable, V: Copyable & Deinitable](
-    entry: _JsMapEntry[K, V]
-) -> Tuple[K, V]:
+def _map_entry[
+    K: AnyType, V: AnyType
+](entry: _JsMapEntry[K, V]) -> Tuple[K, V] where conforms_to(
+    K, Copyable & Deinitable
+) and conforms_to(V, Copyable & Deinitable):
     return (entry.key.copy(), entry.value.copy())
 
 
 def _map_matches[
-    K: Copyable & Deinitable & Equatable, V: Copyable & Deinitable
-](entry: _JsMapEntry[K, V], key: K) -> Bool:
+    K: AnyType, V: AnyType
+](entry: _JsMapEntry[K, V], key: K) -> Bool where conforms_to(
+    K, Copyable & Deinitable & Equatable
+):
     return same_value_zero(entry.key, key)

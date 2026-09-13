@@ -171,7 +171,8 @@ def math_round(value: Float64) -> Float64:
         or value == 0
     ):
         return value
-    var rounded = math.floor(value + 0.5)
+    var lower = math.floor(value)
+    var rounded = lower + (1.0 if value - lower >= 0.5 else 0.0)
     return -0.0 if rounded == 0 and value < 0 else rounded
 
 

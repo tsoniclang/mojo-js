@@ -10,14 +10,21 @@ def option_value(options: JsValue, name: String) raises -> JsValue:
     return JsValue()
 
 
-def string_option(options: JsValue, name: String, default: String) raises -> String:
+def string_option(
+    options: JsValue, name: String, default: String
+) raises -> String:
     return option_string(option_value(options, name), default)
 
 
 def option_string(value: JsValue, default: String) raises -> String:
     if value.is_symbol():
-        raise Error("A symbol cannot be converted to an internationalization option string")
-    return default if value.is_undefined() else js_value_to_string(value).to_native_strict()
+        raise Error(
+            "A symbol cannot be converted to an internationalization option"
+            " string"
+        )
+    return default if value.is_undefined() else js_value_to_string(
+        value
+    ).to_native_strict()
 
 
 def unicode_type_option(options: JsValue, name: String) raises -> String:
@@ -26,7 +33,7 @@ def unicode_type_option(options: JsValue, name: String) raises -> String:
         return String()
     var value = option_string(selected, "")
     validate_unicode_type(value)
-    return value^
+    return value.lower()
 
 
 def boolean_option(options: JsValue, name: String) raises -> Int32:
@@ -35,14 +42,18 @@ def boolean_option(options: JsValue, name: String) raises -> Int32:
 
 
 def validate_unicode_type(value: String) raises:
-    if len(value) == 0:
+    if value.byte_length() == 0:
         raise Error("Unicode locale type must be non-empty")
     for part in value.split("-"):
         var bytes = String(part).as_bytes()
         if len(bytes) < 3 or len(bytes) > 8:
             raise Error("Invalid Unicode locale type")
         for byte in bytes:
-            if not ((byte >= 48 and byte <= 57) or (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122)):
+            if not (
+                (byte >= 48 and byte <= 57)
+                or (byte >= 65 and byte <= 90)
+                or (byte >= 97 and byte <= 122)
+            ):
                 raise Error("Invalid Unicode locale type")
 
 

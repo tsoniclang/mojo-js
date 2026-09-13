@@ -57,7 +57,7 @@ static TsonicIntlResult *formatted_result(const UFormattedNumber *formatted) {
 }
 
 TsonicIntlResult *tsonic_intl_format_number(const UNumberFormatter *formatter,
-    double value, const char *decimal, int parts) {
+    double value, const char *decimal, int parts, int unit_style) {
     if (decimal != NULL && !bounded_ascii(decimal, 128)) return tsonic_intl_failure("Invalid exact numeric input");
     if (decimal != NULL) {
         size_t length = strlen(decimal), index = decimal[0] == '-' ? 1 : 0;
@@ -80,7 +80,7 @@ TsonicIntlResult *tsonic_intl_format_number(const UNumberFormatter *formatter,
     if (parts && result != NULL && !result->failed) {
         int special = decimal != NULL ? 0 : isnan(value) ? 1 : isinf(value) ? 2 : 0;
         int negative = decimal != NULL ? decimal[0] == '-' : !isnan(value) && signbit(value);
-        tsonic_intl_number_parts(result, formatted, negative, special);
+        tsonic_intl_number_parts(result, formatted, negative, special, unit_style);
     }
     unumf_closeResult(formatted);
     return result;

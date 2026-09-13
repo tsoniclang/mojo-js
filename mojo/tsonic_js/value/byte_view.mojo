@@ -11,7 +11,11 @@ struct JsByteView(ImplicitlyCopyable):
     var identity: ArcPointer[Bool]
 
     def validate(self) raises:
-        if self.offset < 0 or self.length < 0 or self.offset > len(self.storage[]) - self.length:
+        if (
+            self.offset < 0
+            or self.length < 0
+            or self.offset > len(self.storage[]) - self.length
+        ):
             raise Error("JavaScript byte view is outside its backing storage")
 
     def get(self, index: Int) raises -> UInt8:

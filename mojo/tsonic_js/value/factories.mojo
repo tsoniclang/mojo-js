@@ -3,7 +3,14 @@ from std.memory import ArcPointer
 from tsonic_runtime import Callable, RaisingCallable, WeakReferenceIdentity
 from ..string import JsString
 from ..symbol import JsSymbol
-from .model import JsValue, _SourceValueView, _NativeValuePresentation, _JsValueNode, _ARRAY, _OBJECT
+from .model import (
+    JsValue,
+    _SourceValueView,
+    _NativeValuePresentation,
+    _JsValueNode,
+    _ARRAY,
+    _OBJECT,
+)
 from .byte_view import JsByteView
 from .builder import _JsValueBuilder
 from .graph import _append_js_value_graph
@@ -15,6 +22,13 @@ def js_value_from_bool(value: Bool) -> JsValue:
 
 def js_value_from_number(value: Float64) -> JsValue:
     return JsValue(value)
+
+
+def js_value_from_bigint[T: Writable](value: T) -> JsValue:
+    comptime assert (
+        T == Int64 or T == UInt64 or T == Int128 or T == UInt128
+    ), "Bigint boxing requires an exact bigint-backed source integer"
+    return JsValue._from_bigint_digits(JsString(String(value)))
 
 
 def js_value_from_string(value: JsString) -> JsValue:
@@ -46,7 +60,9 @@ def js_value_from_native_bytes(
     to_string: Callable[Tuple[], JsString],
     inspect: Callable[Tuple[Int], String],
 ) -> JsValue:
-    var presentation = ArcPointer(_NativeValuePresentation(brand, to_json, to_string, inspect))
+    var presentation = ArcPointer(
+        _NativeValuePresentation(brand, to_json, to_string, inspect)
+    )
     var nodes = List[_JsValueNode]()
     nodes.append(_JsValueNode(view, Optional(presentation)))
     return JsValue(ArcPointer(nodes^), 0)
@@ -58,7 +74,18 @@ def js_value_from_source_array(
     has: Callable[Tuple[Int], Bool],
     value: Callable[Tuple[Int], JsValue],
 ) -> JsValue:
-    var view = ArcPointer(_SourceValueView(identity, length, None, Optional[Callable[Tuple[Int], Bool]](has), value, None, None))
+    var view = ArcPointer(
+        _SourceValueView(
+            identity,
+            String(),
+            length,
+            None,
+            Optional[Callable[Tuple[Int], Bool]](has),
+            value,
+            None,
+            None,
+        )
+    )
     var nodes = List[_JsValueNode]()
     nodes.append(_JsValueNode(_ARRAY, view))
     return JsValue(ArcPointer(nodes^), 0)
@@ -66,13 +93,27 @@ def js_value_from_source_array(
 
 def js_value_from_source_object(
     identity: WeakReferenceIdentity,
+    prototype_identity: String,
     length: Callable[Tuple[], Int],
     key: Callable[Tuple[Int], JsString],
     value: Callable[Tuple[Int], JsValue],
     to_json: Optional[RaisingCallable[Tuple[String], JsValue, Error]] = None,
-    property_reader: Optional[RaisingCallable[Tuple[JsString], JsValue, Error]] = None,
+    property_reader: Optional[
+        RaisingCallable[Tuple[JsString], JsValue, Error]
+    ] = None,
 ) -> JsValue:
-    var view = ArcPointer(_SourceValueView(identity, length, Optional[Callable[Tuple[Int], JsString]](key), None, value, to_json, property_reader))
+    var view = ArcPointer(
+        _SourceValueView(
+            identity,
+            prototype_identity,
+            length,
+            Optional[Callable[Tuple[Int], JsString]](key),
+            None,
+            value,
+            to_json,
+            property_reader,
+        )
+    )
     var nodes = List[_JsValueNode]()
     nodes.append(_JsValueNode(_OBJECT, view))
     return JsValue(ArcPointer(nodes^), 0)
@@ -85,9 +126,7 @@ def js_value_from_array_values(var values: List[JsValue]) raises -> JsValue:
     var copied_indexes = List[Int]()
     for value in values^:
         children.append(
-            _append_js_value_graph(
-                builder, value, copied, copied_indexes, 0
-            )
+            _append_js_value_graph(builder, value, copied, copied_indexes, 0)
         )
     return builder.value(builder.append_array(children^))
 

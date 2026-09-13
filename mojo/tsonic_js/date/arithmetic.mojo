@@ -45,9 +45,13 @@ def from_components(
     millisecond: Float64,
 ) -> Float64:
     if not (
-        math.isfinite(year) and math.isfinite(month) and math.isfinite(day)
-        and math.isfinite(hour) and math.isfinite(minute)
-        and math.isfinite(second) and math.isfinite(millisecond)
+        math.isfinite(year)
+        and math.isfinite(month)
+        and math.isfinite(day)
+        and math.isfinite(hour)
+        and math.isfinite(minute)
+        and math.isfinite(second)
+        and math.isfinite(millisecond)
     ):
         return invalid_time()
     var integral_month = math.trunc(month)
@@ -59,8 +63,10 @@ def from_components(
         normalized_month += 12.0
     var days = days_from_civil(normalized_year, Int(normalized_month) + 1)
     var day_time = (
-        math.trunc(hour) * 3600000.0 + math.trunc(minute) * 60000.0
-        + math.trunc(second) * 1000.0 + math.trunc(millisecond)
+        math.trunc(hour) * 3600000.0
+        + math.trunc(minute) * 60000.0
+        + math.trunc(second) * 1000.0
+        + math.trunc(millisecond)
     )
     return (days + math.trunc(day) - 1.0) * 86400000.0 + day_time
 
@@ -72,8 +78,10 @@ def days_from_civil(year: Float64, month: Int) -> Float64:
     var shifted_month = month + (-3 if month > 2 else 9)
     var day_of_year = Float64((153 * shifted_month + 2) / 5)
     var day_of_era = (
-        year_of_era * 365.0 + math.floor(year_of_era / 4.0)
-        - math.floor(year_of_era / 100.0) + day_of_year
+        year_of_era * 365.0
+        + math.floor(year_of_era / 4.0)
+        - math.floor(year_of_era / 100.0)
+        + day_of_year
     )
     return era * 146097.0 + day_of_era - 719468.0
 
@@ -89,8 +97,14 @@ def parts(milliseconds: Float64) -> DateParts:
     within -= Int64(minute) * 60000
     var second = Int(within / 1000)
     return DateParts(
-        civil[0], civil[1] - 1, civil[2], floor_mod(Int(days) + 4, 7),
-        hour, minute, second, Int(within - Int64(second) * 1000),
+        civil[0],
+        civil[1] - 1,
+        civil[2],
+        floor_mod(Int(days) + 4, 7),
+        hour,
+        minute,
+        second,
+        Int(within - Int64(second) * 1000),
     )
 
 
@@ -144,7 +158,9 @@ def civil_from_days(days: Int) -> Tuple[Int, Int, Int]:
     var era = floor_div(shifted, 146097)
     var day_of_era = shifted - era * 146097
     var year_of_era = (
-        day_of_era - day_of_era / 1460 + day_of_era / 36524
+        day_of_era
+        - day_of_era / 1460
+        + day_of_era / 36524
         - day_of_era / 146096
     ) / 365
     var year = year_of_era + era * 400

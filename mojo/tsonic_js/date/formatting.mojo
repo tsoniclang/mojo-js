@@ -9,9 +9,16 @@ def iso_string(milliseconds: Float64) raises -> String:
         raise Error("Invalid JavaScript Date")
     var value = parts(milliseconds)
     return (
-        year_text(value.year) + "-" + pad(value.month + 1, 2) + "-"
-        + pad(value.day, 2) + "T" + clock_text(value) + "."
-        + pad(value.millisecond, 3) + "Z"
+        year_text(value.year)
+        + "-"
+        + pad(value.month + 1, 2)
+        + "-"
+        + pad(value.day, 2)
+        + "T"
+        + clock_text(value)
+        + "."
+        + pad(value.millisecond, 3)
+        + "Z"
     )
 
 
@@ -20,9 +27,16 @@ def utc_string(milliseconds: Float64) -> String:
         return "Invalid Date"
     var value = parts(milliseconds)
     return (
-        weekday_name(value.weekday) + ", " + pad(value.day, 2) + " "
-        + month_name(value.month) + " " + calendar_year_text(value.year) + " "
-        + clock_text(value) + " GMT"
+        weekday_name(value.weekday)
+        + ", "
+        + pad(value.day, 2)
+        + " "
+        + month_name(value.month)
+        + " "
+        + calendar_year_text(value.year)
+        + " "
+        + clock_text(value)
+        + " GMT"
     )
 
 
@@ -31,8 +45,13 @@ def local_date_string(milliseconds: Float64) raises -> String:
         return "Invalid Date"
     var value = parts(milliseconds + zone_offset(milliseconds))
     return (
-        weekday_name(value.weekday) + " " + month_name(value.month) + " "
-        + pad(value.day, 2) + " " + calendar_year_text(value.year)
+        weekday_name(value.weekday)
+        + " "
+        + month_name(value.month)
+        + " "
+        + pad(value.day, 2)
+        + " "
+        + calendar_year_text(value.year)
     )
 
 
@@ -43,20 +62,33 @@ def local_time_string(milliseconds: Float64) raises -> String:
     var value = parts(milliseconds + offset)
     var minutes = Int(math.abs(offset) / 60000.0)
     return (
-        clock_text(value) + " GMT" + ("+" if offset >= 0 else "-")
-        + pad(minutes / 60, 2) + pad(minutes % 60, 2)
-        + " (" + zone_name(milliseconds) + ")"
+        clock_text(value)
+        + " GMT"
+        + ("+" if offset >= 0 else "-")
+        + pad(minutes / 60, 2)
+        + pad(minutes % 60, 2)
+        + " ("
+        + zone_name(milliseconds)
+        + ")"
     )
 
 
 def local_string(milliseconds: Float64) raises -> String:
     if not math.isfinite(milliseconds):
         return "Invalid Date"
-    return local_date_string(milliseconds) + " " + local_time_string(milliseconds)
+    return (
+        local_date_string(milliseconds) + " " + local_time_string(milliseconds)
+    )
 
 
 def clock_text(value: DateParts) -> String:
-    return pad(value.hour, 2) + ":" + pad(value.minute, 2) + ":" + pad(value.second, 2)
+    return (
+        pad(value.hour, 2)
+        + ":"
+        + pad(value.minute, 2)
+        + ":"
+        + pad(value.second, 2)
+    )
 
 
 def pad(value: Int, width: Int) -> String:

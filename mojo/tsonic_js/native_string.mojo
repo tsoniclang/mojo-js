@@ -1,4 +1,5 @@
 from .string import JsString, string_from_char_code, string_from_code_point
+from .string_indexes import string_repeat_count
 from std.collections import List
 
 
@@ -88,7 +89,10 @@ def native_string_pad_start(
 
 
 def native_string_repeat(value: String, count: Float64) raises -> String:
-    return JsString(value).repeat(count).to_native_strict()
+    var repetitions = string_repeat_count(count)
+    if repetitions == 0 or value.byte_length() == 0:
+        return String()
+    return JsString(value).repeat(repetitions).to_native_strict()
 
 
 def native_string_slice(

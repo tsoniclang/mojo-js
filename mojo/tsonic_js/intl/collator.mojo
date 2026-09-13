@@ -12,14 +12,26 @@ from .collator_options import IntlResolvedCollatorOptions
 struct IntlCollator(Equatable, ImplicitlyCopyable):
     var _owner: ArcPointer[IntlResult]
 
-    def __init__(out self, locales: JsValue = JsValue(), options: JsValue = JsValue()) raises:
+    def __init__(
+        out self, locales: JsValue = JsValue(), options: JsValue = JsValue()
+    ) raises:
         var requested = requested_locales(locales)
         var settings = CollationOptions(options)
         var locale = collation_locale(requested)
-        var owner = IntlResult(external_call[
-            "tsonic_js_intl_collator_open", OptionalPointer[NoneType, MutUntrackedOrigin],
-        ](locale.as_c_string_slice().ptr(), settings.collation.as_c_string_slice().ptr(),
-          c_int(settings.search), settings.numeric, settings.case_first, settings.sensitivity, settings.punctuation))
+        var owner = IntlResult(
+            external_call[
+                "tsonic_js_intl_collator_open",
+                OptionalPointer[NoneType, MutUntrackedOrigin],
+            ](
+                locale.as_c_string_slice().ptr(),
+                settings.collation.as_c_string_slice().ptr(),
+                c_int(settings.search),
+                settings.numeric,
+                settings.case_first,
+                settings.sensitivity,
+                settings.punctuation,
+            )
+        )
         owner.check()
         self._owner = ArcPointer(owner^)
 
@@ -35,14 +47,25 @@ struct IntlCollator(Equatable, ImplicitlyCopyable):
     def compare_units(self, left: JsString, right: JsString) raises -> Float64:
         var first = left._copy_code_units()
         var second = right._copy_code_units()
-        var result = IntlResult(external_call[
-            "tsonic_js_intl_collator_compare", OptionalPointer[NoneType, MutUntrackedOrigin],
-        ](self._owner[].pointer.value(), first.unsafe_ptr(), c_size_t(len(first)), second.unsafe_ptr(), c_size_t(len(second))))
+        var result = IntlResult(
+            external_call[
+                "tsonic_js_intl_collator_compare",
+                OptionalPointer[NoneType, MutUntrackedOrigin],
+            ](
+                self._owner[].pointer.value(),
+                first.unsafe_ptr(),
+                c_size_t(len(first)),
+                second.unsafe_ptr(),
+                c_size_t(len(second)),
+            )
+        )
         return result.order()
 
     def resolved_options(self) raises -> IntlResolvedCollatorOptions:
         return IntlResolvedCollatorOptions(self._owner[])
 
 
-def intl_collator_new(locales: JsValue = JsValue(), options: JsValue = JsValue()) raises -> IntlCollator:
+def intl_collator_new(
+    locales: JsValue = JsValue(), options: JsValue = JsValue()
+) raises -> IntlCollator:
     return IntlCollator(locales, options)

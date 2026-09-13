@@ -12,19 +12,27 @@ def json_parse(source: JsString) raises -> JsValue:
     return parser.parse()
 
 
-def json_stringify_with_property_list(value: JsValue, properties: JsValue) raises -> Optional[JsString]:
+def json_stringify_with_property_list(
+    value: JsValue, properties: JsValue
+) raises -> Optional[JsString]:
     return _stringify_properties(value, properties, JsString())
 
 
-def json_stringify_with_property_list_and_space_number(value: JsValue, properties: JsValue, space: Float64) raises -> Optional[JsString]:
+def json_stringify_with_property_list_and_space_number(
+    value: JsValue, properties: JsValue, space: Float64
+) raises -> Optional[JsString]:
     return _stringify_properties(value, properties, _number_indent(space))
 
 
-def json_stringify_with_property_list_and_space_string(value: JsValue, properties: JsValue, space: JsString) raises -> Optional[JsString]:
+def json_stringify_with_property_list_and_space_string(
+    value: JsValue, properties: JsValue, space: JsString
+) raises -> Optional[JsString]:
     return _stringify_properties(value, properties, _string_indent(space))
 
 
-def _stringify_properties(value: JsValue, properties: JsValue, indent: JsString) raises -> Optional[JsString]:
+def _stringify_properties(
+    value: JsValue, properties: JsValue, indent: JsString
+) raises -> Optional[JsString]:
     var writer = _JsonWriter(json_property_list(properties), indent)
     if not writer.write_property(JsString(), value, 0):
         return None
@@ -36,6 +44,18 @@ def json_stringify(value: JsValue) raises -> Optional[JsString]:
     if not writer.write_property(JsString(), value, 0):
         return None
     return Optional[JsString](writer.finish())
+
+
+def json_stringify_for_inspection(value: JsValue) raises -> JsString:
+    var writer = _JsonWriter()
+    try:
+        if not writer.write_property(JsString(), value, 0):
+            return JsString("undefined")
+        return writer.finish()
+    except error:
+        if writer.circular:
+            return JsString("[Circular]")
+        raise error
 
 
 def json_stringify_with_space_number(

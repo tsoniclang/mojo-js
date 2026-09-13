@@ -14,5 +14,10 @@ def formatted_parts(result: IntlResult) raises -> JsArray[IntlFormatPart]:
         var text = List[UInt16](capacity=bounds[1])
         for offset in range(bounds[1]):
             text.append(units[bounds[0] + offset])
-        parts.append(IntlFormatPart(result.part_type(index), JsString(code_units=text^).to_native_strict()))
+        parts.append(
+            IntlFormatPart(
+                result.part_type(index),
+                JsString(code_units=text^).to_native_strict(),
+            )
+        )
     return JsArray[IntlFormatPart](parts^)

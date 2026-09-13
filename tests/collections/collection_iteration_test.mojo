@@ -1,6 +1,13 @@
 from std.memory import bitcast
 from std.testing import assert_equal, assert_false, assert_true
-from tsonic_js import JsIteratorReturn, JsIteratorYield, JsMap, JsSet, JsValue, array_from
+from tsonic_js import (
+    JsIteratorReturn,
+    JsIteratorYield,
+    JsMap,
+    JsSet,
+    JsValue,
+    array_from,
+)
 
 
 def map_mutations() raises:
@@ -8,19 +15,19 @@ def map_mutations() raises:
     _ = values.set(1, "one")
     _ = values.set(2, "two")
     var iterator = values.entries()
-    var alias = iterator
-    assert_true(iterator == alias)
+    var retained_alias = iterator
+    assert_true(iterator == retained_alias)
     assert_false(iterator == values.entries())
     assert_equal(iterator.next_optional().value()[1], "one")
     _ = values.set(2, "updated")
     _ = values.set(3, "three")
-    assert_equal(alias.next_optional().value()[1], "updated")
+    assert_equal(retained_alias.next_optional().value()[1], "updated")
     assert_true(values.delete(3))
     _ = values.set(3, "reinserted")
     assert_equal(iterator.next_optional().value()[1], "reinserted")
     assert_false(iterator.next_optional())
     _ = values.set(4, "four")
-    assert_false(alias.next_optional())
+    assert_false(retained_alias.next_optional())
     assert_equal(values.js_size(), 4)
 
 
@@ -110,9 +117,9 @@ def main() raises:
     var yielded = first[JsIteratorYield[String]].copy()
     assert_false(yielded.get_done().value())
     assert_equal(yielded.get_value(), "first")
-    var alias = yielded
+    var retained_alias = yielded
     yielded.set_value("changed")
-    assert_equal(alias.get_value(), "changed")
+    assert_equal(retained_alias.get_value(), "changed")
     var last = iterator.next()
     assert_true(last.isa[JsIteratorReturn[JsValue]]())
     assert_true(last[JsIteratorReturn[JsValue]].get_done())

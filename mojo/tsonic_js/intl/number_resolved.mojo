@@ -12,11 +12,14 @@ struct _NumberResolvedOptions:
     var numbering_system: String
     var options: NumberOptions
     var grouping: Variant[Bool, String]
+    var unit: Optional[String]
+    var unit_display: Optional[String]
 
 
 def _text(owner: IntlResult, field: Int) raises -> String:
     var pointer = external_call[
-        "tsonic_js_intl_number_formatter_text", OptionalPointer[UInt8, ImmUntrackedOrigin],
+        "tsonic_js_intl_number_formatter_text",
+        OptionalPointer[UInt8, ImmUntrackedOrigin],
     ](owner.pointer.value(), c_int(field))
     if not pointer:
         raise Error("A retained number formatter has no resolved text field")
@@ -30,7 +33,16 @@ struct IntlResolvedNumberFormatOptions(Equatable, ImplicitlyCopyable):
         var grouping = Variant[Bool, String](False)
         if options.grouping:
             grouping = Variant[Bool, String](options.grouping.value())
-        self._state = ArcPointer(_NumberResolvedOptions(_text(owner, 0), _text(owner, 1), options, grouping^))
+        self._state = ArcPointer(
+            _NumberResolvedOptions(
+                _text(owner, 0),
+                _text(owner, 1),
+                options,
+                grouping^,
+                options.unit,
+                options.unit_display,
+            )
+        )
 
     def __eq__(self, other: Self) -> Bool:
         return self._state is other._state
@@ -79,6 +91,18 @@ struct IntlResolvedNumberFormatOptions(Equatable, ImplicitlyCopyable):
 
     def set_use_grouping(self, var value: Variant[Bool, String]):
         self._state[].grouping = value^
+
+    def get_unit(self) -> Optional[String]:
+        return self._state[].unit
+
+    def set_unit(self, value: Optional[String]):
+        self._state[].unit = value
+
+    def get_unit_display(self) -> Optional[String]:
+        return self._state[].unit_display
+
+    def set_unit_display(self, value: Optional[String]):
+        self._state[].unit_display = value
 
     def get_minimum_integer_digits(self) -> Float64:
         return self._state[].options.precision.minimum_integer

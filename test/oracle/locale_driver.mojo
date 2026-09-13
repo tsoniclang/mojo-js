@@ -3,7 +3,7 @@ from std.sys import argv
 from tsonic_js import JsString, JsValue, json_parse, json_stringify, js_value_from_string, js_value_from_number, js_string_to_locale_lower_case, js_string_to_locale_upper_case, js_string_locale_compare
 from tsonic_js import date_new, date_to_locale_string, date_to_locale_date_string, date_to_locale_time_string
 from tsonic_js import number_to_locale_string
-from locale_inputs import field, number_input
+from locale_inputs import field, number_input, unsigned_input
 from intl_services import evaluate_service
 
 
@@ -21,7 +21,7 @@ def evaluate(record: JsValue) raises -> JsValue:
         var output = String()
         if not kind.is_undefined() and kind.string_value().to_native_strict() == "integer":
             var decimal = input.string_value().to_native_strict()
-            output = number_to_locale_string(Int(decimal), locales, options) if decimal.startswith("-") else number_to_locale_string(UInt(decimal), locales, options)
+            output = number_to_locale_string(Int(decimal), locales, options) if decimal.startswith("-") else number_to_locale_string(unsigned_input(decimal), locales, options)
         else:
             var number = number_input(input)
             output = number_to_locale_string(number, locales, options)

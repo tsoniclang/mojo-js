@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { canonicalIntlOptions, equivalentLocaleResult, referenceDate, referenceDateTimeFormat, referenceResolvedLocale } from "./locale-reference.mjs";
 
 const executable = process.argv[2];
 assert.ok(executable, "Expected the compiled locale oracle");
@@ -107,6 +108,13 @@ const numberOptions = [
   { notation: "compact" }, { notation: "compact", compactDisplay: "long" },
   { numberingSystem: "arab" }, { numberingSystem: "ARAB" }, { numberingSystem: "mathsans" },
   { numberingSystem: "bogus" },
+  { style: "unit", unit: "meter" },
+  { style: "unit", unit: "liter", unitDisplay: "long" },
+  { style: "unit", unit: "kilometer-per-hour", unitDisplay: "narrow" },
+  { style: "unit", unit: "percent" },
+  { style: "unit", unit: "meter", notation: "compact" },
+  { style: "unit", unit: "meter", signDisplay: "always", useGrouping: false, maximumFractionDigits: 1 },
+  { unit: "meter", unitDisplay: "long" },
 ];
 for (const signDisplay of ["auto", "always", "never", "exceptZero", "negative"]) numberOptions.push({ signDisplay });
 for (const roundingMode of ["ceil", "floor", "expand", "trunc", "halfCeil", "halfFloor", "halfExpand", "halfTrunc", "halfEven"]) {
@@ -133,6 +141,26 @@ for (const selected of [null, { style: "currency" }, { currency: "US" }, { curre
 }
 for (const locale of [null, "invalid_tag", ["en-US", "invalid_tag"]]) {
   cases.push({ operation: "number", value: 42, locales: locale });
+}
+for (const unit of Intl.supportedValuesOf("unit")) {
+  for (const unitDisplay of ["short", "long", "narrow"]) {
+    for (const operation of ["number", "numberFormat", "numberParts", "numberResolved"]) {
+      cases.push({ operation, value: 2.5, locales: "en-US", options: { style: "unit", unit, unitDisplay } });
+    }
+  }
+  cases.push({ operation: "numberParts", value: 1, locales: "de-DE", options: { style: "unit", unit: `${unit}-per-second`, unitDisplay: "long" } });
+}
+for (const selected of [
+  { style: "unit" }, { style: "unit", unit: null }, { style: "unit", unit: "" },
+  { style: "unit", unit: "Meter" }, { style: "unit", unit: "meter-per-" },
+  { style: "unit", unit: "-per-second" }, { style: "unit", unit: "meter-per-second-per-hour" },
+  { style: "unit", unit: "meter group-off" }, { style: "unit", unit: "meter\0" },
+  { style: "unit", unit: "meter|mile" }, { style: "unit", unit: "length-meter" },
+  { style: "unit", unit: "meter", unitDisplay: "wide" }, { unit: "bogus" }, { unitDisplay: "" },
+]) {
+  for (const operation of ["number", "numberFormat", "numberResolved"]) {
+    cases.push({ operation, value: 3, locales: "en-US", options: selected });
+  }
 }
 for (const locale of ["en-US", "de-DE", "ar-EG", "ja-JP", "en-US-u-nu-arab"]) {
   for (const selected of numberOptions) {
@@ -170,22 +198,25 @@ assert.equal(actual.stderr, "");
 const lines = actual.stdout.trimEnd().split("\n");
 assert.equal(lines.length, cases.length);
 const failures = [];
-for (const [index, entry] of cases.entries()) {
+let localeDataVariations = 0;
+for (const [index, original] of cases.entries()) {
   let expected;
   try {
+    const invalidPrototypeDate = ["date", "time", "datetime"].includes(original.operation) &&
+      Number.isNaN(new Date(original.value).getTime());
+    const entry = { ...original, options: invalidPrototypeDate ? original.options : canonicalIntlOptions(original.options) };
+    if (entry.operation === "lower" || entry.operation === "upper") Intl.getCanonicalLocales(entry.locales);
     const number = entry.numericKind === "integer" ? BigInt(entry.value) : Number(entry.value);
     const value = entry.operation === "numberFormat" ? new Intl.NumberFormat(entry.locales, entry.options).format(number)
       : entry.operation === "numberParts" ? new Intl.NumberFormat(entry.locales, entry.options).formatToParts(number)
         : entry.operation === "numberResolved" ? new Intl.NumberFormat(entry.locales, entry.options).resolvedOptions()
-          : entry.operation === "dateFormat" ? new Intl.DateTimeFormat(entry.locales, entry.options).format(Number(entry.value))
-            : entry.operation === "dateParts" ? new Intl.DateTimeFormat(entry.locales, entry.options).formatToParts(Number(entry.value))
+          : entry.operation === "dateFormat" ? referenceDateTimeFormat(entry.locales, entry.options).format(Number(entry.value))
+            : entry.operation === "dateParts" ? referenceDateTimeFormat(entry.locales, entry.options).formatToParts(Number(entry.value))
               : entry.operation === "dateResolvedBase" ? dateResolvedBase(entry)
-                : entry.operation === "collatorResolved" ? new Intl.Collator(entry.locales, entry.options).resolvedOptions()
+                : entry.operation === "collatorResolved" ? collatorResolved(entry)
                   : entry.operation === "collatorCompare" ? Math.sign(new Intl.Collator(entry.locales, entry.options).compare(entry.value, entry.right))
       : entry.operation === "number" ? number.toLocaleString(entry.locales, entry.options)
-      : entry.operation === "date" ? new Date(entry.value).toLocaleDateString(entry.locales, entry.options)
-      : entry.operation === "time" ? new Date(entry.value).toLocaleTimeString(entry.locales, entry.options)
-        : entry.operation === "datetime" ? new Date(entry.value).toLocaleString(entry.locales, entry.options)
+      : ["date", "time", "datetime"].includes(entry.operation) ? referenceDate(entry)
           : entry.operation === "lower" ? entry.value.toLocaleLowerCase(entry.locales)
       : entry.operation === "upper" ? entry.value.toLocaleUpperCase(entry.locales)
         : entry.operation === "defaultLower" ? entry.value.toLowerCase()
@@ -195,12 +226,18 @@ for (const [index, entry] of cases.entries()) {
   } catch {
     expected = "!error";
   }
-  if (lines[index] !== expected) failures.push({ entry, expected, actual: lines[index] });
+  if (!equivalentLocaleResult(original, expected, lines[index])) failures.push({ entry: original, expected, actual: lines[index] });
+  else if (lines[index] !== expected) localeDataVariations += 1;
 }
 assert.deepEqual(failures, []);
-console.log(`Locale string/date/number oracle: ${cases.length}/${cases.length}`);
+console.log(`Locale string/date/number oracle: ${cases.length}/${cases.length}; permitted date-literal data variations: ${localeDataVariations}`);
 
 function dateResolvedBase(entry) {
-  const result = new Intl.DateTimeFormat(entry.locales, entry.options).resolvedOptions();
-  return { locale: result.locale, calendar: result.calendar, numberingSystem: result.numberingSystem, timeZone: result.timeZone };
+  const result = referenceDateTimeFormat(entry.locales, entry.options).resolvedOptions();
+  return { locale: referenceResolvedLocale(entry, result, Intl.DateTimeFormat), calendar: result.calendar, numberingSystem: result.numberingSystem, timeZone: result.timeZone };
+}
+
+function collatorResolved(entry) {
+  const result = new Intl.Collator(entry.locales, entry.options).resolvedOptions();
+  return { ...result, locale: referenceResolvedLocale(entry, result, Intl.Collator) };
 }

@@ -2,6 +2,7 @@ from std.ffi import c_int, external_call
 from ..value import JsValue, js_truthy
 from .options import option_value, option_string, unicode_type_option
 from .number_precision import NumberPrecision, number_choice, number_precision
+from .number_unit import number_unit, number_unit_skeleton
 
 
 def _currency(options: JsValue) raises -> String:
@@ -65,6 +66,8 @@ struct NumberOptions(ImplicitlyCopyable):
     var currency: Optional[String]
     var currency_display: Optional[String]
     var currency_sign: Optional[String]
+    var unit: Optional[String]
+    var unit_display: Optional[String]
     var notation: String
     var compact_display: Optional[String]
     var grouping: Optional[String]
@@ -72,18 +75,40 @@ struct NumberOptions(ImplicitlyCopyable):
     var precision: NumberPrecision
 
     def __init__(out self, options: JsValue) raises:
-        _ = number_choice(options, "localeMatcher", "best fit", "lookup|best fit")
+        _ = number_choice(
+            options, "localeMatcher", "best fit", "lookup|best fit"
+        )
         self.numbering = unicode_type_option(options, "numberingSystem")
-        var style = number_choice(options, "style", "decimal", "decimal|percent|currency")
+        var style = number_choice(
+            options, "style", "decimal", "decimal|percent|currency|unit"
+        )
         var currency = _currency(options)
-        var currency_display = number_choice(options, "currencyDisplay", "symbol", "code|symbol|narrowSymbol|name")
-        var currency_sign = number_choice(options, "currencySign", "standard", "standard|accounting")
-        var notation = number_choice(options, "notation", "standard", "standard|scientific|engineering|compact")
+        var currency_display = number_choice(
+            options,
+            "currencyDisplay",
+            "symbol",
+            "code|symbol|narrowSymbol|name",
+        )
+        var currency_sign = number_choice(
+            options, "currencySign", "standard", "standard|accounting"
+        )
+        var unit = number_unit(options, style == "unit")
+        var unit_display = number_choice(
+            options, "unitDisplay", "short", "short|long|narrow"
+        )
+        var notation = number_choice(
+            options,
+            "notation",
+            "standard",
+            "standard|scientific|engineering|compact",
+        )
         self.style = style
         self.notation = notation
         self.currency = None
         self.currency_display = None
         self.currency_sign = None
+        self.unit = None
+        self.unit_display = None
         var minimum_fraction = 0
         var maximum_fraction = 3
         self.skeleton = String()
@@ -93,7 +118,11 @@ struct NumberOptions(ImplicitlyCopyable):
             self.currency = currency
             self.currency_display = currency_display
             self.currency_sign = currency_sign
-            var digits = Int(external_call["tsonic_js_intl_currency_digits", c_int](currency.as_c_string_slice().ptr()))
+            var digits = Int(
+                external_call["tsonic_js_intl_currency_digits", c_int](
+                    currency.as_c_string_slice().ptr()
+                )
+            )
             if digits < 0:
                 raise Error("Unable to resolve currency fraction digits")
             if notation == "standard":
@@ -106,13 +135,23 @@ struct NumberOptions(ImplicitlyCopyable):
                 width = String("narrow")
             elif currency_display == "name":
                 width = String("full-name")
-            self.skeleton = "currency/" + currency + " unit-width-" + width + " "
+            self.skeleton = (
+                "currency/" + currency + " unit-width-" + width + " "
+            )
         elif style == "percent":
             maximum_fraction = 0
             self.skeleton = String("percent scale/100 ")
-        self.precision = number_precision(options, notation == "compact", minimum_fraction, maximum_fraction)
+        elif style == "unit":
+            self.unit = unit
+            self.unit_display = unit_display
+            self.skeleton = number_unit_skeleton(unit.value(), unit_display)
+        self.precision = number_precision(
+            options, notation == "compact", minimum_fraction, maximum_fraction
+        )
         self.skeleton += self.precision.skeleton
-        var compact_display = number_choice(options, "compactDisplay", "short", "short|long")
+        var compact_display = number_choice(
+            options, "compactDisplay", "short", "short|long"
+        )
         self.compact_display = None
         if notation == "compact":
             self.compact_display = compact_display
@@ -121,6 +160,13 @@ struct NumberOptions(ImplicitlyCopyable):
             self.skeleton += " " + notation
         self.grouping = _grouping(options, notation == "compact")
         self.skeleton += " " + _grouping_skeleton(self.grouping)
-        var sign = number_choice(options, "signDisplay", "auto", "auto|never|always|exceptZero|negative")
+        var sign = number_choice(
+            options,
+            "signDisplay",
+            "auto",
+            "auto|never|always|exceptZero|negative",
+        )
         self.sign_display = sign
-        self.skeleton += " " + _sign(sign, style == "currency" and currency_sign == "accounting")
+        self.skeleton += " " + _sign(
+            sign, style == "currency" and currency_sign == "accounting"
+        )

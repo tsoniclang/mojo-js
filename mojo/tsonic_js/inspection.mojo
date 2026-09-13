@@ -10,7 +10,13 @@ def _escaped_unit(value: UInt32) -> String:
     var digits = "0123456789abcdef".as_bytes()
     var result = String("\\u")
     for shift in range(12, -1, -4):
-        result += String(Codepoint(unsafe_unchecked_codepoint=UInt32(digits[Int((value >> shift) & 15)])))
+        result += String(
+            Codepoint(
+                unsafe_unchecked_codepoint=UInt32(
+                    digits[Int((value >> UInt32(shift)) & 15)]
+                )
+            )
+        )
     return result
 
 
@@ -38,7 +44,14 @@ def quote_inspected_string(value: JsString) -> String:
             if index < len(value):
                 var low = UInt32(value.code_unit_at(index).value())
                 if low >= 0xDC00 and low <= 0xDFFF:
-                    result += String(Codepoint(unsafe_unchecked_codepoint=0x10000 + ((unit - 0xD800) << 10) + low - 0xDC00))
+                    result += String(
+                        Codepoint(
+                            unsafe_unchecked_codepoint=0x10000
+                            + ((unit - 0xD800) << 10)
+                            + low
+                            - 0xDC00
+                        )
+                    )
                     index += 1
                     continue
             result += _escaped_unit(unit)
@@ -54,7 +67,12 @@ def _plain_key(value: JsString) -> Bool:
         return False
     for index in range(len(value)):
         var unit = value.code_unit_at(index).value()
-        if (unit >= 65 and unit <= 90) or (unit >= 97 and unit <= 122) or unit == 95 or unit == 36:
+        if (
+            (unit >= 65 and unit <= 90)
+            or (unit >= 97 and unit <= 122)
+            or unit == 95
+            or unit == 36
+        ):
             continue
         if index != 0 and unit >= 48 and unit <= 57:
             continue
@@ -62,12 +80,23 @@ def _plain_key(value: JsString) -> Bool:
     return True
 
 
-def inspect_value(value: JsValue, depth: Int = 2, array_limit: Int = 100) -> String:
+def inspect_value(
+    value: JsValue,
+    depth: Int = 2,
+    array_limit: Int = 100,
+    show_hidden: Bool = False,
+) -> String:
     var active = List[JsValue]()
-    return _inspect(value, depth, max(0, array_limit), active)
+    return _inspect(value, depth, max(0, array_limit), show_hidden, active)
 
 
-def _inspect(value: JsValue, depth: Int, array_limit: Int, mut active: List[JsValue]) -> String:
+def _inspect(
+    value: JsValue,
+    depth: Int,
+    array_limit: Int,
+    show_hidden: Bool,
+    mut active: List[JsValue],
+) -> String:
     if value.is_undefined():
         return "undefined"
     if value.is_null():
@@ -76,7 +105,11 @@ def _inspect(value: JsValue, depth: Int, array_limit: Int, mut active: List[JsVa
         return "true" if value._bool_value() else "false"
     if value.is_number():
         var number = value._number_value()
-        return "-0" if number == 0 and bitcast[.uint64](number) != 0 else source_number_to_string(number)
+        return "-0" if number == 0 and bitcast[.uint64](
+            number
+        ) != 0 else source_number_to_string(number)
+    if value.is_bigint():
+        return value._string_value().to_native_lossy() + "n"
     if value.is_string():
         return quote_inspected_string(value._string_value())
     var storage = value._storage()
@@ -105,6 +138,8 @@ def _inspect(value: JsValue, depth: Int, array_limit: Int, mut active: List[JsVa
         return "[Array]" if array else "[Object]"
     var count = value._aggregate_length()
     if count == 0:
+        if array and show_hidden:
+            return "[ [length]: 0 ]"
         return "[]" if array else "{}"
     active.append(value)
     var result = String("[ " if array else "{ ")
@@ -118,18 +153,36 @@ def _inspect(value: JsValue, depth: Int, array_limit: Int, mut active: List[JsVa
             while index < limit and not value._aggregate_has(index):
                 index += 1
             var missing = index - start
-            result += "<" + String(missing) + (" empty item>" if missing == 1 else " empty items>")
+            result += (
+                "<"
+                + String(missing)
+                + (" empty item>" if missing == 1 else " empty items>")
+            )
             continue
         if not array:
             var key = value._aggregate_key(index)
-            result += key.to_native_lossy() if _plain_key(key) else quote_inspected_string(key)
+            result += key.to_native_lossy() if _plain_key(
+                key
+            ) else quote_inspected_string(key)
             result += ": "
-        result += _inspect(value._aggregate_value(index), depth - 1, array_limit, active)
+        result += _inspect(
+            value._aggregate_value(index),
+            depth - 1,
+            array_limit,
+            show_hidden,
+            active,
+        )
         index += 1
     if limit != count:
         if limit != 0:
             result += ", "
         var remaining = count - limit
-        result += "... " + String(remaining) + (" more item" if remaining == 1 else " more items")
+        result += (
+            "... "
+            + String(remaining)
+            + (" more item" if remaining == 1 else " more items")
+        )
     _ = active.pop()
+    if array and show_hidden:
+        result += ", [length]: " + String(count)
     return result + (" ]" if array else " }")
