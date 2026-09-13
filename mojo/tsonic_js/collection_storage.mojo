@@ -9,7 +9,7 @@ struct _CollectionData[T: AnyType](
     Deinitable where conforms_to(T, Deinitable),
     Movable where conforms_to(T, Movable),
 ):
-    var slots: List[Optional[Self.T]]
+    var slots: List[downcast[Optional[Self.T], Movable & Deinitable]]
     var size: Int
     var readers: Int
 
