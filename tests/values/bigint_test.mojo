@@ -1,6 +1,7 @@
 from std.collections import List
 from std.testing import assert_equal, assert_false, assert_true
 from tsonic_runtime import (
+    BigInt,
     ErasedCallableContext,
     RaisingCallable,
     allocate_callable_environment,
@@ -63,6 +64,18 @@ def rejected_json(value: JsValue) raises:
 
 
 def main() raises:
+    exact_integer(
+        BigInt.from_decimal_literal(
+            "12345678901234567890123456789012345678901234567890"
+        ),
+        "12345678901234567890123456789012345678901234567890",
+    )
+    exact_integer(
+        -BigInt.from_decimal_literal(
+            "12345678901234567890123456789012345678901234567890"
+        ),
+        "-12345678901234567890123456789012345678901234567890",
+    )
     exact_integer(Int64(-9223372036854775808), "-9223372036854775808")
     exact_integer(UInt64(18446744073709551615), "18446744073709551615")
     exact_integer(UInt64(9007199254740993), "9007199254740993")

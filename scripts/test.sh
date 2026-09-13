@@ -13,13 +13,13 @@ git diff --exit-code -- mojo tests
 
 mkdir -p "${NATIVE_BUILD}"
 CONDA_PREFIX="$(${PIXI_BIN} run printenv CONDA_PREFIX)"
-native_object="$("${PIXI_BIN}" run bash ../mojo-runtime/scripts/build-native.sh)"
+native_output="$("${PIXI_BIN}" run bash ../mojo-runtime/scripts/build-native.sh)"
+mapfile -t native_arguments <<<"$native_output"
 js_native_output="$("${PIXI_BIN}" run bash scripts/build-native.sh)"
 mapfile -t js_native_arguments <<<"${js_native_output}"
 
 link_arguments=(
-  -Xlinker "$native_object"
-  -Xlinker -lstdc++
+  "${native_arguments[@]}"
   "${js_native_arguments[@]}"
 )
 

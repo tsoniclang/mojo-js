@@ -1,6 +1,6 @@
 from std.collections import List
 from std.memory import ArcPointer
-from tsonic_runtime import Callable, RaisingCallable, WeakReferenceIdentity
+from tsonic_runtime import BigInt, Callable, RaisingCallable, WeakReferenceIdentity
 from ..string import JsString
 from ..symbol import JsSymbol
 from .model import (
@@ -26,7 +26,7 @@ def js_value_from_number(value: Float64) -> JsValue:
 
 def js_value_from_bigint[T: Writable](value: T) -> JsValue:
     comptime assert (
-        T == Int64 or T == UInt64 or T == Int128 or T == UInt128
+        T == BigInt or T == Int64 or T == UInt64 or T == Int128 or T == UInt128
     ), "Bigint boxing requires an exact bigint-backed source integer"
     return JsValue._from_bigint_digits(JsString(String(value)))
 
