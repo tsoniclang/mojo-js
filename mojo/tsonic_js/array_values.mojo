@@ -1,10 +1,18 @@
 from tsonic_runtime.nullish import Null, Undefined
 from std.collections import List
+from std.builtin.rebind import downcast
 
 from .boolean import boolean_to_string
 from .number import number_to_string
 from .string import JsString
 from .value import JsValue, js_value_from_undefined, js_value_to_string
+
+
+comptime _ArrayIterableElement[T: AnyType]: AnyType = (
+    downcast[T, IterableOwned].IteratorOwnedType.Element if conforms_to(
+        T, IterableOwned
+    ) else NoneType
+)
 
 
 def array_value_string[
@@ -26,6 +34,14 @@ def array_value_string[
         return JsString("undefined")
     elif T == JsValue:
         return _implicit_value_string(rebind[JsValue](value))
+    elif T == Optional[_ArrayIterableElement[T]]:
+        comptime Element = downcast[
+            _ArrayIterableElement[T], Copyable & Deinitable & Writable
+        ]
+        ref selected = rebind[Optional[Element]](value)
+        if not selected:
+            return JsString("undefined")
+        return array_value_string(selected.value())
     else:
         comptime assert (
             T == Int
@@ -92,6 +108,11 @@ def array_present_value[
         return rebind[T](Undefined()).copy()
     elif T == JsValue:
         return rebind[T](js_value_from_undefined()).copy()
+    elif T == Optional[_ArrayIterableElement[T]]:
+        comptime Element = downcast[
+            _ArrayIterableElement[T], Copyable & Deinitable
+        ]
+        return rebind[T](Optional[Element]()).copy()
     else:
         raise Error(
             "JavaScript undefined cannot inhabit this array element type"
@@ -138,6 +159,12 @@ def array_value_is_nullish[T: Copyable & Deinitable](value: T) -> Bool:
     elif T == JsValue:
         var selected = rebind[JsValue](value)
         return selected.is_null() or selected.is_undefined()
+    elif T == Optional[_ArrayIterableElement[T]]:
+        comptime Element = downcast[
+            _ArrayIterableElement[T], Copyable & Deinitable
+        ]
+        ref selected = rebind[Optional[Element]](value)
+        return not selected or array_value_is_nullish(selected.value())
     else:
         return False
 
@@ -147,5 +174,11 @@ def array_value_is_undefined[T: Copyable & Deinitable](value: T) -> Bool:
         return True
     elif T == JsValue:
         return rebind[JsValue](value).is_undefined()
+    elif T == Optional[_ArrayIterableElement[T]]:
+        comptime Element = downcast[
+            _ArrayIterableElement[T], Copyable & Deinitable
+        ]
+        ref selected = rebind[Optional[Element]](value)
+        return not selected or array_value_is_undefined(selected.value())
     else:
         return False
